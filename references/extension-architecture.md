@@ -7,6 +7,18 @@
 
 ### Essential Files
 
+**Local Developer Tool Configurations (Allowed in Root)**
+The following PHP configuration files are allowed in the root directory as they are local developer overrides (typically gitignored):
+- `.php-cs-fixer.php` - Local PHP CS Fixer configuration override
+- `.php_cs` / `.php_cs.dist` - Legacy PHP CS Fixer configurations
+- `phpstan.neon.php` - PHPStan configuration (when PHP format needed)
+- `rector.php` - Rector configuration
+
+**Note:** The actual committed configurations should be in `Build/` directory:
+- `Build/.php-cs-fixer.dist.php` - Team/project PHP CS Fixer config
+- `Build/phpstan.neon` - PHPStan configuration
+- `Build/rector.php` - Rector configuration
+
 **composer.json**
 - REQUIRED for all extensions
 - Defines package metadata, dependencies, PSR-4 autoloading

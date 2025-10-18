@@ -116,14 +116,28 @@ echo ""
 echo "### Anti-Patterns Check"
 echo ""
 
-# Check for PHP files in root (except ext_* files)
-root_php_files=$(find . -maxdepth 1 -name "*.php" ! -name "ext_*.php" | wc -l)
+# Check for PHP files in root (except ext_* files and local tool configs)
+root_php_files=$(find . -maxdepth 1 -name "*.php" \
+    ! -name "ext_*.php" \
+    ! -name ".php-cs-fixer.php" \
+    ! -name ".php_cs" \
+    ! -name ".php_cs.dist" \
+    ! -name "phpstan.neon.php" \
+    ! -name "rector.php" \
+    | wc -l)
 if [ ${root_php_files} -gt 0 ]; then
     echo "- ❌ ${root_php_files} PHP files found in root directory (should be in Classes/)"
-    find . -maxdepth 1 -name "*.php" ! -name "ext_*.php" | sed 's/^/  - /'
+    find . -maxdepth 1 -name "*.php" \
+        ! -name "ext_*.php" \
+        ! -name ".php-cs-fixer.php" \
+        ! -name ".php_cs" \
+        ! -name ".php_cs.dist" \
+        ! -name "phpstan.neon.php" \
+        ! -name "rector.php" \
+        | sed 's/^/  - /'
     has_issues=1
 else
-    echo "- ✅ No PHP files in root (except ext_* files)"
+    echo "- ✅ No PHP files in root (except ext_* files and local tool configs)"
 fi
 
 # Check for deprecated ext_tables.php
