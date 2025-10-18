@@ -11,7 +11,7 @@ This skill enables systematic evaluation of TYPO3 extensions for conformance to 
 | Standard | Version/Specification |
 |----------|----------------------|
 | **TYPO3 Core** | 12.4 LTS / 13.x |
-| **PHP** | 8.1+ / 8.2+ / 8.3+ |
+| **PHP** | 8.1 / 8.2 / 8.3 / 8.4 |
 | **Coding Style** | PSR-12 (Extended Coding Style) |
 | **Architecture** | Dependency Injection (PSR-11), PSR-14 Events, PSR-15 Middleware |
 | **Testing** | PHPUnit 10+, TYPO3 Testing Framework |
