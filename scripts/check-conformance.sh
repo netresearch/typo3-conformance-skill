@@ -30,7 +30,7 @@ echo -e "${BLUE}╚════════════════════�
 echo ""
 echo -e "${BLUE}Standards Compliance Check:${NC}"
 echo -e "  • TYPO3 Version: ${YELLOW}12.4 LTS / 13.x${NC}"
-echo -e "  • PHP Version:   ${YELLOW}8.1+ / 8.2+ / 8.3+${NC}"
+echo -e "  • PHP Version:   ${YELLOW}8.1 / 8.2 / 8.3 / 8.4${NC}"
 echo -e "  • PSR Standard:  ${YELLOW}PSR-12 (Extended Coding Style)${NC}"
 echo -e "  • Architecture:  ${YELLOW}Dependency Injection, PSR-14 Events${NC}"
 echo ""
@@ -69,7 +69,7 @@ This conformance check validates your extension against the following standards:
 | Standard | Version/Specification |
 |----------|----------------------|
 | **TYPO3 Core** | 12.4 LTS / 13.x |
-| **PHP** | 8.1+ / 8.2+ / 8.3+ |
+| **PHP** | 8.1 / 8.2 / 8.3 / 8.4 |
 | **Coding Style** | PSR-12 (Extended Coding Style) |
 | **Architecture** | Dependency Injection (PSR-11), PSR-14 Events, PSR-15 Middleware |
 | **Testing** | PHPUnit 10+, TYPO3 Testing Framework |
