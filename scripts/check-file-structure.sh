@@ -146,7 +146,11 @@ fi
 
 # Report tracked files (these are issues)
 if [ ${#tracked_files[@]} -gt 0 ]; then
-    echo "- ❌ ${#tracked_files[@]} PHP file(s) in root directory committed to repository:"
+    if [ -d ".git" ]; then
+        echo "- ❌ ${#tracked_files[@]} PHP file(s) in root directory committed to repository:"
+    else
+        echo "- ❌ ${#tracked_files[@]} PHP file(s) found in root directory:"
+    fi
     for file in "${tracked_files[@]}"; do
         echo "  - ${file} (ISSUE: should be in Classes/ or Build/)"
     done
