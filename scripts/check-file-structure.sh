@@ -117,36 +117,52 @@ echo "### Anti-Patterns Check"
 echo ""
 
 # Check for PHP files in root (except ext_* files)
-# Only flag files that are tracked in git (not local temp files)
-root_php_count=0
+# Show all files but distinguish between tracked (issues) and untracked (info)
+tracked_files=()
+untracked_files=()
+all_root_php_files=()
+
+# Find all PHP files in root (except ext_* files)
+while IFS= read -r file; do
+    filename=$(basename "$file")
+    if [[ "$filename" != ext_*.php ]]; then
+        all_root_php_files+=("$filename")
+    fi
+done < <(find . -maxdepth 1 -name "*.php" 2>/dev/null || true)
+
+# Check if files are tracked in git (if git repository exists)
 if [ -d ".git" ]; then
-    # Git repository - check only tracked files
-    while IFS= read -r file; do
-        if [[ "$file" != ext_*.php ]]; then
-            if [ ${root_php_count} -eq 0 ]; then
-                echo "- ❌ PHP files found in root directory (should be in Classes/):"
-            fi
-            echo "  - ${file}"
-            root_php_count=$((root_php_count + 1))
-            has_issues=1
+    for file in "${all_root_php_files[@]}"; do
+        if git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
+            tracked_files+=("$file")
+        else
+            untracked_files+=("$file")
         fi
-    done < <(git ls-files --cached --exclude-standard | grep -E '^\./[^/]+\.php$' | sed 's|^\./||' || true)
+    done
 else
-    # No git repository - check all files except ext_* files
-    while IFS= read -r file; do
-        filename=$(basename "$file")
-        if [[ "$filename" != ext_*.php ]]; then
-            if [ ${root_php_count} -eq 0 ]; then
-                echo "- ❌ PHP files found in root directory (should be in Classes/):"
-            fi
-            echo "  - ${file}"
-            root_php_count=$((root_php_count + 1))
-            has_issues=1
-        fi
-    done < <(find . -maxdepth 1 -name "*.php" || true)
+    # No git repository - treat all files as tracked (potential issues)
+    tracked_files=("${all_root_php_files[@]}")
 fi
 
-if [ ${root_php_count} -eq 0 ]; then
+# Report tracked files (these are issues)
+if [ ${#tracked_files[@]} -gt 0 ]; then
+    echo "- ❌ ${#tracked_files[@]} PHP file(s) in root directory committed to repository:"
+    for file in "${tracked_files[@]}"; do
+        echo "  - ${file} (ISSUE: should be in Classes/ or Build/)"
+    done
+    has_issues=1
+fi
+
+# Report untracked files (informational only)
+if [ ${#untracked_files[@]} -gt 0 ]; then
+    echo "- ℹ️  ${#untracked_files[@]} untracked PHP file(s) in root (ignored, not committed):"
+    for file in "${untracked_files[@]}"; do
+        echo "  - ${file} (local file, not in repository)"
+    done
+fi
+
+# Success message if no files found
+if [ ${#all_root_php_files[@]} -eq 0 ]; then
     echo "- ✅ No PHP files in root (except ext_* files)"
 fi
 
