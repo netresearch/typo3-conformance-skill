@@ -116,28 +116,38 @@ echo ""
 echo "### Anti-Patterns Check"
 echo ""
 
-# Check for PHP files in root (except ext_* files and local tool configs)
-root_php_files=$(find . -maxdepth 1 -name "*.php" \
-    ! -name "ext_*.php" \
-    ! -name ".php-cs-fixer.php" \
-    ! -name ".php_cs" \
-    ! -name ".php_cs.dist" \
-    ! -name "phpstan.neon.php" \
-    ! -name "rector.php" \
-    | wc -l)
-if [ ${root_php_files} -gt 0 ]; then
-    echo "- ❌ ${root_php_files} PHP files found in root directory (should be in Classes/)"
-    find . -maxdepth 1 -name "*.php" \
-        ! -name "ext_*.php" \
-        ! -name ".php-cs-fixer.php" \
-        ! -name ".php_cs" \
-        ! -name ".php_cs.dist" \
-        ! -name "phpstan.neon.php" \
-        ! -name "rector.php" \
-        | sed 's/^/  - /'
-    has_issues=1
+# Check for PHP files in root (except ext_* files)
+# Only flag files that are tracked in git (not local temp files)
+root_php_count=0
+if [ -d ".git" ]; then
+    # Git repository - check only tracked files
+    while IFS= read -r file; do
+        if [[ "$file" != ext_*.php ]]; then
+            if [ ${root_php_count} -eq 0 ]; then
+                echo "- ❌ PHP files found in root directory (should be in Classes/):"
+            fi
+            echo "  - ${file}"
+            root_php_count=$((root_php_count + 1))
+            has_issues=1
+        fi
+    done < <(git ls-files --cached --exclude-standard | grep -E '^\./[^/]+\.php$' | sed 's|^\./||' || true)
 else
-    echo "- ✅ No PHP files in root (except ext_* files and local tool configs)"
+    # No git repository - check all files except ext_* files
+    while IFS= read -r file; do
+        filename=$(basename "$file")
+        if [[ "$filename" != ext_*.php ]]; then
+            if [ ${root_php_count} -eq 0 ]; then
+                echo "- ❌ PHP files found in root directory (should be in Classes/):"
+            fi
+            echo "  - ${file}"
+            root_php_count=$((root_php_count + 1))
+            has_issues=1
+        fi
+    done < <(find . -maxdepth 1 -name "*.php" || true)
+fi
+
+if [ ${root_php_count} -eq 0 ]; then
+    echo "- ✅ No PHP files in root (except ext_* files)"
 fi
 
 # Check for deprecated ext_tables.php
