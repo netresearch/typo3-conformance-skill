@@ -38,6 +38,7 @@ This skill enables systematic evaluation of TYPO3 extensions for conformance to 
 
 ### Reference Documentation
 
+- **version-requirements.md** - Official TYPO3 and PHP version compatibility matrix
 - **extension-architecture.md** - TYPO3 file structure standards
 - **coding-guidelines.md** - PSR-12 and TYPO3 code style guide
 - **php-architecture.md** - Dependency injection and architectural patterns
