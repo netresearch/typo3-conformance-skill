@@ -176,7 +176,7 @@ parameters:
         - vendor
 ```
 
-#### PHPStan Level 9 Best Practices for TYPO3
+#### PHPStan Level 10 Best Practices for TYPO3
 
 **Handling $GLOBALS['TCA'] in Tests:**
 
