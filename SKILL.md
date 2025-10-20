@@ -30,6 +30,15 @@ This skill provides systematic evaluation of TYPO3 extensions against official T
 
 **Reference:** See `references/version-requirements.md` for complete version compatibility matrix and migration paths.
 
+## Critical Validation References
+
+**New Advanced Validation Guides:**
+- **`references/runtests-validation.md`** - Validate Build/Scripts/runTests.sh against Tea extension reference
+- **`references/development-environment.md`** - Validate DDEV/Docker development environment setup
+- **`references/directory-structure.md`** - Validate .Build/ vs Build/ directory separation
+
+These guides provide line-by-line validation strategies, automated validation scripts, and scoring methodologies to ensure comprehensive conformance checks.
+
 ## Evaluation Workflow
 
 ### Step 1: Initial Assessment
@@ -288,7 +297,35 @@ cat Tests/Functional/Domain/Repository/ProductRepositoryTest.php
 
 **Reference:** `references/best-practices.md`
 
-**Project Infrastructure:**
+**CRITICAL: New Comprehensive Validation Areas**
+
+**1. Build Scripts Validation** (`references/runtests-validation.md`)
+- [ ] Build/Scripts/runTests.sh exists and matches Tea reference
+- [ ] PHP_VERSION default matches composer.json minimum
+- [ ] TYPO3_VERSION default matches composer.json target
+- [ ] PHP version regex includes only supported versions
+- [ ] Database version lists are current (not EOL)
+- [ ] Network name customized (not "friendsoftypo3-tea")
+- [ ] Test suite paths match actual directory structure
+
+**2. Development Environment** (`references/development-environment.md`)
+- [ ] DDEV configuration (.ddev/config.yaml) present
+- [ ] DDEV type set to 'typo3'
+- [ ] DDEV PHP version matches composer.json minimum
+- [ ] DDEV docroot matches composer.json web-dir
+- [ ] Database is MariaDB 10.11+ or MySQL 8.0+
+- [ ] OR Docker Compose (docker-compose.yml) as alternative
+- [ ] DevContainer configuration (optional but recommended)
+
+**3. Directory Structure** (`references/directory-structure.md`)
+- [ ] Build/ directory exists with committed configuration
+- [ ] .Build/ properly gitignored (entire directory)
+- [ ] No .Build/ files committed to git
+- [ ] Cache files in .Build/, not Build/
+- [ ] Composer paths reference .Build/ (bin-dir, vendor-dir, web-dir)
+- [ ] Quality tool configs reference .Build/ for cache
+
+**4. Project Infrastructure**
 - [ ] .editorconfig present
 - [ ] .gitignore properly configured
 - [ ] CI/CD pipeline (.github/workflows/ or .gitlab-ci.yml)
@@ -492,6 +529,9 @@ Use this checklist to track conformance improvements:
 - [ ] Acceptance tests (if applicable)
 
 **Best Practices**
+- [ ] Development environment (DDEV or Docker Compose) configured
+- [ ] Build/Scripts/runTests.sh present and accurate
+- [ ] Directory structure (.Build/ vs Build/) correct
 - [ ] Code quality tools configured
 - [ ] CI/CD pipeline setup
 - [ ] Security best practices followed
@@ -539,10 +579,22 @@ Each category (Architecture, Coding, PHP Architecture, Testing, Best Practices) 
 - Configuration files present: 4 points
 
 **Best Practices (20 points)**
-- Quality tools configured: 6 points
-- CI/CD pipeline: 6 points
-- Security practices: 4 points
-- Documentation complete: 4 points
+- Development environment (DDEV/Docker): 6 points
+  - DDEV configuration present: 4 points
+  - Configuration matches extension requirements: 2 points
+  - OR Docker Compose alternative: 3 points
+- Build scripts (runTests.sh): 6 points
+  - Script present and executable: 2 points
+  - PHP/TYPO3 versions match extension: 3 points
+  - Database versions current: 1 point
+- Directory structure (.Build/ vs Build/): 4 points
+  - .Build/ properly gitignored: 2 points
+  - Cache files in correct location: 1 point
+  - Composer paths aligned: 1 point
+- Quality tools configured: 2 points
+- Documentation complete: 2 points
+
+**Note:** Previously this category scored only quality tools (6) and documentation (4). The new comprehensive approach validates development environment setup, build script accuracy, and directory structure standards, providing more thorough conformance assessment.
 
 ### Severity Levels
 
