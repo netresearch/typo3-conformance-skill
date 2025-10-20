@@ -386,13 +386,22 @@ cat Documentation/Index.rst | head -50
 
 ## Executive Summary
 
-**Overall Conformance Score:** {score}/100
+**Base Conformance Score:** {score}/100
+**Excellence Indicators:** {excellence_score}/20 (Bonus)
+**Total Score:** {total_score}/120
 
+### Base Conformance Breakdown (0-100 points)
 - Extension Architecture: {score}/20
 - Coding Guidelines: {score}/20
 - PHP Architecture: {score}/20
 - Testing Standards: {score}/20
 - Best Practices: {score}/20
+
+### Excellence Indicators (0-20 bonus points)
+- Community & Internationalization: {score}/6
+- Advanced Quality Tooling: {score}/7
+- Documentation Excellence: {score}/4
+- Extension Configuration: {score}/3
 
 **Priority Issues:** {count_critical}
 **Recommendations:** {count_recommendations}
@@ -595,6 +604,96 @@ Each category (Architecture, Coding, PHP Architecture, Testing, Best Practices) 
 - Documentation complete: 2 points
 
 **Note:** Previously this category scored only quality tools (6) and documentation (4). The new comprehensive approach validates development environment setup, build script accuracy, and directory structure standards, providing more thorough conformance assessment.
+
+### Excellence Indicators (Bonus 0-20 points)
+
+**Reference:** `references/excellence-indicators.md`
+
+Excellence indicators are **optional features** that demonstrate exceptional quality and community engagement. Extensions are NOT penalized for missing these features - they provide bonus points only.
+
+**Total Possible Score: 120 points** (100 base conformance + 20 excellence bonus)
+
+**Category 1: Community & Internationalization (0-6 points)**
+- Crowdin integration (crowdin.yml): +2 points
+- GitHub issue templates (.github/ISSUE_TEMPLATE/): +1 point
+- .gitattributes with export-ignore: +1 point
+- Professional README badges (stability, versions, downloads, CI): +2 points
+
+**Category 2: Advanced Quality Tooling (0-7 points)**
+- Fractor configuration (Build/fractor/fractor.php): +2 points
+- TYPO3 CodingStandards package (typo3/coding-standards in composer.json): +2 points
+- StyleCI integration (.styleci.yml): +1 point
+- Makefile with self-documenting help: +1 point
+- CI testing matrix (multiple PHP/TYPO3 versions): +1 point
+
+**Category 3: Documentation Excellence (0-4 points)**
+- 50-99 RST files in Documentation/: +1 point
+- 100-149 RST files: +2 points
+- 150+ RST files: +3 points
+- Modern documentation tooling (guides.xml, screenshots.json): +1 point
+
+**Category 4: Extension Configuration (0-3 points)**
+- ext_conf_template.txt with proper categorization: +1 point
+- Composer documentation scripts (doc-init, doc-make, doc-watch): +1 point
+- Multiple Configuration/Sets/ presets (for different use cases): +1 point
+
+**Excellence Score Interpretation:**
+- **0-5 points:** Standard extension (meets requirements)
+- **6-10 points:** Good practices (actively maintained)
+- **11-15 points:** Excellent quality (community reference level)
+- **16-20 points:** Outstanding (georgringer/news level)
+
+**Example Report Format:**
+
+```markdown
+## TYPO3 Extension Conformance Report
+
+**Extension:** my_extension (v2.0.0)
+
+---
+
+### Score Summary
+
+**Base Conformance:** 94/100
+- Extension Architecture: 18/20
+- Coding Guidelines: 20/20
+- PHP Architecture: 18/20
+- Testing Standards: 18/20
+- Best Practices: 20/20
+
+**Excellence Indicators:** 12/20 (Bonus)
+- Community & Internationalization: 4/6
+  - ✅ Crowdin integration (+2)
+  - ✅ Professional README badges (+2)
+  - ❌ No GitHub issue templates
+  - ❌ No .gitattributes export-ignore
+
+- Advanced Quality Tooling: 5/7
+  - ✅ Fractor configuration (+2)
+  - ✅ TYPO3 CodingStandards (+2)
+  - ✅ Makefile with help (+1)
+  - ❌ No StyleCI
+  - ❌ No CI testing matrix
+
+- Documentation Excellence: 2/4
+  - ✅ 75 RST files (+1)
+  - ✅ Modern tooling (guides.xml) (+1)
+
+- Extension Configuration: 1/3
+  - ✅ Composer doc scripts (+1)
+  - ❌ No ext_conf_template.txt
+  - ❌ Only one Configuration/Sets/ preset
+
+**Total Score:** 106/120
+
+**Rating:** Excellent - This extension demonstrates strong conformance and excellent quality practices.
+```
+
+**Important Notes:**
+- Base conformance (0-100) is MANDATORY - this is pass/fail criteria
+- Excellence indicators (0-20) are OPTIONAL - bonus points for exceptional quality
+- Extensions scoring 100/100 base are fully conformant, regardless of excellence score
+- Excellence indicators identify community reference extensions
 
 ### Severity Levels
 
