@@ -1,6 +1,6 @@
 ---
 name: TYPO3 Conformance
-description: "Evaluate TYPO3 extensions for conformance to official TYPO3 12/13 LTS standards, coding guidelines (PSR-12, TYPO3 CGL), and architecture patterns. Use when assessing extension quality, generating conformance reports, identifying technical debt, or planning modernization efforts. Evaluates: extension architecture, dependency injection, services configuration, testing coverage, Extbase patterns, and best practices alignment. Supports PHP 8.1-8.4 and provides actionable improvement recommendations with scoring."
+description: "Evaluate TYPO3 extensions for conformance to official TYPO3 12/13 LTS standards, coding guidelines (PSR-12, TYPO3 CGL), and architecture patterns. Use when assessing extension quality, generating conformance reports, identifying technical debt, or planning modernization efforts. Evaluates: extension architecture, dependency injection, services configuration, testing coverage, Extbase patterns, and best practices alignment. Supports PHP 8.1-8.4 and provides actionable improvement recommendations with dual scoring (0-100 base + 0-20 excellence). Orchestrates specialized skills: delegates to typo3-tests for deep testing analysis and typo3-docs for comprehensive documentation validation when available."
 license: Complete terms in LICENSE.txt
 ---
 
@@ -19,6 +19,30 @@ This skill provides systematic evaluation of TYPO3 extensions against official T
 3. **PHP Architecture** - Dependency injection, services, events, Extbase patterns
 4. **Testing Standards** - Unit, functional, and acceptance testing requirements
 5. **Best Practices** - Real-world patterns from Tea extension and core standards
+
+### Skill Ecosystem Integration
+
+This skill acts as an **orchestrator** that delegates to specialized skills for deep domain analysis:
+
+**🔧 typo3-tests** (https://github.com/netresearch/typo3-testing-skill)
+- Deep PHPUnit configuration analysis
+- Test quality patterns (AAA, mocking, fixtures)
+- TYPO3 Testing Framework validation
+- Accurate coverage calculation
+- Test anti-pattern detection
+
+**📚 typo3-docs** (https://github.com/netresearch/typo3-docs-skill)
+- RST syntax and TYPO3 directive validation
+- Documentation rendering with Docker
+- Modern tooling detection (guides.xml, screenshots.json)
+- Cross-reference integrity checks
+- Official TYPO3 documentation standards
+
+**Delegation Strategy:**
+- **Surface-level checks:** Performed directly by this skill
+- **Deep analysis:** Delegated to specialized skills when available
+- **Fallback:** Basic validation if specialized skills unavailable
+- **Integration:** Results incorporated into conformance scoring
 
 ## Version Compatibility
 
@@ -238,6 +262,25 @@ grep -r "inject[A-Z]" Classes/  # Method injection (check if justified)
 
 **Reference:** `references/testing-standards.md`
 
+**DELEGATION STRATEGY: For Deep Testing Analysis**
+
+When Testing Standards category needs comprehensive validation, use skill delegation:
+
+```
+🔧 Use /skill typo3-tests (if available) for deep analysis:
+  - PHPUnit configuration quality and best practices
+  - Test code patterns (AAA, proper mocking, fixtures)
+  - TYPO3 Testing Framework usage validation
+  - Functional test database handling
+  - Accurate test coverage calculation
+  - Test quality metrics and anti-patterns
+  - Integration with TYPO3 core testing infrastructure
+
+  Return: Detailed testing conformance report with specific issues
+```
+
+**Fallback: If typo3-tests skill unavailable, perform basic validation:**
+
 **Test Coverage Analysis:**
 
 ```bash
@@ -253,7 +296,7 @@ find Tests/Unit/ -name "*Test.php" | wc -l
 find Tests/Functional/ -name "*Test.php" | wc -l
 ```
 
-**Evaluate:**
+**Basic Evaluation Checklist:**
 - [ ] Tests/Unit/ mirrors Classes/ structure
 - [ ] Tests/Functional/ present with fixtures
 - [ ] PHPUnit configuration files present
@@ -261,6 +304,8 @@ find Tests/Functional/ -name "*Test.php" | wc -l
 - [ ] Functional tests extend FunctionalTestCase
 - [ ] Acceptance tests configured (Codeception)
 - [ ] Test coverage >70% for new code
+
+**Note:** Basic validation provides surface-level checks. For production-ready conformance reports, delegate to typo3-tests skill for comprehensive analysis
 
 **Sample Test Inspection:**
 ```php
@@ -342,11 +387,40 @@ grep -r "GeneralUtility::validEmail" Classes/  # Email validation
 ```
 
 **Documentation Quality:**
+
+**DELEGATION STRATEGY: For Deep Documentation Analysis**
+
+When Documentation Excellence validation is needed, use skill delegation:
+
+```
+📚 Use /skill typo3-docs (if available) for deep analysis:
+  - RST syntax validation and TYPO3 directive compliance
+  - Documentation structure conformance (Index.rst, Settings.cfg)
+  - TYPO3 documentation standards (guides.xml, screenshots.json)
+  - Rendering validation with Docker (official TYPO3 render-guides)
+  - Intersphinx references validation
+  - Code example syntax validation
+  - Cross-reference integrity
+  - Modern documentation tooling detection
+
+  Return: Comprehensive documentation conformance report
+```
+
+**Fallback: If typo3-docs skill unavailable, perform basic validation:**
+
 ```bash
 # Check documentation completeness
 ls -1 Documentation/ | wc -l
 cat Documentation/Index.rst | head -50
+
+# Check for required files
+ls Documentation/Settings.cfg Documentation/guides.xml 2>/dev/null
+
+# Count RST files for excellence scoring
+find Documentation/ -name "*.rst" | wc -l
 ```
+
+**Note:** Basic validation only checks file existence. For production-ready documentation conformance, delegate to typo3-docs skill for comprehensive RST validation and rendering checks
 
 **Output Format:**
 ```markdown

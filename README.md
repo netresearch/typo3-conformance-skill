@@ -6,6 +6,31 @@ A comprehensive Claude Code skill for evaluating TYPO3 extensions against offici
 
 This skill enables systematic evaluation of TYPO3 extensions for conformance to official TYPO3 standards.
 
+### Skill Ecosystem Integration
+
+This conformance checker acts as an **orchestrator** that delegates to specialized skills for deep domain analysis:
+
+**🔧 Testing Analysis: typo3-tests**
+- Repository: https://github.com/netresearch/typo3-testing-skill
+- Expertise: Deep PHPUnit configuration analysis, test quality patterns, TYPO3 Testing Framework validation
+- Integration: Delegated for Testing Standards category (20 points)
+
+**📚 Documentation Analysis: typo3-docs**
+- Repository: https://github.com/netresearch/typo3-docs-skill
+- Expertise: RST validation, TYPO3 documentation standards, rendering validation with Docker
+- Integration: Delegated for Documentation Excellence (bonus category)
+
+**Delegation Benefits:**
+- **Depth:** Each skill provides domain expertise beyond surface-level checks
+- **Accuracy:** Specialized validation reduces false positives/negatives
+- **Modularity:** Skills can be used independently or together
+- **Maintainability:** Each skill focuses on single responsibility
+
+**Fallback Strategy:**
+- Surface-level checks performed if specialized skills unavailable
+- Basic validation ensures conformance reports always generate
+- Full accuracy requires all ecosystem skills installed
+
 ### Standards Checked
 
 | Standard | Version/Specification |
@@ -855,6 +880,23 @@ mv ~/.claude/skills/typo3-conformance-skill-main ~/.claude/skills/typo3-conforma
 # Or using git
 git clone https://github.com/netresearch/typo3-conformance-skill.git ~/.claude/skills/typo3-conformance
 ```
+
+### Install Ecosystem Skills (Recommended)
+
+For comprehensive conformance analysis, install specialized skills:
+
+```bash
+# Install typo3-tests for deep testing analysis
+git clone https://github.com/netresearch/typo3-testing-skill.git ~/.claude/skills/typo3-tests
+
+# Install typo3-docs for comprehensive documentation validation
+git clone https://github.com/netresearch/typo3-docs-skill.git ~/.claude/skills/typo3-docs
+```
+
+**Skill Dependencies:**
+- **Standalone:** typo3-conformance works independently with basic validation
+- **Enhanced:** Install typo3-tests and typo3-docs for production-ready conformance reports
+- **Automatic Delegation:** Conformance skill auto-detects and uses ecosystem skills when available
 
 ### Verify Installation
 
