@@ -38,12 +38,18 @@ This skill enables systematic evaluation of TYPO3 extensions for conformance to 
 
 ### Reference Documentation
 
+**Core Standards:**
 - **version-requirements.md** - Official TYPO3 and PHP version compatibility matrix
 - **extension-architecture.md** - TYPO3 file structure standards
 - **coding-guidelines.md** - PSR-12 and TYPO3 code style guide
 - **php-architecture.md** - Dependency injection and architectural patterns
 - **testing-standards.md** - Unit, functional, and acceptance testing
 - **best-practices.md** - Real-world patterns and project infrastructure
+
+**Advanced Validation Guides:**
+- **runtests-validation.md** - Validate Build/Scripts/runTests.sh against Tea extension reference
+- **development-environment.md** - Validate DDEV/Docker development environment setup
+- **directory-structure.md** - Validate .Build/ vs Build/ directory separation and organization
 
 ### Quality Tool Configuration Templates
 
