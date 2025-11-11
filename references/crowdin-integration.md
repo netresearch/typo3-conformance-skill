@@ -932,6 +932,390 @@ done
 3. **Document in PR**: Mention XLIFF version upgrade in PR description
 4. **Crowdin compatibility**: Confirm Crowdin continues to work after upgrade
 
+## Translator Notes for Multilingual Terms
+
+### Problem: Brand Names and International Terms
+
+Some translation strings contain terms that may not need translation in all languages:
+- **Brand names**: Retina, Ultra, Standard
+- **International terms**: DPI, PDF, SVG
+- **Technical terms**: widely understood across languages
+
+**Challenge**: Different languages handle these differently:
+- Some keep as-is (Latin script languages)
+- Some transliterate (Arabic, Chinese, Japanese, Thai, Hindi)
+- Some translate (context-dependent)
+
+### ❌ Wrong Approach: `translate="no"`
+
+```xml
+<!-- DON'T DO THIS -->
+<trans-unit id="labels.ckeditor.quality.retina" translate="no">
+    <source>Retina (2.0x)</source>
+    <target>Retina (2.0x)</target>
+</trans-unit>
+```
+
+**Why this fails**:
+- Hides string from translators entirely in Crowdin
+- Prevents legitimate localization choices
+- Example: Arabic transliterates "Retina" → "ريتينا" (correct!)
+- Blocks cultural adaptation
+
+### ✅ Correct Approach: `<note>` Elements
+
+```xml
+<!-- CORRECT - Provides guidance, allows translator judgment -->
+<trans-unit id="labels.ckeditor.quality.retina" xml:space="preserve">
+    <source>Retina (2.0x)</source>
+    <note>Multilingual term - keep as-is or transliterate if more natural in your language</note>
+</trans-unit>
+
+<trans-unit id="labels.ckeditor.quality.standard" xml:space="preserve">
+    <source>Standard (1.0x)</source>
+    <note>Multilingual term - keep as-is unless your language has a more natural equivalent</note>
+</trans-unit>
+```
+
+**Benefits**:
+- Translators see the note in Crowdin UI
+- Provides guidance without restricting choices
+- Allows appropriate localization decisions
+- Respects translator expertise
+
+### Identifying Multilingual Terms
+
+**Detection script**:
+
+```python
+#!/usr/bin/env python3
+import re
+from pathlib import Path
+from collections import defaultdict
+
+lang_dir = Path('Resources/Private/Language')
+matches_by_id = defaultdict(list)
+
+for filepath in sorted(lang_dir.glob('??.locallang_be.xlf')):
+    content = filepath.read_text(encoding='utf-8')
+
+    units = re.findall(
+        r'<trans-unit id="([^"]+)"[^>]*>.*?<source>([^<]+)</source>\s*<target[^>]*>([^<]+)</target>.*?</trans-unit>',
+        content,
+        re.DOTALL
+    )
+
+    for unit_id, source, target in units:
+        if source.strip() == target.strip():
+            matches_by_id[unit_id].append((filepath.name, source.strip()))
+
+# Show strings matching in 3+ languages (likely multilingual)
+print("Multilingual candidates (source == target in 3+ languages):\n")
+for unit_id, matches in sorted(matches_by_id.items()):
+    if len(matches) >= 3:
+        print(f"{unit_id}: {matches[0][1]}")
+        print(f"  Languages: {len(matches)} keep as-is")
+```
+
+**Criteria for adding notes**:
+- Term unchanged in 3+ languages → Likely multilingual
+- Brand names (Retina, Ultra) → Add note
+- Technical acronyms (DPI, SVG) → Add note
+- Common international words (Standard) → Add note
+
+### Note Text Guidelines
+
+**For brand names and transliterable terms**:
+```xml
+<note>Multilingual term - keep as-is or transliterate if more natural in your language</note>
+```
+
+**For international terms with possible equivalents**:
+```xml
+<note>Multilingual term - keep as-is unless your language has a more natural equivalent</note>
+```
+
+**For technical acronyms**:
+```xml
+<note>Technical acronym - commonly understood internationally</note>
+```
+
+### Adding Notes to Source File
+
+**Important**: Only add `<note>` elements to **source file** (`locallang_be.xlf`), not translation files.
+
+```bash
+# Add notes manually in source file
+vim Resources/Private/Language/locallang_be.xlf
+```
+
+Or via script:
+
+```python
+import re
+from pathlib import Path
+
+source_file = Path('Resources/Private/Language/locallang_be.xlf')
+content = source_file.read_text(encoding='utf-8')
+
+# Add note after </source> for specific trans-units
+note = '\t\t\t\t<note>Multilingual term - keep as-is or transliterate if more natural in your language</note>'
+
+# Example: Add to Retina trans-unit
+content = re.sub(
+    r'(<trans-unit id="labels\.ckeditor\.quality\.retina"[^>]*>.*?<source>Retina \(2\.0x\)</source>)',
+    r'\1\n' + note,
+    content,
+    flags=re.DOTALL
+)
+
+source_file.write_text(content, encoding='utf-8')
+```
+
+**Crowdin behavior**:
+- Notes appear in translator UI
+- Visible during translation process
+- Helps translators make informed decisions
+
+## XLIFF Validation in CI
+
+### Why Validate XLIFF Files
+
+**Quality gates**:
+- Catch XML syntax errors early
+- Enforce XLIFF version consistency
+- Verify proper namespace declarations
+- Detect encoding issues
+- Warn about potential untranslated strings
+
+**Benefits**:
+- Prevents broken translations from being merged
+- Ensures Crowdin compatibility
+- Maintains translation quality standards
+- Catches errors before they reach production
+
+### Validation Script
+
+Create `Build/Scripts/validate-xliff.sh`:
+
+```bash
+#!/bin/bash
+set -e
+
+echo "=== XLIFF Translation File Validation ==="
+echo
+
+LANG_DIR="Resources/Private/Language"
+ERRORS=0
+
+# Check if xmllint is available
+if ! command -v xmllint &> /dev/null; then
+    echo "⚠️  xmllint not found, skipping XML syntax validation"
+    XMLLINT_AVAILABLE=false
+else
+    XMLLINT_AVAILABLE=true
+fi
+
+# 1. Validate XML syntax
+if [ "$XMLLINT_AVAILABLE" = true ]; then
+    echo "=== 1. XML Syntax Validation ==="
+    for file in "$LANG_DIR"/*.xlf; do
+        if xmllint --noout "$file" 2>&1; then
+            echo "✅ $file - Valid XML"
+        else
+            echo "❌ $file - Invalid XML syntax"
+            ERRORS=$((ERRORS + 1))
+        fi
+    done
+    echo
+fi
+
+# 2. Check XLIFF version consistency
+echo "=== 2. XLIFF Version Consistency ==="
+VERSION_CHECK=$(grep -h 'xliff version=' "$LANG_DIR"/*.xlf | sort -u)
+VERSION_COUNT=$(echo "$VERSION_CHECK" | wc -l)
+
+if [ "$VERSION_COUNT" -eq 1 ]; then
+    if echo "$VERSION_CHECK" | grep -q 'version="1.2"'; then
+        echo "✅ All files use XLIFF 1.2"
+    else
+        echo "❌ Files not using XLIFF 1.2:"
+        echo "$VERSION_CHECK"
+        ERRORS=$((ERRORS + 1))
+    fi
+else
+    echo "❌ Mixed XLIFF versions detected:"
+    echo "$VERSION_CHECK"
+    ERRORS=$((ERRORS + 1))
+fi
+echo
+
+# 3. Check namespace declarations
+echo "=== 3. XLIFF 1.2 Namespace Validation ==="
+MISSING_NS=$(grep -L 'xmlns="urn:oasis:names:tc:xliff:document:1.2"' "$LANG_DIR"/*.xlf || true)
+if [ -z "$MISSING_NS" ]; then
+    echo "✅ All files have proper XLIFF 1.2 namespace"
+else
+    echo "❌ Files missing XLIFF 1.2 namespace:"
+    echo "$MISSING_NS"
+    ERRORS=$((ERRORS + 1))
+fi
+echo
+
+# 4. Check for UTF-8 encoding (ASCII is valid UTF-8)
+echo "=== 4. UTF-8 Encoding Validation ==="
+NON_UTF8=$(file "$LANG_DIR"/*.xlf | grep -vE "(UTF-8|ASCII)" || true)
+if [ -z "$NON_UTF8" ]; then
+    echo "✅ All files are UTF-8 compatible"
+else
+    echo "❌ Files not UTF-8 compatible:"
+    echo "$NON_UTF8"
+    ERRORS=$((ERRORS + 1))
+fi
+echo
+
+# 5. Warn about potential untranslated strings (source == target)
+echo "=== 5. Translation Completeness Check ==="
+echo "(Warning only - some matches are legitimate multilingual terms)"
+echo
+
+python3 << 'PYEOF'
+import re
+from pathlib import Path
+
+lang_dir = Path('Resources/Private/Language')
+
+# Known multilingual terms that are OK to match
+MULTILINGUAL_TERMS = {
+    'Retina', 'Retina (2.0x)',
+    'Ultra', 'Ultra (3.0x)',
+    'Standard', 'Standard (1.0x)',
+    'DPI', 'SVG', 'PDF'
+}
+
+warnings = 0
+for filepath in sorted(lang_dir.glob('??.locallang_be.xlf')):
+    content = filepath.read_text(encoding='utf-8')
+
+    units = re.findall(
+        r'<trans-unit id="([^"]+)"[^>]*>.*?<source>([^<]+)</source>\s*<target[^>]*>([^<]+)</target>.*?</trans-unit>',
+        content,
+        re.DOTALL
+    )
+
+    untranslated = []
+    for unit_id, source, target in units:
+        if source.strip() == target.strip() and source.strip() not in MULTILINGUAL_TERMS:
+            untranslated.append((unit_id, source.strip()))
+
+    if untranslated:
+        warnings += 1
+        print(f"⚠️  {filepath.name}: {len(untranslated)} potential untranslated strings")
+        for unit_id, text in untranslated[:3]:
+            print(f"    - {unit_id}: {text}")
+        if len(untranslated) > 3:
+            print(f"    ... and {len(untranslated)-3} more")
+
+if warnings == 0:
+    print("✅ No unexpected untranslated strings found")
+else:
+    print(f"\n⚠️  Found {warnings} files with potential untranslated strings")
+    print("(This is a warning only - review manually)")
+PYEOF
+
+echo
+echo "=== Validation Summary ==="
+if [ $ERRORS -eq 0 ]; then
+    echo "✅ All validation checks passed!"
+    exit 0
+else
+    echo "❌ Found $ERRORS validation error(s)"
+    exit 1
+fi
+```
+
+**Make executable**:
+```bash
+chmod +x Build/Scripts/validate-xliff.sh
+```
+
+### CI Integration
+
+Add to `.github/workflows/ci.yml`:
+
+```yaml
+jobs:
+    build:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+
+            # Add XLIFF validation BEFORE composer install
+            - name: Validate XLIFF Translation Files
+              run: |
+                  bash Build/Scripts/validate-xliff.sh
+
+            # ... rest of CI jobs (composer install, lint, tests, etc.)
+```
+
+**Why before composer install**:
+- No PHP dependencies required
+- Fails fast if translation files broken
+- Saves CI time by catching errors early
+- xmllint available in ubuntu-latest
+
+### Validation Checklist
+
+**✅ XML Syntax**: All files are well-formed XML
+- Uses xmllint for validation
+- Catches malformed tags, encoding issues
+
+**✅ Version Consistency**: All files use same XLIFF version
+- Enforces XLIFF 1.2 standard
+- Detects mixed versions (1.0 and 1.2)
+
+**✅ Namespace Declarations**: Proper XLIFF 1.2 namespace
+- Checks for `xmlns="urn:oasis:names:tc:xliff:document:1.2"`
+- Required for XLIFF 1.2 compliance
+
+**✅ Encoding**: UTF-8 compatible
+- Accepts UTF-8 and ASCII (ASCII is UTF-8 subset)
+- Detects non-UTF-8 encodings
+
+**⚠️ Translation Completeness**: Source != target check
+- Warning only, doesn't fail CI
+- Excludes known multilingual terms
+- Helps catch accidental untranslated strings
+
+### Customizing Multilingual Term List
+
+Update the `MULTILINGUAL_TERMS` set in validation script:
+
+```python
+# Add your extension's multilingual terms
+MULTILINGUAL_TERMS = {
+    'Retina', 'Retina (2.0x)',
+    'Ultra', 'Ultra (3.0x)',
+    'Standard', 'Standard (1.0x)',
+    'DPI', 'SVG', 'PDF',
+    # Add extension-specific terms
+    'WebP', 'AVIF', 'HEIF',
+    'API', 'REST', 'JSON'
+}
+```
+
+### Testing Locally
+
+```bash
+# Run validation locally before pushing
+bash Build/Scripts/validate-xliff.sh
+
+# Expected output on clean repository
+# ✅ All validation checks passed!
+```
+
 ## Validation Scoring Impact
 
 ### Translation Quality (+2 points)
@@ -948,4 +1332,12 @@ done
 
 - **XLIFF 1.2 compliance** (+1): All translation files use XLIFF 1.2 with proper namespace declaration
 
-**Total possible improvement**: +4 points to conformance score
+### Translator Guidance (+1 point)
+
+- **Multilingual term notes** (+1): Source file contains `<note>` elements for brand names and international terms
+
+### CI Validation (+1 point)
+
+- **XLIFF validation in CI** (+1): Automated validation checks in GitHub Actions/CI pipeline
+
+**Total possible improvement**: +6 points to conformance score
