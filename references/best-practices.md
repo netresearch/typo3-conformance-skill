@@ -511,6 +511,59 @@ Clear and concise extension description explaining the purpose and main features
    Sitemap
 ```
 
+**Page Size Guidelines:**
+
+Follow TYPO3 documentation best practices for page organization and sizing:
+
+**Index.rst (Landing Page):**
+- **Target:** 80-150 lines
+- **Maximum:** 200 lines
+- **Purpose:** Entry point with metadata, brief description, and navigation only
+- **Contains:** Extension metadata, brief description, card-grid (optional), toctree, license
+- **Anti-pattern:** ❌ Embedding all content (introduction, requirements, contributing, credits, etc.)
+
+**Content Pages:**
+- **Target:** 100-300 lines per file
+- **Optimal:** 150-200 lines
+- **Maximum:** 400 lines (split if larger)
+- **Structure:** Focused on single topic or logically related concepts
+- **Split Strategy:** Create subdirectories for complex topics with multiple aspects
+
+**Red Flags:**
+- ❌ Index.rst >200 lines → Extract content to Introduction/, Contributing/, etc.
+- ❌ Single file >400 lines → Split into multiple focused pages
+- ❌ All content in Index.rst → Create proper section directories
+- ❌ Navigation by scrolling → Use card-grid + toctree structure
+
+**Proper Structure Example:**
+```
+Documentation/
+├── Index.rst              # Landing page (80-150 lines)
+├── Introduction/          # Getting started
+│   └── Index.rst         # Features, requirements, quick start
+├── Installation/          # Setup instructions
+│   └── Index.rst
+├── Configuration/         # Configuration guides
+│   ├── Index.rst
+│   ├── Basic.rst
+│   └── Advanced.rst
+├── Contributing/          # Contribution guidelines
+│   └── Index.rst         # Code, translations, credits, resources
+├── Examples/              # Usage examples
+├── Troubleshooting/       # Problem solving
+└── API/                   # Developer reference
+```
+
+**Benefits:**
+- ✅ Better user experience (focused, scannable pages)
+- ✅ Easier maintenance (smaller, manageable files)
+- ✅ Improved search results (specific pages rank better)
+- ✅ Clear information architecture
+- ✅ Follows TYPO3 documentation standards
+- ✅ Mobile-friendly navigation
+
+**Reference:** [TYPO3 tea extension](https://github.com/TYPO3BestPractices/tea) - exemplary documentation structure
+
 ### 8. Language File Organization
 
 **Resources/Private/Language/locallang.xlf:**
