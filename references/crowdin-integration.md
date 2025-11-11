@@ -786,6 +786,152 @@ Some formatting differences cannot be prevented:
 (Minimal diff showing only actual translation changes or unavoidable attribute reordering)
 ```
 
+## XLIFF Version Standards
+
+### XLIFF 1.2 vs 1.0
+
+**TYPO3 Recommendation**: Use XLIFF 1.2 for all translation files
+
+**Benefits of XLIFF 1.2**:
+- Better tooling support across translation platforms
+- Enhanced validation capabilities with proper namespace
+- Recommended by OASIS XLIFF Technical Committee
+- Improved interoperability with CAT (Computer-Assisted Translation) tools
+- Required for modern Crowdin features and validation
+
+### Version Detection
+
+Check current XLIFF version in translation files:
+
+```bash
+grep -h "xliff version" Resources/Private/Language/*.xlf | sort -u
+```
+
+**XLIFF 1.0 format** (deprecated):
+```xml
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<xliff version="1.0">
+    <file source-language="en" datatype="plaintext" product-name="rte_ckeditor_image">
+```
+
+**XLIFF 1.2 format** (recommended):
+```xml
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" product-name="rte_ckeditor_image">
+```
+
+### Key Differences
+
+1. **Version attribute**: `version="1.0"` → `version="1.2"`
+2. **Namespace declaration**: Must add `xmlns="urn:oasis:names:tc:xliff:document:1.2"`
+3. **Validation**: XLIFF 1.2 has stricter schema validation
+4. **Tooling**: Modern CAT tools prefer XLIFF 1.2
+
+### Upgrade Script
+
+Automated XLIFF 1.0 → 1.2 conversion:
+
+```python
+#!/usr/bin/env python3
+import re
+from pathlib import Path
+
+def upgrade_xliff_to_1_2(filepath):
+    """Upgrade XLIFF file from version 1.0 to 1.2"""
+    with open(filepath, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    # Check if already 1.2
+    if 'version="1.2"' in content:
+        return False
+
+    # Upgrade version and add namespace
+    new_content = content.replace(
+        '<xliff version="1.0">',
+        '<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">'
+    )
+
+    if new_content != content:
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+        return True
+
+    return False
+
+# Upgrade all XLIFF files
+upgraded_count = 0
+for filepath in Path('Resources/Private/Language').glob('*.xlf'):
+    if upgrade_xliff_to_1_2(filepath):
+        print(f"✅ Upgraded: {filepath.name}")
+        upgraded_count += 1
+    else:
+        print(f"⏭️  Already XLIFF 1.2: {filepath.name}")
+
+print(f"\nUpgraded {upgraded_count} files to XLIFF 1.2")
+```
+
+**Bash alternative** (simple sed replacement):
+
+```bash
+#!/bin/bash
+# Upgrade all XLIFF files from 1.0 to 1.2
+
+for file in Resources/Private/Language/*.xlf; do
+    if grep -q 'version="1.0"' "$file"; then
+        sed -i 's|<xliff version="1.0">|<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">|g' "$file"
+        echo "✅ Upgraded: $file"
+    else
+        echo "⏭️  Already XLIFF 1.2: $file"
+    fi
+done
+```
+
+### Validation
+
+Verify XLIFF 1.2 compliance after upgrade:
+
+```bash
+# Check all files have version 1.2
+if grep -q 'version="1.0"' Resources/Private/Language/*.xlf 2>/dev/null; then
+    echo "❌ Some files still use XLIFF 1.0"
+    grep -l 'version="1.0"' Resources/Private/Language/*.xlf
+    exit 1
+else
+    echo "✅ All files use XLIFF 1.2"
+fi
+
+# Check all files have namespace
+if grep -L 'xmlns="urn:oasis:names:tc:xliff:document:1.2"' Resources/Private/Language/*.xlf 2>/dev/null | grep -q .; then
+    echo "❌ Some files missing XLIFF 1.2 namespace"
+    grep -L 'xmlns="urn:oasis:names:tc:xliff:document:1.2"' Resources/Private/Language/*.xlf
+    exit 1
+else
+    echo "✅ All files have proper XLIFF 1.2 namespace"
+fi
+```
+
+### Testing After Upgrade
+
+1. **TYPO3 Backend**: Verify translations still load correctly
+2. **Crowdin Upload**: Test that Crowdin accepts XLIFF 1.2 files
+3. **Translation Export**: Confirm Crowdin exports maintain XLIFF 1.2 format
+4. **XML Validation**: Use xmllint or online validators to check schema compliance
+
+```bash
+# Validate XML syntax
+for file in Resources/Private/Language/*.xlf; do
+    xmllint --noout "$file" 2>&1 && echo "✅ $file" || echo "❌ $file"
+done
+```
+
+### Best Practices
+
+1. **All files same version**: Upgrade all XLIFF files together, don't mix versions
+2. **Test before commit**: Verify in TYPO3 backend before committing
+3. **Document in PR**: Mention XLIFF version upgrade in PR description
+4. **Crowdin compatibility**: Confirm Crowdin continues to work after upgrade
+
 ## Validation Scoring Impact
 
 ### Translation Quality (+2 points)
@@ -798,4 +944,8 @@ Some formatting differences cannot be prevented:
 - **Formatting rules** (+0.5): .editorconfig and .gitattributes present
 - **Export options** (+0.5): crowdin.yml includes export_options configuration
 
-**Total possible improvement**: +3 points to conformance score
+### XLIFF Version (+1 point)
+
+- **XLIFF 1.2 compliance** (+1): All translation files use XLIFF 1.2 with proper namespace declaration
+
+**Total possible improvement**: +4 points to conformance score
