@@ -712,7 +712,7 @@ Excellence indicators are **optional features** that demonstrate exceptional qua
 
 **Category 1: Community & Internationalization (0-6 points)**
 - Crowdin integration: 0-2 points
-  - Basic (.crowdin.yml exists): +1 point
+  - Basic (crowdin.yml exists): +1 point
   - TYPO3-compliant (preserve_hierarchy, wildcards, proper patterns, no download job): +2 points
   - See `references/crowdin-integration.md` for comprehensive validation
 - GitHub issue templates (.github/ISSUE_TEMPLATE/): +1 point
