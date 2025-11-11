@@ -37,7 +37,7 @@ Translations committed to main branch
 3. **Contact Channel**: Slack `#typo3-localization-team`
 4. **Branch Support**: TYPO3 currently supports one branch/version (typically `main`)
 
-## Configuration File Validation (.crowdin.yml)
+## Configuration File Validation (crowdin.yml)
 
 ### Required Structure
 
@@ -127,51 +127,51 @@ files:
 
 ```bash
 #!/bin/bash
-# Validate .crowdin.yml against TYPO3 standards
+# Validate crowdin.yml against TYPO3 standards
 
-echo "Validating .crowdin.yml for TYPO3 compliance..."
+echo "Validating crowdin.yml for TYPO3 compliance..."
 
 # Check file exists
-if [[ ! -f .crowdin.yml ]]; then
-  echo "❌ .crowdin.yml not found"
+if [[ ! -f crowdin.yml ]]; then
+  echo "❌ crowdin.yml not found"
   exit 1
 fi
 
 # Check preserve_hierarchy
-if grep -q "preserve_hierarchy: 1" .crowdin.yml; then
+if grep -q "preserve_hierarchy: 1" crowdin.yml; then
   echo "✅ preserve_hierarchy: 1 present"
 else
   echo "❌ Missing preserve_hierarchy: 1"
 fi
 
 # Check wildcard source pattern
-if grep -q "/Resources/Private/Language/\*.xlf" .crowdin.yml; then
+if grep -q "/Resources/Private/Language/\*.xlf" crowdin.yml; then
   echo "✅ Wildcard source pattern (*.xlf) present"
 else
   echo "❌ Missing wildcard pattern or hardcoded filename"
 fi
 
 # Check translation pattern with variables
-if grep -q "%original_path%.*%two_letters_code%.*%original_file_name%" .crowdin.yml; then
+if grep -q "%original_path%.*%two_letters_code%.*%original_file_name%" crowdin.yml; then
   echo "✅ Translation pattern uses TYPO3 variables"
 else
   echo "❌ Translation pattern not TYPO3-compliant"
 fi
 
 # Check ignore directive
-if grep -q "ignore:" .crowdin.yml; then
+if grep -q "ignore:" crowdin.yml; then
   echo "✅ Ignore directive present"
 else
   echo "❌ Missing ignore directive"
 fi
 
 # Check for non-standard fields (should not be present)
-if grep -qE "project_id_env|api_token_env|languages_mapping|type:|update_option|content_segmentation" .crowdin.yml; then
+if grep -qE "project_id_env|api_token_env|languages_mapping|type:|update_option|content_segmentation" crowdin.yml; then
   echo "⚠️  Non-standard fields detected (remove for TYPO3 compliance)"
 fi
 
 # Check file length (should be ~5-7 lines)
-line_count=$(wc -l < .crowdin.yml)
+line_count=$(wc -l < crowdin.yml)
 if [[ $line_count -le 10 ]]; then
   echo "✅ Configuration is concise ($line_count lines)"
 else
@@ -204,7 +204,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          config: '.crowdin.yml'
+          config: 'crowdin.yml'
           project_id: ${{ secrets.CROWDIN_PROJECT_ID }}
           token: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
 ```
@@ -222,7 +222,7 @@ jobs:
 - [ ] Uses `actions/checkout@v4` (or latest)
 - [ ] Uses `crowdin/github-action@v2` (or latest)
 - [ ] Provides `CROWDIN_PROJECT_ID` and `CROWDIN_PERSONAL_TOKEN` via secrets
-- [ ] References `.crowdin.yml` config file
+- [ ] References `crowdin.yml` config file
 - [ ] GITHUB_TOKEN provided (for action permissions)
 
 **❌ INCORRECT PATTERNS:**
@@ -443,7 +443,7 @@ Contact TYPO3 localization team via Slack:
 3. Authorize GitHub access and select repository
 4. Configure branch (typically `main`)
 5. Accept service branch name (e.g., `l10n_main`)
-6. Specify `.crowdin.yml` as configuration file
+6. Specify `crowdin.yml` as configuration file
 7. Enable "One-time translation import" for existing translations
 8. Disable "Push Sources" (managed in extension repository)
 
@@ -473,16 +473,16 @@ Upload via Crowdin UI → Translations tab
 ### Base Scoring (0-2 points)
 
 **0 points**: No Crowdin integration
-- `.crowdin.yml` not present
+- `crowdin.yml` not present
 - No translation automation
 
 **+1 point**: Basic Crowdin integration
-- `.crowdin.yml` exists
+- `crowdin.yml` exists
 - Some configuration present
 - May not follow TYPO3 standards
 
 **+2 points**: TYPO3-compliant Crowdin integration
-- `.crowdin.yml` follows TYPO3 standard format
+- `crowdin.yml` follows TYPO3 standard format
 - `preserve_hierarchy: 1` present
 - Wildcard source patterns (`*.xlf`)
 - Proper translation pattern with variables
@@ -500,7 +500,7 @@ For full +2 points, ALL of the following must be true:
    - ✅ Source: `/Resources/Private/Language/*.xlf`
    - ✅ Translation: `/%original_path%/%two_letters_code%.%original_file_name%`
    - ✅ Ignore directive present
-   - ✅ No project_id_env or api_token_env in .crowdin.yml
+   - ✅ No project_id_env or api_token_env in crowdin.yml
    - ✅ No languages_mapping or unnecessary fields
 
 2. **Workflow Compliance** (if GitHub Actions used):
@@ -527,37 +527,37 @@ max_score=2
 echo "=== TYPO3 Crowdin Integration Validation ==="
 echo
 
-# Check .crowdin.yml existence
-if [[ ! -f .crowdin.yml ]]; then
-  echo "❌ .crowdin.yml not found (0/2 points)"
+# Check crowdin.yml existence
+if [[ ! -f crowdin.yml ]]; then
+  echo "❌ crowdin.yml not found (0/2 points)"
   exit 0
 fi
-echo "✅ .crowdin.yml found"
+echo "✅ crowdin.yml found"
 
 # Validate configuration
 config_valid=true
 
-if ! grep -q "preserve_hierarchy: 1" .crowdin.yml; then
+if ! grep -q "preserve_hierarchy: 1" crowdin.yml; then
   echo "❌ Missing preserve_hierarchy: 1"
   config_valid=false
 fi
 
-if ! grep -q "/Resources/Private/Language/\*.xlf" .crowdin.yml; then
+if ! grep -q "/Resources/Private/Language/\*.xlf" crowdin.yml; then
   echo "❌ Missing wildcard source pattern (*.xlf)"
   config_valid=false
 fi
 
-if ! grep -q "%original_path%.*%two_letters_code%.*%original_file_name%" .crowdin.yml; then
+if ! grep -q "%original_path%.*%two_letters_code%.*%original_file_name%" crowdin.yml; then
   echo "❌ Translation pattern not TYPO3-compliant"
   config_valid=false
 fi
 
-if ! grep -q "ignore:" .crowdin.yml; then
+if ! grep -q "ignore:" crowdin.yml; then
   echo "❌ Missing ignore directive"
   config_valid=false
 fi
 
-if grep -qE "project_id_env|api_token_env|languages_mapping" .crowdin.yml; then
+if grep -qE "project_id_env|api_token_env|languages_mapping" crowdin.yml; then
   echo "⚠️  Non-standard fields detected"
   config_valid=false
 fi
@@ -603,10 +603,10 @@ echo "=== Final Score: $score/$max_score points ==="
 ✅ Letting Crowdin's native integration handle downloads
 
 ### Anti-Pattern 2: Over-Engineering Configuration
-❌ 90-line `.crowdin.yml` with every possible option
+❌ 90-line `crowdin.yml` with every possible option
 ❌ Explicit language mapping for all supported languages
 ❌ Complex PR templates and commit messages in config
-✅ Simple 6-line `.crowdin.yml` following TYPO3 standard
+✅ Simple 6-line `crowdin.yml` following TYPO3 standard
 ✅ Letting Crowdin handle language detection automatically
 ✅ Using Crowdin's default PR behavior
 
