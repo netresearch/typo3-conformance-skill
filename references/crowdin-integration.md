@@ -624,3 +624,178 @@ echo "=== Final Score: $score/$max_score points ==="
 - **Crowdin GitHub Action**: https://github.com/marketplace/actions/crowdin-action
 - **TYPO3 Slack**: `#typo3-localization-team` channel
 - **Example Extension**: Check `EXT:news` or other popular extensions for reference implementations
+
+## Translation Quality Validation
+
+### Detecting Untranslated Strings
+
+**Problem**: Translation files may contain strings where `<source>` equals `<target>`, indicating untranslated content.
+
+**Detection Script**:
+```python
+import re
+from pathlib import Path
+
+def find_untranslated(lang_files):
+    """Find strings where source == target (untranslated)"""
+    for filepath in lang_files:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Extract source/target pairs
+        units = re.findall(
+            r'<trans-unit id="([^"]+)"[^>]*>.*?<source>([^<]+)</source>\s*<target>([^<]+)</target>.*?</trans-unit>',
+            content,
+            re.DOTALL
+        )
+        
+        untranslated = []
+        for unit_id, source, target in units:
+            if source.strip() == target.strip():
+                untranslated.append((unit_id, source.strip()))
+        
+        if untranslated:
+            print(f"{filepath.name}: {len(untranslated)} untranslated")
+            for unit_id, text in untranslated[:3]:
+                print(f"  - {text}")
+```
+
+**Validation Points**:
+- Brand names (e.g., "Retina", "Ultra") may legitimately remain unchanged
+- Technical terms may be international (e.g., "Standard")
+- All other matches should be reviewed for proper translation
+
+## Minimizing Crowdin PR Noise
+
+### Problem: Excessive Formatting Changes
+
+Crowdin PRs often contain many cosmetic changes that make review difficult:
+- Whitespace differences
+- Attribute reordering
+- Added `state` attributes
+- Line ending inconsistencies
+
+### Solution: Preemptive Configuration
+
+#### 1. .editorconfig
+
+Add XLIFF/XML formatting rules:
+
+```ini
+[*.{xlf,xml}]
+indent_style = tab
+indent_size = 4
+trim_trailing_whitespace = true
+```
+
+**Purpose**: Ensures consistent formatting between local files and Crowdin exports
+
+#### 2. .gitattributes
+
+Add line ending handling:
+
+```
+*.xlf text eol=lf linguist-language=XML
+*.xml text eol=lf
+```
+
+**Purpose**: Enforces LF line endings for XLIFF files, prevents CRLF/LF mixing
+
+#### 3. crowdin.yml Export Options
+
+Add export configuration:
+
+```yaml
+preserve_hierarchy: 1
+files:
+  - source: /Resources/Private/Language/*.xlf
+    translation: /%original_path%/%two_letters_code%.%original_file_name%
+    ignore:
+      - /**/%two_letters_code%.%original_file_name%
+    # Minimize formatting changes
+    export_options:
+      export_quotes: none
+      export_pattern: default
+      export_approved_only: false
+```
+
+**Purpose**: Controls Crowdin's export formatting behavior
+
+#### 4. Preemptive state="translated" Attributes
+
+Add `state="translated"` to all target elements **before** Crowdin does:
+
+```bash
+# Add to all translated targets
+find Resources/Private/Language -name "*.locallang_be.xlf" \
+  -exec sed -i 's/<target>/<target state="translated">/g' {} \;
+```
+
+Or via Python:
+
+```python
+import re
+from pathlib import Path
+
+for filepath in Path('Resources/Private/Language').glob('*.locallang_be.xlf'):
+    with open(filepath, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    # Add state="translated" to targets without it
+    new_content = re.sub(
+        r'<target(?![^>]*state=)([^>]*)>',
+        r'<target state="translated"\1>',
+        content
+    )
+    
+    if new_content != content:
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+        print(f"{filepath.name}: Added state attributes")
+```
+
+**Purpose**: Prevents Crowdin from adding `state="translated"` in its PRs
+
+### Unavoidable Changes
+
+Some formatting differences cannot be prevented:
+
+- **XML attribute reordering**: Crowdin's XML parser may reorder attributes
+  - Example: `target-language="de"` position may change
+  - This is cosmetic and doesn't affect functionality
+
+- **Comment preservation**: Crowdin may remove or reformat XML comments
+
+**Recommendation**: Accept these cosmetic changes and focus PR reviews on actual translation content.
+
+### Impact Assessment
+
+**Before optimization**:
+```diff
+- <file source-language="en" target-language="de" datatype="plaintext">
++ <file source-language="en" datatype="plaintext" target-language="de">
+  
+- <target>Translated text</target>
++ <target state="translated">Translated text</target>
+
+(Plus many whitespace and line ending changes)
+```
+
+**After optimization**:
+```diff
+(Minimal diff showing only actual translation changes or unavoidable attribute reordering)
+```
+
+## Validation Scoring Impact
+
+### Translation Quality (+2 points)
+
+- **Basic state attributes** (+1): All translated targets have `state="translated"`
+- **Complete translations** (+1): No untranslated strings (source != target except for brand names)
+
+### Configuration Quality (+1 point)
+
+- **Formatting rules** (+0.5): .editorconfig and .gitattributes present
+- **Export options** (+0.5): crowdin.yml includes export_options configuration
+
+**Total possible improvement**: +3 points to conformance score
