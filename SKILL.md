@@ -1,7 +1,7 @@
 ---
 name: typo3-conformance
-version: 1.5.0
-description: "Evaluate TYPO3 extensions for conformance to official TYPO3 12/13 LTS standards, coding guidelines (PSR-12, TYPO3 CGL), and architecture patterns. Use when assessing extension quality, generating conformance reports, identifying technical debt, or planning modernization efforts. Evaluates: extension architecture, composer.json validation (mandatory fields, version constraints, deprecated properties), ext_emconf.php validation (state values, categories, constraints, critical TER restrictions), comprehensive ext_* files validation (ext_localconf.php, ext_tables.php, ext_tables.sql, ext_tables_static+adt.sql, ext_conf_template.txt), TYPO3 v13 deprecation detection (deprecated TypoScript files, addUserTSConfig, backend module migration, Site sets adoption), dependency injection, services configuration, testing coverage, Extbase patterns, best practices alignment, and Crowdin integration. Supports PHP 8.1-8.4 and provides actionable improvement recommendations with dual scoring (0-100 base + 0-20 excellence). Orchestrates specialized skills: delegates to typo3-tests for deep testing analysis and typo3-docs for comprehensive documentation creation/validation. Includes comprehensive Crowdin integration validation for TYPO3's centralized translation ecosystem."
+version: 1.6.0
+description: "Evaluate TYPO3 extensions for conformance to official TYPO3 12/13 LTS standards, coding guidelines (PSR-12, TYPO3 CGL), and architecture patterns. Use when assessing extension quality, generating conformance reports, identifying technical debt, or planning modernization efforts. Evaluates: extension architecture, composer.json validation (mandatory fields, version constraints, deprecated properties), ext_emconf.php validation (state values, categories, constraints, critical TER restrictions), comprehensive ext_* files validation (ext_localconf.php, ext_tables.php, ext_tables.sql, ext_tables_static+adt.sql, ext_conf_template.txt), TYPO3 v13 deprecation detection (deprecated TypoScript files, addUserTSConfig, backend module migration, Site sets adoption), dependency injection, services configuration, testing coverage, Extbase patterns, best practices alignment, Crowdin integration, and GitHub workflow validation (issue templates, TER publishing automation). Supports PHP 8.1-8.4 and provides actionable improvement recommendations with dual scoring (0-100 base + 0-22 excellence). Orchestrates specialized skills: delegates to typo3-tests for deep testing analysis and typo3-docs for comprehensive documentation creation/validation. Includes comprehensive Crowdin integration validation for TYPO3's centralized translation ecosystem and GitHub workflow best practices."
 license: Complete terms in LICENSE.txt
 ---
 
@@ -387,6 +387,8 @@ cat Tests/Functional/Domain/Repository/ProductRepositoryTest.php
 4. Confirm code quality tools configured (php-cs-fixer, phpstan)
 5. Validate README.md provides clear setup instructions
 6. Ensure LICENSE file present with appropriate open-source license
+7. Check GitHub issue templates (.github/ISSUE_TEMPLATE/config.yml)
+8. Verify TER publishing workflow (.github/workflows/publish-to-ter.yml)
 
 **Security Practices:**
 ```bash
@@ -751,7 +753,7 @@ Each category (Architecture, Coding, PHP Architecture, Testing, Best Practices) 
 
 Excellence indicators are **optional features** that demonstrate exceptional quality and community engagement. Extensions are NOT penalized for missing these features - they provide bonus points only.
 
-**Total Possible Score: 120 points** (100 base conformance + 20 excellence bonus)
+**Total Possible Score: 122 points** (100 base conformance + 22 excellence bonus)
 
 **Category 1: Community & Internationalization (0-6 points)**
 - Crowdin integration: 0-2 points
@@ -762,12 +764,13 @@ Excellence indicators are **optional features** that demonstrate exceptional qua
 - .gitattributes with export-ignore: +1 point
 - Professional README badges (stability, versions, downloads, CI): +2 points
 
-**Category 2: Advanced Quality Tooling (0-7 points)**
+**Category 2: Advanced Quality Tooling (0-9 points)**
 - Fractor configuration (Build/fractor/fractor.php): +2 points
 - TYPO3 CodingStandards package (typo3/coding-standards in composer.json): +2 points
 - StyleCI integration (.styleci.yml): +1 point
 - Makefile with self-documenting help: +1 point
 - CI testing matrix (multiple PHP/TYPO3 versions): +1 point
+- TER publishing workflow (.github/workflows/publish-to-ter.yml): +2 points
 
 **Category 3: Documentation Excellence (0-4 points)**
 - 50-99 RST files in Documentation/: +1 point
@@ -782,9 +785,9 @@ Excellence indicators are **optional features** that demonstrate exceptional qua
 
 **Excellence Score Interpretation:**
 - **0-5 points:** Standard extension (meets requirements)
-- **6-10 points:** Good practices (actively maintained)
-- **11-15 points:** Excellent quality (community reference level)
-- **16-20 points:** Outstanding (georgringer/news level)
+- **6-11 points:** Good practices (actively maintained)
+- **12-16 points:** Excellent quality (community reference level)
+- **17-22 points:** Outstanding (georgringer/news level)
 
 **Example Report Format:**
 
@@ -804,17 +807,18 @@ Excellence indicators are **optional features** that demonstrate exceptional qua
 - Testing Standards: 18/20
 - Best Practices: 20/20
 
-**Excellence Indicators:** 12/20 (Bonus)
-- Community & Internationalization: 4/6
+**Excellence Indicators:** 14/22 (Bonus)
+- Community & Internationalization: 5/6
   - ✅ Crowdin integration (+2)
   - ✅ Professional README badges (+2)
-  - ❌ No GitHub issue templates
+  - ✅ GitHub issue templates (+1)
   - ❌ No .gitattributes export-ignore
 
-- Advanced Quality Tooling: 5/7
+- Advanced Quality Tooling: 7/9
   - ✅ Fractor configuration (+2)
   - ✅ TYPO3 CodingStandards (+2)
   - ✅ Makefile with help (+1)
+  - ✅ TER publishing workflow (+2)
   - ❌ No StyleCI
   - ❌ No CI testing matrix
 
@@ -827,14 +831,14 @@ Excellence indicators are **optional features** that demonstrate exceptional qua
   - ❌ No ext_conf_template.txt
   - ❌ Only one Configuration/Sets/ preset
 
-**Total Score:** 106/120
+**Total Score:** 108/122
 
 **Rating:** Excellent - This extension demonstrates strong conformance and excellent quality practices.
 ```
 
 **Important Notes:**
 - Base conformance (0-100) is MANDATORY - this is pass/fail criteria
-- Excellence indicators (0-20) are OPTIONAL - bonus points for exceptional quality
+- Excellence indicators (0-22) are OPTIONAL - bonus points for exceptional quality
 - Extensions scoring 100/100 base are fully conformant, regardless of excellence score
 - Excellence indicators identify community reference extensions
 
