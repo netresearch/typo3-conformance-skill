@@ -1,7 +1,6 @@
 ---
 name: typo3-conformance
-version: 1.6.1
-description: "Evaluate TYPO3 extensions for conformance to official TYPO3 12/13 LTS standards, coding guidelines (PSR-12, TYPO3 CGL), and architecture patterns. Use when assessing extension quality, generating conformance reports, identifying technical debt, or planning modernization efforts. Evaluates: extension architecture, composer.json validation (mandatory fields, version constraints, deprecated properties), ext_emconf.php validation (state values, categories, constraints, critical TER restrictions), comprehensive ext_* files validation (ext_localconf.php, ext_tables.php, ext_tables.sql, ext_tables_static+adt.sql, ext_conf_template.txt), TYPO3 v13 deprecation detection (deprecated TypoScript files, addUserTSConfig, backend module migration, Site sets adoption), dependency injection, services configuration, testing coverage, Extbase patterns, best practices alignment, Crowdin integration, and GitHub workflow validation (issue templates, TER publishing automation). Supports PHP 8.1-8.4 and provides actionable improvement recommendations with dual scoring (0-100 base + 0-22 excellence). Orchestrates specialized skills: delegates to typo3-tests for deep testing analysis and typo3-docs for comprehensive documentation creation/validation. Includes comprehensive Crowdin integration validation for TYPO3's centralized translation ecosystem and GitHub workflow best practices."
+description: "Evaluate TYPO3 extensions for conformance to TYPO3 12/13 LTS standards, coding guidelines (PSR-12), and architecture patterns. Use when assessing extension quality, generating conformance reports, identifying technical debt, or planning modernization. Validates: extension architecture, composer.json, ext_emconf.php, ext_* files, v13 deprecations, backend module v13 compliance (ES6 modules, DocHeader, Modal/Notification APIs, Module.html layout, ARIA, extension key consistency, CSRF, icons), dependency injection, services, testing, Extbase patterns, Crowdin, GitHub workflows. Dual scoring (0-100 base + 0-22 excellence). Delegates to typo3-tests and typo3-docs skills for deep analysis. PHP 8.1-8.4 support."
 license: Complete terms in LICENSE.txt
 ---
 
@@ -214,6 +213,96 @@ The TYPO3 community is committed to inclusive language that welcomes all contrib
 - Inconsistent spacing around concatenation operators (12 instances)
 - Some variables using snake_case (5 instances)
 ```
+
+### Step 3.5: Backend Module v13 Compliance (If Applicable)
+
+**Reference:** `references/backend-module-v13.md`
+
+**Trigger:** Extension contains backend modules (Configuration/Backend/Modules.php or ext_tables.php with registerModule)
+
+**Critical Checks:**
+
+**Extension Key Consistency:**
+```bash
+# Check for mixed extension keys
+grep -rn "EXT:.*/" Resources/Private/Templates/ | grep -v "EXT:${EXTENSION_KEY}/"
+
+# Verify JavaScript uses correct name
+grep -rn "alert\|console" Resources/Public/JavaScript/
+```
+
+**JavaScript Modernization:**
+```bash
+# Check for inline JavaScript (VIOLATION)
+grep -rn "FooterAssets" Resources/Private/Templates/
+grep -rn "<script" Resources/Private/Templates/
+
+# Verify ES6 module exists
+ls Resources/Public/JavaScript/BackendModule.js
+
+# Check Modal/Notification API usage
+grep -E "Modal\.confirm|Notification\.(success|error)" Resources/Public/JavaScript/*.js
+```
+
+**Layout Pattern:**
+```bash
+# Verify Module.html layout
+ls Resources/Private/Layouts/Module.html
+
+# Check all templates use Module layout
+grep -n "f:layout name=" Resources/Private/Templates/Backend/**/*.html
+```
+
+**DocHeader Integration:**
+```bash
+# Check IconFactory injection
+grep "IconFactory" Classes/Controller/Backend/*.php
+
+# Verify DocHeader buttons
+grep "addDocHeaderButtons\|makeLinkButton\|makeShortcutButton" Classes/Controller/Backend/*.php
+```
+
+**CSRF Protection:**
+```bash
+# Check for hardcoded URLs (VIOLATION)
+grep -rn '"/typo3/' Resources/
+
+# Verify uriBuilder usage
+grep "uriFor(" Classes/Controller/Backend/*.php
+```
+
+**Accessibility:**
+```bash
+# Check ARIA labels
+grep -rn "aria-label\|role=" Resources/Private/Templates/
+```
+
+**Icon Registration:**
+```bash
+# Verify modern icon registration
+ls Configuration/Icons.php
+
+# Check for deprecated IconRegistry (VIOLATION)
+grep -rn "IconRegistry" ext_localconf.php
+```
+
+**Scoring Impact:**
+- Extension key consistency: -5 points if violations found
+- Inline JavaScript: -8 points (non-CSP-compliant)
+- Missing DocHeader: -4 points (poor UX)
+- Hardcoded URLs: -6 points (security risk)
+- No accessibility: -3 points (WCAG non-compliant)
+- Deprecated icon registration: -2 points
+
+**Read `references/backend-module-v13.md` for:**
+- Complete before/after code examples
+- ES6 module architecture patterns
+- Modal/Notification API usage
+- WCAG 2.1 accessibility requirements
+- 10-phase modernization checklist
+- Real-world modernization case study (45/100 → 95/100)
+
+---
 
 ### Step 4: PHP Architecture Evaluation
 
@@ -646,6 +735,18 @@ Execute these validation steps systematically during conformance evaluation:
 - PSR-12 compliance requirements
 - TYPO3-specific code style rules
 - Type declaration standards
+
+**When evaluating backend modules**, read `references/backend-module-v13.md` for:
+- Extension key consistency validation
+- JavaScript modernization (ES6 modules, no inline scripts)
+- TYPO3 Modal and Notification API patterns
+- DocHeader integration (ButtonBar, IconFactory)
+- Module.html layout requirements
+- ARIA accessibility standards
+- Icon registration (Configuration/Icons.php)
+- CSRF protection via uriBuilder
+- 10-phase modernization checklist
+- Real-world case study (45/100 → 95/100 compliance)
 
 **When evaluating PHP architecture**, read `references/php-architecture.md` for:
 - Dependency injection patterns
