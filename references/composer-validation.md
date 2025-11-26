@@ -28,11 +28,35 @@ jq -r '.type' composer.json | grep -q "typo3-cms-extension" && echo "✅ Correct
 ```
 
 ### description
-**Format:** Single-line summary
+**Format:** Single-line summary describing what the extension does
+
+**Requirements:**
+- Clear, concise description of extension functionality
+- Should identify the vendor/company for professional extensions
+- Avoid vague descriptions like "An extension" or "Utility tools"
+
+**Good Examples:**
+```json
+"description": "Adds image support to CKEditor5 RTE - by Netresearch"
+"description": "TYPO3 extension for advanced content management by Vendor GmbH"
+"description": "Provides custom form elements for newsletter subscription"
+```
+
+**Bad Examples:**
+```json
+"description": "Extension"  // Too vague
+"description": "Some tools"  // Meaningless
+"description": ""  // Empty
+```
 
 **Validation:**
 ```bash
+# Check description exists and is not empty
 jq -r '.description' composer.json | grep -q . && echo "✅ Has description" || echo "❌ Missing description"
+
+# Check description length (should be meaningful, >20 chars)
+DESC_LEN=$(jq -r '.description | length' composer.json)
+[[ $DESC_LEN -gt 20 ]] && echo "✅ Description is meaningful" || echo "⚠️  Description too short"
 ```
 
 ### license
@@ -297,6 +321,10 @@ echo "=== Composer.json Validation ===="
 jq -r '.name' composer.json > /dev/null 2>&1 || { echo "❌ Missing 'name'"; ((ERRORS++)); }
 jq -r '.type' composer.json | grep -q "typo3-cms-extension" || { echo "❌ Wrong or missing 'type'"; ((ERRORS++)); }
 jq -r '.description' composer.json | grep -q . || { echo "❌ Missing 'description'"; ((ERRORS++)); }
+
+# Check description is meaningful (>20 chars)
+DESC_LEN=$(jq -r '.description | length' composer.json 2>/dev/null)
+[[ $DESC_LEN -lt 20 ]] && { echo "⚠️  Description too short (should be >20 chars)"; ((WARNINGS++)); }
 
 # Check typo3/cms-core
 jq -r '.require["typo3/cms-core"]' composer.json | grep -q . || { echo "❌ Missing typo3/cms-core"; ((ERRORS++)); }

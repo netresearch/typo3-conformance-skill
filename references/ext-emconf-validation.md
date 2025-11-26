@@ -72,16 +72,36 @@ grep "'title' =>" ext_emconf.php && echo "✅ Has title" || echo "❌ Missing ti
 ```
 
 ### description
-**Format:** Short, precise English description
+**Format:** Short, precise English description of extension functionality
 
-**Example:**
+**Requirements:**
+- Clear explanation of what the extension does
+- Should identify the vendor/company for professional extensions
+- Must be meaningful (not just "Extension" or empty)
+- Keep concise but informative (typically 50-150 characters)
+
+**Good Examples:**
 ```php
-'description' => 'Provides advanced content management features',
+'description' => 'Adds image support to CKEditor5 RTE - by Netresearch',
+'description' => 'Provides advanced content management features for TYPO3 editors',
+'description' => 'Custom form elements for newsletter subscription by Vendor GmbH',
+```
+
+**Bad Examples:**
+```php
+'description' => '',  // Empty
+'description' => 'Extension',  // Too vague
+'description' => 'Some tools',  // Meaningless
 ```
 
 **Validation:**
 ```bash
+# Check description exists
 grep "'description' =>" ext_emconf.php && echo "✅ Has description" || echo "❌ Missing description"
+
+# Check description is not empty or trivial
+DESC=$(grep -oP "'description' => '\K[^']+(?=')" ext_emconf.php)
+[[ ${#DESC} -gt 20 ]] && echo "✅ Description is meaningful" || echo "⚠️  Description too short or vague"
 ```
 
 ### version
@@ -377,6 +397,10 @@ fi
 grep -q "'title' =>" ext_emconf.php || { echo "❌ Missing title"; ((ERRORS++)); }
 grep -q "'description' =>" ext_emconf.php || { echo "❌ Missing description"; ((ERRORS++)); }
 grep -qP "'version' => '[0-9]+\.[0-9]+\.[0-9]+" ext_emconf.php || { echo "❌ Missing or invalid version"; ((ERRORS++)); }
+
+# Check description is meaningful (>20 chars)
+DESC=$(grep -oP "'description' => '\K[^']+(?=')" ext_emconf.php)
+[[ ${#DESC} -lt 20 ]] && { echo "⚠️  Description too short (should be >20 chars)"; ((WARNINGS++)); }
 
 # Check category
 CATEGORY=$(grep -oP "'category' => '\K[a-z]+(?=')" ext_emconf.php)
