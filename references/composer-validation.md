@@ -96,6 +96,112 @@ jq -r '.extra."typo3/cms"."extension-key"' composer.json | grep -q . && echo "�
 
 ---
 
+## Recommended Fields (Professional Extensions)
+
+### authors
+**Format:** Array of author objects with name, email, role, homepage
+
+**Example:**
+```json
+"authors": [
+    {
+        "name": "Developer Name",
+        "email": "developer@company.com",
+        "role": "Developer",
+        "homepage": "https://www.company.com/"
+    }
+]
+```
+
+**Required Sub-Fields:**
+| Field | Format | Purpose |
+|-------|--------|---------|
+| `name` | String | Developer's full name |
+| `email` | Email address | Contact email |
+| `role` | String | `Developer`, `Maintainer`, `Lead Developer` |
+| `homepage` | URL | Company or personal website |
+
+**Validation:**
+```bash
+# Check authors array exists
+jq -r '.authors' composer.json | grep -q "name" && echo "✅ Has authors" || echo "⚠️  Missing authors"
+
+# Check authors have email
+jq -r '.authors[].email' composer.json | grep -q "@" && echo "✅ Has author emails" || echo "⚠️  Missing author emails"
+
+# Check authors have homepage
+jq -r '.authors[].homepage' composer.json | grep -q "http" && echo "✅ Has author homepage" || echo "⚠️  Missing author homepage"
+```
+
+### homepage
+**Format:** URL to project repository or documentation
+
+**Example:**
+```json
+"homepage": "https://github.com/vendor/extension-name"
+```
+
+**Validation:**
+```bash
+jq -r '.homepage' composer.json | grep -qE "^https?://" && echo "✅ Has homepage" || echo "⚠️  Missing homepage"
+```
+
+### support
+**Format:** Object with support channels
+
+**Example:**
+```json
+"support": {
+    "issues": "https://github.com/vendor/extension/issues",
+    "source": "https://github.com/vendor/extension"
+}
+```
+
+**Validation:**
+```bash
+jq -r '.support.issues' composer.json | grep -q "http" && echo "✅ Has issues URL" || echo "⚠️  Missing issues URL"
+```
+
+### keywords
+**Format:** Array of relevant keywords for discoverability
+
+**Example:**
+```json
+"keywords": [
+    "TYPO3",
+    "extension",
+    "content",
+    "management"
+]
+```
+
+**Validation:**
+```bash
+jq -r '.keywords | length' composer.json | grep -qE '^[1-9]' && echo "✅ Has keywords" || echo "⚠️  Missing keywords"
+```
+
+---
+
+## Complete Required Fields Checklist
+
+**Mandatory (MUST have):**
+- [ ] `name` - vendor/package format
+- [ ] `type` - must be `typo3-cms-extension`
+- [ ] `description` - clear, concise description
+- [ ] `license` - SPDX identifier (GPL-2.0-or-later, AGPL-3.0-or-later)
+- [ ] `require.typo3/cms-core` - with upper bound constraint
+- [ ] `require.php` - PHP version constraint
+- [ ] `autoload.psr-4` - mapping to Classes/
+- [ ] `extra.typo3/cms.extension-key` - underscored extension key
+
+**Recommended (SHOULD have):**
+- [ ] `authors` - with name, email, role, homepage
+- [ ] `homepage` - project repository URL
+- [ ] `support.issues` - issue tracker URL
+- [ ] `keywords` - for discoverability
+
+---
+
 ## Deprecated Properties
 
 ### replace with typo3-ter vendor
