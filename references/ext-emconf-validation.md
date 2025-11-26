@@ -54,6 +54,44 @@ $EM_CONF[$_EXTKEY] = [
 grep '\$EM_CONF\[$_EXTKEY\]' ext_emconf.php && echo "✅ Uses $_EXTKEY" || echo "❌ Hardcoded key"
 ```
 
+### ❌ MUST NOT contain custom code
+
+The ext_emconf.php file must only contain the `$EM_CONF` array assignment. No additional functions, classes, or executable code is allowed.
+
+❌ **WRONG:**
+```php
+<?php
+function getVersion() { return '1.0.0'; }
+$EM_CONF[$_EXTKEY] = [
+    'version' => getVersion(),
+];
+```
+
+❌ **WRONG:**
+```php
+<?php
+$EM_CONF[$_EXTKEY] = [
+    'title' => 'My Extension',
+];
+// Additional initialization code
+require_once 'setup.php';
+```
+
+✅ **CORRECT:**
+```php
+<?php
+$EM_CONF[$_EXTKEY] = [
+    'title' => 'My Extension',
+    'version' => '1.0.0',
+];
+```
+
+**Detection:**
+```bash
+# Check for function/class definitions
+grep -E '^(function|class|interface|trait|require|include)' ext_emconf.php && echo "❌ Contains custom code" || echo "✅ No custom code"
+```
+
 ---
 
 ## Mandatory Fields
@@ -390,6 +428,12 @@ fi
 # CRITICAL: Check for $_EXTKEY usage
 if ! grep -q '\$EM_CONF\[$_EXTKEY\]' ext_emconf.php 2>/dev/null; then
     echo "❌ CRITICAL: Must use \$EM_CONF[\$_EXTKEY], not hardcoded key"
+    ((ERRORS++))
+fi
+
+# CRITICAL: Check for custom code
+if grep -E '^(function|class|interface|trait|require|include)' ext_emconf.php 2>/dev/null; then
+    echo "❌ CRITICAL: ext_emconf.php contains custom code (functions/classes/requires)"
     ((ERRORS++))
 fi
 

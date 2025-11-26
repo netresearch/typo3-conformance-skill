@@ -348,15 +348,43 @@ exit $ERRORS
 
 ---
 
+## Optional but Recommended Fields
+
+### require-dev
+**Purpose:** Development dependencies not needed in production
+
+**Example:**
+```json
+"require-dev": {
+    "typo3/coding-standards": "^0.7",
+    "phpstan/phpstan": "^1.10",
+    "phpunit/phpunit": "^10.0"
+}
+```
+
+### suggest
+**Purpose:** Optional packages that enhance functionality
+
+**Example:**
+```json
+"suggest": {
+    "typo3/cms-filelist": "For file browser functionality",
+    "typo3/cms-reactions": "For webhook support"
+}
+```
+
+---
+
 ## Best Practices
 
 1. **Packagist Publication:** Publishing to Packagist makes extensions available in TYPO3 Extension Repository automatically
-2. **Documentation Rendering:** Required for rendering on docs.typo3.org
+2. **Documentation Rendering:** `composer.json` is **REQUIRED** for extensions with documentation on docs.typo3.org
 3. **Version Constraint Strategy:**
    - Use `^` for flexible upper bounds
    - Specify both major version ranges for v12/v13 compatibility
    - Always include upper bounds (avoid `>=` without upper limit)
 4. **Namespace Alignment:** PSR-4 namespace should match vendor/extension structure
+5. **Composer Priority:** Composer-based installations prioritize `composer.json` over `ext_emconf.php` for dependency resolution
 
 ---
 
