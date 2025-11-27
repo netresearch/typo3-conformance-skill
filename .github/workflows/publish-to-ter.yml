@@ -37,23 +37,37 @@ jobs:
           RELEASE_NAME: ${{ github.event.release.name }}
           RELEASE_URL: ${{ github.event.release.html_url }}
         run: |
-          # Use release body if available, otherwise use release name
+          # TER Upload Comment Format:
+          # - Plain text only (no HTML/Markdown)
+          # - Newlines ARE supported (rendered as <br> on frontend)
+          # - Allowed chars: word chars, whitespace, " % & [ ] ( ) . , ; : / ? { } ! $ - @
+          # - Stripped in XML export: # * + = ~ ^ | \ < >
+          # See: references/ter-publishing.md
+
           if [[ -n "${RELEASE_BODY}" ]]; then
-            # Truncate to 500 chars to avoid TER issues, strip excessive whitespace
-            COMMENT=$(echo "${RELEASE_BODY}" | head -c 500 | tr '\n' ' ' | sed 's/  */ /g')
+            # Preserve newlines (TER displays them as line breaks)
+            # Limit to reasonable length (1000 chars)
+            COMMENT=$(echo "${RELEASE_BODY}" | head -c 1000)
           elif [[ -n "${RELEASE_NAME}" ]]; then
             COMMENT="${RELEASE_NAME}"
           else
             COMMENT="Release ${{ steps.version.outputs.version }}"
           fi
 
-          # Append release link
-          COMMENT="${COMMENT} | Details: ${RELEASE_URL}"
+          # Strip characters not supported in TER XML export
+          COMMENT=$(echo "${COMMENT}" | sed 's/[#*+=~^|\\<>]//g')
 
-          # Escape for GitHub Actions output
-          echo "comment<<EOF" >> $GITHUB_OUTPUT
-          echo "${COMMENT}" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Append release link on new line
+          COMMENT="${COMMENT}
+
+Details: ${RELEASE_URL}"
+
+          # Escape for GitHub Actions output (HEREDOC preserves newlines)
+          {
+            echo "comment<<EOF"
+            echo "${COMMENT}"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2

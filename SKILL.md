@@ -208,6 +208,7 @@ ls Configuration/Backend/Modules.php 2>/dev/null || echo "Using deprecated ext_t
 | `v13-deprecations.md` | TYPO3 v13 deprecations |
 | `excellence-indicators.md` | Bonus scoring criteria |
 | `crowdin-integration.md` | Translation workflow |
+| `ter-publishing.md` | TER upload workflow, comment format |
 | `report-template.md` | Full report format |
 
 ---

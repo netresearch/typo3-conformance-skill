@@ -6,18 +6,18 @@
 
 Excellence Indicators are **optional** features that demonstrate exceptional project quality, community engagement, and professional development practices. Extensions are **not penalized** for missing these features, but **earn bonus points** when present.
 
-**Key Principle:** Base conformance (0-100 points) measures adherence to TYPO3 standards. Excellence indicators (0-20 bonus points) reward exceptional quality.
+**Key Principle:** Base conformance (0-100 points) measures adherence to TYPO3 standards. Excellence indicators (0-22 bonus points) reward exceptional quality.
 
 ---
 
 ## Scoring System
 
-**Total Excellence Points: 0-20 (bonus)**
+**Total Excellence Points: 0-22 (bonus)**
 
 | Category | Max Points | Purpose |
 |----------|-----------|---------|
 | Community & Internationalization | 6 | Engagement, accessibility, distribution |
-| Advanced Quality Tooling | 7 | Automation, code quality, maintenance |
+| Advanced Quality Tooling | 9 | Automation, code quality, TER workflow |
 | Documentation Excellence | 4 | Comprehensive docs, modern tooling |
 | Extension Configuration | 3 | Professional setup, flexibility |
 
@@ -170,7 +170,7 @@ grep -c "^|" README.md   # Table rows
 
 ---
 
-## Category 2: Advanced Quality Tooling (0-7 points)
+## Category 2: Advanced Quality Tooling (0-9 points)
 
 ### 2.1 Fractor Configuration (+2 points)
 
@@ -396,6 +396,70 @@ jobs:
 ```bash
 # Check for matrix with multiple PHP versions and composerInstall strategies
 grep -A 5 "matrix:" .github/workflows/*.yml | grep -c "composerInstall"
+```
+
+---
+
+### 2.6 TER Publishing Workflow (+2 points)
+
+**File:** `.github/workflows/publish-to-ter.yml`
+
+**Purpose:** Automated extension publishing to TYPO3 Extension Repository on releases
+
+**Reference:** `references/ter-publishing.md`
+
+**Required Elements:**
+- Triggers on `release: [published]` event
+- Tag format validation (vX.Y.Z)
+- Version extraction (strips 'v' prefix)
+- Proper upload comment handling
+- Uses `typo3/tailor` for publishing
+
+**Example:**
+```yaml
+name: Publish to TER
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TYPO3_EXTENSION_KEY: ${{ secrets.TYPO3_EXTENSION_KEY }}
+      TYPO3_API_TOKEN: ${{ secrets.TYPO3_TER_ACCESS_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate tag
+        run: |
+          [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+      - run: composer global require typo3/tailor
+      - run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          tailor set-version "$VERSION"
+          tailor ter:publish --comment "${{ github.event.release.body }}" "$VERSION"
+```
+
+**Upload Comment Format:**
+- Plain text only (no HTML/Markdown)
+- Newlines supported (rendered as `<br>` on frontend)
+- Allowed: word chars, whitespace, `" % & [ ] ( ) . , ; : / ? { } ! $ - @`
+- Stripped in XML export: `# * + = ~ ^ | \ < >`
+
+**Benefits:**
+- Automated releases reduce manual errors
+- Consistent versioning across ext_emconf and TER
+- Professional release workflow
+- Release notes automatically sync to TER
+
+**Validation:**
+```bash
+[ -f ".github/workflows/publish-to-ter.yml" ] && echo "✅ TER publish workflow (+2)"
+# Or check for alternative naming
+ls .github/workflows/*ter*.yml 2>/dev/null && echo "✅ TER workflow found"
 ```
 
 ---
@@ -660,12 +724,13 @@ Community & Internationalization (0-6):
 □ .gitattributes with export-ignore (+1)
 □ README with 4+ badges + compatibility table (+2)
 
-Advanced Quality Tooling (0-7):
+Advanced Quality Tooling (0-9):
 □ Build/fractor/fractor.php present (+2)
 □ TYPO3\CodingStandards in php-cs-fixer config (+1)
 □ .styleci.yml present (+1)
 □ Makefile with help target (+1)
 □ CI matrix: 3+ PHP versions + composerInstall variants (+2)
+□ TER publish workflow (.github/workflows/*ter*.yml) (+2)
 
 Documentation Excellence (0-4):
 □ 50-99 RST files (+1) / 100-149 (+2) / 150+ (+3)
