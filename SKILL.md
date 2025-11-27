@@ -57,7 +57,7 @@ ls -1 | grep -E "composer.json|ext_emconf.php"
 **Reference:** `references/coding-guidelines.md`
 
 **Check:**
-- [ ] `declare(strict_types=1)` in all PHP files
+- [ ] `declare(strict_types=1)` in all PHP files (except ext_emconf.php)
 - [ ] Type declarations on properties, parameters, returns
 - [ ] PHPDoc on public methods/classes
 - [ ] PSR-12 compliance, short array syntax `[]`
