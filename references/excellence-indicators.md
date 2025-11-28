@@ -466,47 +466,79 @@ ls .github/workflows/*ter*.yml 2>/dev/null && echo "✅ TER workflow found"
 
 ## Category 3: Documentation Excellence (0-4 points)
 
-### 3.1 Extensive RST Documentation (100+ files) (+3 points)
+### 3.1 Complete Documentation Structure (+3 points)
 
 **Directory:** `Documentation/`
 
-**Purpose:** Comprehensive, structured documentation covering all aspects
+**Purpose:** Documentation appropriate for extension complexity with all required sections
 
-**Example (georgringer/news: 183 RST files):**
-```
-Documentation/
-├── Addons/          # Extension integrations
-├── Administration/  # Backend administration
-├── Introduction/    # Getting started
-├── QuickStart/      # Fast setup guide
-├── Reference/       # API reference
-├── Tutorials/       # Step-by-step guides
-├── UsersManual/     # End-user documentation
-└── Images/          # Visual assets
-```
+**Required Sections (scale with extension complexity):**
+
+| Extension Complexity | Required Sections | Example |
+|---------------------|-------------------|---------|
+| **Simple** (1-2 features) | Index, Installation, Configuration | Single-purpose utility extension |
+| **Medium** (3-5 features) | + Administration, Reference | Content element, backend module |
+| **Complex** (6+ features) | + Tutorials, FAQ, API docs | Full CMS feature like EXT:news |
 
 **Scoring:**
-- 50-99 RST files: +1 point
-- 100-149 RST files: +2 points
-- 150+ RST files: +3 points
+- Complete documentation for extension scope: +3 points
+  - All required sections present for complexity level
+  - Each section has meaningful content (not stub/placeholder)
+  - Configuration options documented with examples
+- Partial documentation: +2 points
+  - Most required sections present
+  - Some sections incomplete or missing examples
+- Basic documentation: +1 point
+  - Index.rst and Installation present
+  - Minimal configuration documentation
+- No documentation: 0 points
+
+**Example Structure (medium complexity):**
+```
+Documentation/
+├── Index.rst           # Overview and quick links
+├── Installation/       # Setup and requirements
+│   └── Index.rst
+├── Configuration/      # All options with examples
+│   └── Index.rst
+├── Administration/     # Backend usage guide
+│   └── Index.rst
+├── Reference/          # Technical reference
+│   └── Index.rst
+└── Images/             # Visual assets
+```
 
 **Validation:**
 ```bash
-RST_COUNT=$(find Documentation -name "*.rst" | wc -l)
-if [ $RST_COUNT -ge 150 ]; then
-    echo "✅ Extensive documentation 150+ RST (+3)"
-elif [ $RST_COUNT -ge 100 ]; then
-    echo "✅ Comprehensive documentation 100+ RST (+2)"
-elif [ $RST_COUNT -ge 50 ]; then
-    echo "✅ Good documentation 50+ RST (+1)"
+# Check for required documentation sections
+REQUIRED_SECTIONS=("Index.rst" "Installation" "Configuration")
+SCORE=0
+for section in "${REQUIRED_SECTIONS[@]}"; do
+    if [ -e "Documentation/$section" ] || [ -e "Documentation/${section}/Index.rst" ]; then
+        ((SCORE++))
+    fi
+done
+
+# Assess completeness relative to extension complexity
+CLASSES_COUNT=$(find Classes -name "*.php" 2>/dev/null | wc -l)
+if [ $CLASSES_COUNT -gt 20 ]; then
+    COMPLEXITY="complex"
+    REQUIRED_SECTIONS+=("Administration" "Reference" "Tutorials")
+elif [ $CLASSES_COUNT -gt 5 ]; then
+    COMPLEXITY="medium"
+    REQUIRED_SECTIONS+=("Administration" "Reference")
 fi
+
+# Score based on completeness for scope
+echo "Extension complexity: $COMPLEXITY"
+echo "Documentation score based on completeness for scope"
 ```
 
 **Benefits:**
-- Reduces support burden
-- Improves onboarding
-- Professional project impression
-- Better community adoption
+- Documentation appropriate for extension scope
+- Quality over quantity approach
+- Reduces user confusion
+- Improves onboarding efficiency
 
 ---
 
