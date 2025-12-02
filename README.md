@@ -1278,6 +1278,6 @@ Based on:
 
 ---
 
-**Version:** 1.7.0
+**Version:** 1.8.0
 **Maintained By:** Netresearch DTT GmbH
 **Last Updated:** 2025-12-02
