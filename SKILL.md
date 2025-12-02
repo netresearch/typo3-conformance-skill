@@ -63,7 +63,7 @@ ls -1 | grep -E "composer.json|ext_emconf.php"
 - [ ] PSR-12 compliance, short array syntax `[]`
 - [ ] Inclusive language (no master/slave, blacklist/whitelist)
 
-### Step 3.5: Backend Module v13 (If Applicable)
+### Step 4: Backend Module v13 (If Applicable)
 
 **Reference:** `references/backend-module-v13.md`
 
@@ -76,17 +76,17 @@ ls -1 | grep -E "composer.json|ext_emconf.php"
 - CSRF protection via uriBuilder
 - ARIA accessibility
 
-### Step 4: PHP Architecture
+### Step 5: PHP Architecture
 
-**Reference:** `references/php-architecture.md`
+**References:** `references/php-architecture.md`, `references/hooks-and-events.md`
 
 **Check:**
 - [ ] `Configuration/Services.yaml` present
 - [ ] Constructor injection (not GeneralUtility::makeInstance)
-- [ ] PSR-14 events (not deprecated hooks)
+- [ ] PSR-14 events where applicable (SC_OPTIONS still valid for DataHandler)
 - [ ] No `$GLOBALS` access
 
-### Step 5: Testing Infrastructure
+### Step 6: Testing Infrastructure
 
 **Reference:** `references/testing-standards.md`
 
@@ -105,7 +105,7 @@ ls -1 | grep -E "composer.json|ext_emconf.php"
 - [ ] `Build/tests/playwright/fixtures/` Page Object Models
 - [ ] `Build/.nvmrc` specifies Node ≥22.18
 
-### Step 6: Best Practices
+### Step 7: Best Practices
 
 **References:**
 - `references/best-practices.md`
@@ -213,7 +213,8 @@ cat Build/.nvmrc 2>/dev/null || echo "No .nvmrc (recommend Node >=22.18)"
 | `coding-guidelines.md` | PSR-12, naming conventions |
 | `backend-module-v13.md` | Backend module modernization |
 | `php-architecture.md` | DI, events, services |
-| `testing-standards.md` | PHPUnit, coverage |
+| `hooks-and-events.md` | SC_OPTIONS hooks, PSR-14 events |
+| `testing-standards.md` | PHPUnit, Playwright E2E |
 | `best-practices.md` | Infrastructure, quality |
 | `composer-validation.md` | composer.json requirements |
 | `ext-emconf-validation.md` | ext_emconf.php requirements |
@@ -222,6 +223,10 @@ cat Build/.nvmrc 2>/dev/null || echo "No .nvmrc (recommend Node >=22.18)"
 | `excellence-indicators.md` | Bonus scoring criteria |
 | `crowdin-integration.md` | Translation workflow |
 | `ter-publishing.md` | TER upload workflow, comment format |
+| `version-requirements.md` | PHP/TYPO3 version matrix |
+| `directory-structure.md` | Build directory organization |
+| `development-environment.md` | DDEV, Docker setup |
+| `runtests-validation.md` | runTests.sh patterns |
 | `report-template.md` | Full report format |
 
 ---
