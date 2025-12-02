@@ -92,11 +92,18 @@ ls -1 | grep -E "composer.json|ext_emconf.php"
 
 **Delegate:** Use typo3-tests skill for deep analysis when available.
 
-**Basic Check:**
+**PHP Tests (PHPUnit):**
 - [ ] `Tests/Unit/` mirrors `Classes/` structure
 - [ ] `Tests/Functional/` with fixtures
 - [ ] PHPUnit configuration files present
 - [ ] Coverage target: >70%
+
+**E2E Tests (Playwright):**
+- [ ] `Build/playwright.config.ts` configured
+- [ ] `Build/tests/playwright/e2e/` test files
+- [ ] `Build/tests/playwright/accessibility/` with axe-core
+- [ ] `Build/tests/playwright/fixtures/` Page Object Models
+- [ ] `Build/.nvmrc` specifies Node ≥22.18
 
 ### Step 6: Best Practices
 
@@ -176,7 +183,7 @@ ls -1 | grep -E "composer.json|ext_emconf.php"
 
 ```bash
 # File structure
-ls -la | grep -E "Classes|Configuration|Resources|Tests"
+ls -la | grep -E "Classes|Configuration|Resources|Tests|Build"
 
 # Strict types check
 grep -rL "declare(strict_types=1)" Classes/ --include="*.php"
@@ -190,6 +197,12 @@ grep -ri "master\|slave\|blacklist\|whitelist" Classes/ Documentation/
 
 # Backend module checks
 ls Configuration/Backend/Modules.php 2>/dev/null || echo "Using deprecated ext_tables.php"
+
+# Playwright E2E setup
+ls Build/playwright.config.ts 2>/dev/null && echo "Playwright configured"
+ls Build/tests/playwright/e2e/ 2>/dev/null && echo "E2E tests present"
+ls Build/tests/playwright/accessibility/ 2>/dev/null && echo "Accessibility tests present"
+cat Build/.nvmrc 2>/dev/null || echo "No .nvmrc (recommend Node >=22.18)"
 ```
 
 ## Reference Index
