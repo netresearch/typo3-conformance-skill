@@ -1,7 +1,7 @@
 # TYPO3 Testing Standards
 
 **Purpose:** Conformance validation criteria for TYPO3 extension testing
-**Implementation Guide:** [typo3-testing-skill](~/.claude/skills/typo3-testing/)
+**Implementation Guide:** Use the `typo3-testing` skill for templates and patterns
 
 ## Testing Framework Requirements
 
