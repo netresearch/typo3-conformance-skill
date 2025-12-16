@@ -1,12 +1,12 @@
 {
   "name": "netresearch/agent-typo3-conformance",
-  "description": "Evaluate TYPO3 extensions for conformance to TYPO3 12/13 LTS standards, coding guidelines (PSR-12), and architecture patterns. Use when assessing extension quality, generating conformance reports, ide",
+  "description": "Netresearch AI skill for TYPO3 extension conformance and coding standards assessment",
   "type": "ai-agent-skill",
   "license": "MIT",
   "authors": [
     {
       "name": "Netresearch DTT GmbH",
-      "email": "plugins@netresearch.de",
+      "email": "info@netresearch.de",
       "homepage": "https://www.netresearch.de/",
       "role": "Manufacturer"
     }
