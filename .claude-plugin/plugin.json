@@ -1,6 +1,6 @@
 {
   "name": "typo3-conformance",
-  "version": "1.10.0",
+  "version": "1.10.1",
   "description": "Evaluate TYPO3 extensions for conformance to v12/v13/v14 standards",
   "repository": "https://github.com/netresearch/typo3-conformance-skill",
   "license": "MIT",
