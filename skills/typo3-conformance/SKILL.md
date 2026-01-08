@@ -29,6 +29,7 @@ Evaluate TYPO3 extensions for standards compliance, architecture patterns, and b
 6. **Backend Module v13** - ES6 modules, Modal API, CSRF
 7. **Testing** - PHPUnit, Playwright E2E, coverage >70%
 8. **Best Practices** - DDEV, runTests.sh, quality tools, CI/CD
+9. **TER Publishing** - Workflow validation, upload comment format, CI TER compatibility check
 
 ## Scoring
 
@@ -54,6 +55,7 @@ scripts/check-conformance.sh /path/to/extension
 | `excellence-indicators.md` | Bonus scoring |
 | `multi-tier-configuration.md` | Provider → Model → Config architecture |
 | `backend-wizard-patterns.md` | Setup wizard DTOs, AJAX, ES6 |
+| `ter-publishing.md` | TER workflow, upload comments, CI checks |
 
 ---
 
