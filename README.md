@@ -1301,6 +1301,20 @@ Based on:
 - [TYPO3 Coding Guidelines](https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/CodingGuidelines/)
 - [TYPO3 Best Practices Tea Extension](https://github.com/TYPO3BestPractices/tea)
 
+## Acknowledgments
+
+This skill is built upon the foundational work of the TYPO3 community. We gratefully acknowledge:
+
+- **[TYPO3 Core Development Team](https://typo3.org/community/teams/typo3-development)** — For establishing and maintaining the extension architecture standards, coding guidelines, dependency injection patterns, and PSR-14 event system that form the basis of this conformance checker.
+
+- **[TYPO3 Best Practices Team](https://typo3.org/community/teams/best-practices)** — For the exemplary [Tea Extension](https://github.com/TYPO3BestPractices/tea) that serves as the reference implementation, demonstrating production-grade quality tooling, testing infrastructure, and CI/CD patterns.
+
+- **[TYPO3 Documentation Team](https://typo3.org/community/teams/documentation)** — For the comprehensive official documentation that defines TYPO3 standards and makes conformance checking possible.
+
+- **[TYPO3 Content Types Team](https://typo3.org/community/teams/content-types)** — For their work on structured content and TCA standards that inform extension architecture best practices.
+
+- **[TYPO3 Security Team](https://typo3.org/community/teams/security)** — For establishing the security guidelines and patterns that inform our security-focused conformance checks.
+
 ---
 
 **Version:** 1.8.0
