@@ -40,10 +40,13 @@ else
     echo "- ⚠️  Documentation/Index.rst missing (required for docs.typo3.org)"
 fi
 
-if [ -f "Documentation/Settings.cfg" ]; then
-    echo "- ✅ Documentation/Settings.cfg present"
+# Check for documentation config (guides.xml is modern standard, Settings.cfg is legacy)
+if [ -f "Documentation/guides.xml" ]; then
+    echo "- ✅ Documentation/guides.xml present (modern PHP-based rendering)"
+elif [ -f "Documentation/Settings.cfg" ]; then
+    echo "- ⚠️  Documentation/Settings.cfg present (legacy Sphinx - migrate to guides.xml)"
 else
-    echo "- ⚠️  Documentation/Settings.cfg missing (required for docs.typo3.org)"
+    echo "- ⚠️  Documentation config missing (need guides.xml for docs.typo3.org)"
 fi
 
 echo ""
@@ -116,16 +119,44 @@ echo ""
 echo "### Anti-Patterns Check"
 echo ""
 
-# Check for PHP files in root (except ext_* files)
+# Check for PHP files in root (except allowed config files)
 # Show all files but distinguish between tracked (issues) and untracked (info)
 tracked_files=()
 untracked_files=()
 all_root_php_files=()
 
-# Find all PHP files in root (except ext_* files)
+# Allowed PHP config files in root (standard tool configurations)
+allowed_root_php=(
+    ".php-cs-fixer.php"
+    ".php-cs-fixer.dist.php"
+    "php-cs-fixer.php"
+    "rector.php"
+    "fractor.php"
+    "ecs.php"
+    "phpstan.php"
+    "phpunit.php"
+    "captainhook.php"
+    "grumphp.php"
+    "pint.php"
+    "scoper.inc.php"
+)
+
+# Find all PHP files in root (except ext_* files and allowed config files)
 while IFS= read -r file; do
     filename=$(basename "$file")
-    if [[ "$filename" != ext_*.php ]]; then
+    # Skip ext_* files
+    if [[ "$filename" == ext_*.php ]]; then
+        continue
+    fi
+    # Check if file is in allowed list
+    is_allowed=0
+    for allowed in "${allowed_root_php[@]}"; do
+        if [[ "$filename" == "$allowed" ]]; then
+            is_allowed=1
+            break
+        fi
+    done
+    if [ $is_allowed -eq 0 ]; then
         all_root_php_files+=("$filename")
     fi
 done < <(find . -maxdepth 1 -name "*.php" 2>/dev/null || true)
