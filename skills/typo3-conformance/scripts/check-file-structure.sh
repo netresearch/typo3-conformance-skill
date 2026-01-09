@@ -34,19 +34,11 @@ else
     echo "- ⚠️  ext_emconf.php missing (required for TER publication)"
 fi
 
-if [ -f "Documentation/Index.rst" ]; then
-    echo "- ✅ Documentation/Index.rst present"
+# Documentation checks delegated to check-documentation.sh (typo3-docs skill standards)
+if [ -d "Documentation" ]; then
+    echo "- ✅ Documentation/ directory present (details in Documentation check)"
 else
-    echo "- ⚠️  Documentation/Index.rst missing (required for docs.typo3.org)"
-fi
-
-# Check for documentation config (guides.xml is modern standard, Settings.cfg is legacy)
-if [ -f "Documentation/guides.xml" ]; then
-    echo "- ✅ Documentation/guides.xml present (modern PHP-based rendering)"
-elif [ -f "Documentation/Settings.cfg" ]; then
-    echo "- ⚠️  Documentation/Settings.cfg present (legacy Sphinx - migrate to guides.xml)"
-else
-    echo "- ⚠️  Documentation config missing (need guides.xml for docs.typo3.org)"
+    echo "- ⚠️  Documentation/ directory missing"
 fi
 
 echo ""
