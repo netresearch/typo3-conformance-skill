@@ -14,10 +14,28 @@ Evaluate TYPO3 extensions for standards compliance, architecture patterns, and b
 
 ## Skill Delegation
 
-| Skill | Use For |
-|-------|---------|
-| **typo3-tests** | PHPUnit config, test patterns, coverage |
-| **typo3-docs** | RST validation, documentation rendering |
+**IMPORTANT:** When performing conformance checks, you MUST invoke these skills for comprehensive validation:
+
+| Skill | When to Invoke | What It Validates |
+|-------|----------------|-------------------|
+| **typo3-docs** | Documentation/ folder exists | RST syntax, guides.xml, rendering, TYPO3 directives |
+| **typo3-tests** | Tests/ folder exists | PHPUnit config, test patterns, coverage requirements |
+
+### How to Delegate
+
+1. **For Documentation:** After running `check-documentation.sh`, invoke the typo3-docs skill:
+   ```
+   Use typo3-docs skill to validate Documentation/ folder
+   ```
+   This provides comprehensive RST validation beyond basic file structure checks.
+
+2. **For Testing:** After running `check-testing.sh`, invoke the typo3-tests skill:
+   ```
+   Use typo3-tests skill to validate Tests/ folder
+   ```
+   This provides detailed test pattern and coverage analysis.
+
+The bash scripts only check file structure. The delegated skills provide deep content validation.
 
 ## Evaluation Workflow
 

@@ -107,8 +107,8 @@ else
 fi
 echo ""
 
-# 2. Documentation Check (delegated to typo3-docs skill standards)
-echo -e "${BLUE}[2/7] Checking documentation (typo3-docs delegation)...${NC}"
+# 2. Documentation Structure Check (for full validation, invoke typo3-docs skill)
+echo -e "${BLUE}[2/7] Checking documentation structure...${NC}"
 if bash "${SCRIPT_DIR}/check-documentation.sh" "${PROJECT_DIR}" >> "${REPORT_FILE}"; then
     echo -e "${GREEN}  ✓ Documentation check complete${NC}"
     docs_score=10
