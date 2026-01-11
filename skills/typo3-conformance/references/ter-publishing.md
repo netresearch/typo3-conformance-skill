@@ -130,7 +130,7 @@ When auditing extensions, verify `publish-to-ter.yml` uses:
 
 **File:** `.github/workflows/publish-to-ter.yml`
 
-**Template:** Copy from `templates/.github/workflows/publish-to-ter.yml`
+**Template:** Copy from `assets/.github/workflows/publish-to-ter.yml`
 
 ```yaml
 name: Publish new extension version to TER
