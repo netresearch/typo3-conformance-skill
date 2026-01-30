@@ -1,0 +1,283 @@
+# Checkpoints for typo3-conformance skill
+# Validates TYPO3 extension structure, configuration, and coding standards
+
+version: 1
+skill_id: typo3-conformance
+
+mechanical:
+  # === ext_emconf.php CHECKS ===
+  - id: TC-01
+    type: file_exists
+    target: ext_emconf.php
+    severity: error
+    desc: "ext_emconf.php must exist for TYPO3 extension registration"
+
+  - id: TC-02
+    type: contains
+    target: ext_emconf.php
+    pattern: "'title'"
+    severity: error
+    desc: "ext_emconf.php must define 'title' field"
+
+  - id: TC-03
+    type: contains
+    target: ext_emconf.php
+    pattern: "'description'"
+    severity: error
+    desc: "ext_emconf.php must define 'description' field"
+
+  - id: TC-04
+    type: contains
+    target: ext_emconf.php
+    pattern: "'version'"
+    severity: error
+    desc: "ext_emconf.php must define 'version' field"
+
+  - id: TC-05
+    type: contains
+    target: ext_emconf.php
+    pattern: "'constraints'"
+    severity: error
+    desc: "ext_emconf.php must define 'constraints' with TYPO3 core dependency"
+
+  - id: TC-06
+    type: regex
+    target: ext_emconf.php
+    pattern: "'state'\\s*=>\\s*'(stable|beta|alpha|experimental|test|obsolete)'"
+    severity: warning
+    desc: "ext_emconf.php should define valid 'state' field"
+
+  # === composer.json CHECKS ===
+  - id: TC-10
+    type: file_exists
+    target: composer.json
+    severity: error
+    desc: "composer.json must exist for Composer-based installation"
+
+  - id: TC-11
+    type: contains
+    target: composer.json
+    pattern: '"typo3-cms-extension"'
+    severity: error
+    desc: "composer.json type must be 'typo3-cms-extension'"
+
+  - id: TC-12
+    type: json_path
+    target: composer.json
+    pattern: '.require["typo3/cms-core"]'
+    severity: error
+    desc: "composer.json must require typo3/cms-core"
+
+  - id: TC-13
+    type: json_path
+    target: composer.json
+    pattern: '.autoload["psr-4"]'
+    severity: error
+    desc: "composer.json must define PSR-4 autoloading"
+
+  - id: TC-14
+    type: regex
+    target: composer.json
+    pattern: '"[A-Z][a-zA-Z0-9]*\\\\\\\\[A-Z][a-zA-Z0-9]*\\\\\\\\": "Classes/"'
+    severity: error
+    desc: "PSR-4 autoload must map vendor namespace to Classes/ directory"
+
+  - id: TC-15
+    type: json_path
+    target: composer.json
+    pattern: '.extra["typo3/cms"]["extension-key"]'
+    severity: warning
+    desc: "composer.json should define extension-key in extra.typo3/cms"
+
+  - id: TC-16
+    type: command
+    pattern: "composer validate --strict 2>&1 || true"
+    severity: warning
+    desc: "composer.json should pass strict validation"
+
+  # === DIRECTORY STRUCTURE CHECKS ===
+  - id: TC-20
+    type: file_exists
+    target: Classes/
+    severity: error
+    desc: "Classes/ directory must exist for PHP classes"
+
+  - id: TC-21
+    type: file_exists
+    target: Configuration/
+    severity: warning
+    desc: "Configuration/ directory should exist for TCA, TypoScript, etc."
+
+  - id: TC-22
+    type: file_exists
+    target: Resources/
+    severity: warning
+    desc: "Resources/ directory should exist for templates, assets, translations"
+
+  - id: TC-23
+    type: file_exists
+    target: Resources/Private/
+    severity: warning
+    desc: "Resources/Private/ should exist for templates and partials"
+
+  - id: TC-24
+    type: file_exists
+    target: Resources/Public/
+    severity: info
+    desc: "Resources/Public/ should exist for CSS, JS, and images"
+
+  # === DEPENDENCY INJECTION CHECKS ===
+  - id: TC-30
+    type: file_exists
+    target: Configuration/Services.yaml
+    severity: warning
+    desc: "Services.yaml should exist for dependency injection configuration"
+
+  - id: TC-31
+    type: contains
+    target: Configuration/Services.yaml
+    pattern: "autowire: true"
+    severity: info
+    desc: "Services.yaml should enable autowiring"
+
+  - id: TC-32
+    type: contains
+    target: Configuration/Services.yaml
+    pattern: "autoconfigure: true"
+    severity: info
+    desc: "Services.yaml should enable autoconfiguration"
+
+  # === TCA CONFIGURATION CHECKS ===
+  - id: TC-35
+    type: file_exists
+    target: Configuration/TCA/
+    severity: info
+    desc: "Configuration/TCA/ should exist if extension defines database tables"
+
+  # === DEPRECATED API PATTERNS ===
+  - id: TC-40
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "$GLOBALS['TYPO3_DB']"
+    severity: error
+    desc: "Must not use deprecated TYPO3_DB global (removed in TYPO3 v10)"
+
+  - id: TC-41
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "GeneralUtility::makeInstance(ObjectManager"
+    severity: warning
+    desc: "Should not instantiate ObjectManager directly; use dependency injection"
+
+  - id: TC-42
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "ObjectManager::get("
+    severity: warning
+    desc: "Should not use ObjectManager::get(); use dependency injection"
+
+  - id: TC-43
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "GeneralUtility::_GP("
+    severity: warning
+    desc: "Should not use deprecated _GP(); use request object instead"
+
+  - id: TC-44
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "GeneralUtility::_GET("
+    severity: warning
+    desc: "Should not use deprecated _GET(); use request object instead"
+
+  - id: TC-45
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "GeneralUtility::_POST("
+    severity: warning
+    desc: "Should not use deprecated _POST(); use request object instead"
+
+  - id: TC-46
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "$GLOBALS['TSFE']->fe_user"
+    severity: warning
+    desc: "Should not access fe_user via TSFE global; use Context API"
+
+  - id: TC-47
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "extRelPath("
+    severity: error
+    desc: "Must not use deprecated extRelPath() (removed in TYPO3 v10)"
+
+  - id: TC-48
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "BackendUtility::getModuleUrl("
+    severity: error
+    desc: "Must not use deprecated getModuleUrl(); use UriBuilder"
+
+  # === EXTENSION REGISTRATION ===
+  - id: TC-50
+    type: file_exists
+    target: ext_localconf.php
+    severity: info
+    desc: "ext_localconf.php should exist for frontend/backend registration"
+
+  - id: TC-51
+    type: file_exists
+    target: ext_tables.php
+    severity: info
+    desc: "ext_tables.php should exist for backend module registration (if needed)"
+
+llm_reviews:
+  # === CODE QUALITY REVIEWS ===
+  - id: TC-60
+    domain: code-quality
+    prompt: |
+      Review the Classes/ directory for TYPO3 coding standards compliance:
+      1. Check for proper namespace declarations matching PSR-4 autoload
+      2. Verify constructor injection is used for dependencies
+      3. Check that controllers extend ActionController or appropriate base class
+      4. Verify services are stateless and do not hold mutable state
+      5. Check for proper use of TYPO3 attributes (#[AsController], etc.)
+    severity: warning
+    desc: "Classes should follow TYPO3 coding standards"
+
+  - id: TC-61
+    domain: code-quality
+    prompt: |
+      Check for modern TYPO3 API usage:
+      1. Verify PSR-7 Request/Response is used in controllers
+      2. Check for proper use of Site and SiteLanguage objects
+      3. Verify TypoScriptFrontendController is not accessed directly
+      4. Check that Context API is used for user/workspace info
+      5. Verify FlexForm handling uses modern approaches
+    severity: warning
+    desc: "Extension should use modern TYPO3 APIs"
+
+  - id: TC-62
+    domain: code-quality
+    prompt: |
+      Review TCA configuration in Configuration/TCA/:
+      1. Check for proper ctrl configuration
+      2. Verify columns use modern renderType instead of deprecated types
+      3. Check showitem syntax is correct
+      4. Verify locallang references exist
+      5. Check for proper icon registration
+    severity: info
+    desc: "TCA configuration should follow current standards"
+
+  # === DOCUMENTATION REVIEWS ===
+  - id: TC-70
+    domain: documentation
+    prompt: |
+      Check extension documentation completeness:
+      1. Verify README.md or Documentation/ exists
+      2. Check for installation instructions specific to TYPO3
+      3. Verify configuration options are documented
+      4. Check if TypoScript/FlexForm options are explained
+      5. Verify version compatibility is clearly stated
+    severity: info
+    desc: "Extension documentation should be complete"
