@@ -43,7 +43,7 @@ mechanical:
   - id: TC-06
     type: regex
     target: ext_emconf.php
-    pattern: "'state'\\s*=>\\s*'(stable|beta|alpha|experimental|test|obsolete)'"
+    pattern: "'state'\\s*=>\\s*'(stable|beta|alpha|experimental|test|obsolete|excludeFromUpdates)'"
     severity: warning
     desc: "ext_emconf.php should define valid 'state' field"
 
@@ -78,7 +78,7 @@ mechanical:
   - id: TC-14
     type: regex
     target: composer.json
-    pattern: '"[A-Z][a-zA-Z0-9]*\\\\\\\\[A-Z][a-zA-Z0-9]*\\\\\\\\": "Classes/"'
+    pattern: '"[A-Z][a-zA-Z0-9_]*\\\\\\\\[A-Z][a-zA-Z0-9_]*\\\\\\\\": "Classes/"'
     severity: error
     desc: "PSR-4 autoload must map vendor namespace to Classes/ directory"
 
