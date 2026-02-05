@@ -21,6 +21,23 @@ When documentation validation is needed, delegate to the `typo3-docs` skill.
 
 To evaluate an extension, follow these steps in order:
 
+### Step 0: Understand Extension Context (ALWAYS FIRST)
+
+Before checking any files, understand what you're evaluating:
+
+1. **Purpose** - What does this extension do? Read the README and ext_emconf description
+2. **Target TYPO3 Version** - Is this for v12, v13, or v14? Multi-version support?
+3. **Target PHP Version** - What PHP version(s) does it support?
+4. **Extension Type** - Is it a plugin, module, site package, or library?
+5. **Criticality Assessment** - Is this production-critical or experimental?
+   - Production extensions need stricter conformance (aim for 80+)
+   - Experimental/proof-of-concept can have lower thresholds
+6. **Scope** - How large is the codebase? Set appropriate expectations
+
+This context shapes how strictly to apply subsequent checks and what to prioritize.
+
+### Steps 1-9: Conformance Checks
+
 1. **Initial Assessment** - Identify extension key, target TYPO3 version, and extension type
 2. **File Structure** - Validate composer.json, ext_emconf.php, and required directories
 3. **Coding Standards** - Check strict_types, type declarations, and PSR-12 compliance
@@ -30,6 +47,17 @@ To evaluate an extension, follow these steps in order:
 7. **Testing** - Verify PHPUnit setup, Playwright E2E, and coverage >70%
 8. **Best Practices** - Confirm DDEV setup, runTests.sh, quality tools, and CI/CD
 9. **TER Publishing** - Validate workflow, upload comment format, CI TER compatibility check
+
+### Step 10: Verification Loop (After Fixes)
+
+After implementing improvements, always re-run the conformance check:
+
+1. **Re-score** - Run `scripts/check-conformance.sh` again
+2. **Compare** - Document score improvement (e.g., "Score improved: 58 → 82")
+3. **Validate** - Ensure no regressions in previously passing checks
+4. **Report** - Update the conformance report with before/after scores
+
+Do not consider conformance work complete until verification confirms improvement.
 
 ## Scoring System
 
@@ -41,6 +69,52 @@ To evaluate an extension, follow these steps in order:
 - Best Practices: 20 points
 
 **Excellence Bonus (0-22):** Additional points for exceptional quality features.
+
+### Severity Interpretation
+
+Use these thresholds to guide recommendations:
+
+| Score Range | Interpretation | Action |
+|-------------|----------------|--------|
+| 90-100+ | Excellent | Ready for production and TER publishing |
+| 80-89 | Good | Minor improvements recommended |
+| 70-79 | Acceptable | Address issues before major releases |
+| 50-69 | Needs Work | Significant improvements required |
+| Below 50 | Critical | Block deployment until resolved |
+
+**Critical vs. Nice-to-Have:**
+- **Critical issues** (security, data loss, TYPO3 core incompatibility) block production deployment regardless of score
+- **Nice-to-have** (code style, minor optimizations) can be deferred to future releases
+
+## CI Debugging: Extension Works Locally but CI Fails
+
+When an extension passes locally but fails in CI, check these common causes:
+
+1. **TYPO3 Version Mismatch** - CI matrix may test different TYPO3 versions than local
+   - Check `composer.json` TYPO3 constraints match CI matrix
+   - Ensure deprecated APIs work across all tested versions
+
+2. **PHP Version Matrix** - CI tests multiple PHP versions
+   - Verify type declarations work on oldest supported PHP
+   - Check for PHP 8.x-only features if supporting PHP 7.4
+
+3. **Dependency Locking** - composer.lock state differs
+   - TYPO3 extensions should NOT commit composer.lock (add to .gitignore)
+   - Without lock file, CI resolves versions appropriate for its PHP/TYPO3
+
+4. **Test Environment Differences**
+   - DDEV provides services (MySQL, Redis) that CI may not
+   - Mock external services or use test fixtures
+
+5. **Missing Test Database Setup**
+   - Functional tests need database; ensure CI creates it
+   - Check test bootstrap configuration
+
+6. **File Path Assumptions**
+   - Avoid absolute paths that differ between local and CI
+   - Use TYPO3's path constants (Environment::getPublicPath())
+
+Run `scripts/diagnose-ci-failure.sh` if available, or compare CI logs against local test output.
 
 ## Running Conformance Checks
 
