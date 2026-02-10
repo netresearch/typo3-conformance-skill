@@ -230,6 +230,108 @@ Details: ${RELEASE_URL}"
 
 ---
 
+## MANDATORY: TER Metadata Setup (Sidebar Links)
+
+**CRITICAL:** The TER extension page sidebar links (Extension Manual, Found an Issue?, Code Insights, Packagist.org) are **NOT** populated from `composer.json`. They must be set explicitly via `tailor ter:update`.
+
+Without this step, the TER page looks incomplete — no links to documentation, issues, source code, or Packagist.
+
+### The Problem
+
+New extensions uploaded to TER show an empty sidebar with no links:
+- No "Extension Manual" button
+- No "Found an Issue?" button
+- No "Code Insights" button
+- No "Packagist.org" button
+
+This makes the extension appear unprofessional and hard to use.
+
+### The Solution
+
+Run `tailor ter:update` after the first TER upload:
+
+```bash
+TYPO3_API_TOKEN=your-token tailor ter:update \
+  --composer="vendor/package-name" \
+  --manual="https://github.com/vendor/repo" \
+  --issues="https://github.com/vendor/repo/issues" \
+  --repository="https://github.com/vendor/repo" \
+  --tags="tag1,tag2,tag3" \
+  extension_key
+```
+
+### Available Metadata Fields
+
+| Option | TER Sidebar Button | Required |
+|--------|--------------------|----------|
+| `--manual` | Extension Manual | **YES** |
+| `--issues` | Found an Issue? | **YES** |
+| `--repository` | Code Insights | **YES** |
+| `--composer` | Packagist.org (auto-linked) | **YES** |
+| `--tags` | Search tags | Recommended |
+| `--paypal` | Sponsoring link | Optional |
+
+### When to Run
+
+- **First release:** MANDATORY after the first `ter:publish`
+- **URL changes:** Only when repository, docs, or issue tracker URLs change
+- **Links persist:** Once set, they carry across all future version uploads
+
+### Automation via CI
+
+Add to your TER publish workflow as a post-publish step:
+
+```yaml
+- name: Update TER metadata
+  if: env.FIRST_RELEASE == 'true'  # or always, idempotent
+  run: |
+    TAILOR="$(composer global config bin-dir --absolute)/tailor"
+    "${TAILOR}" ter:update \
+      --composer="${COMPOSER_NAME}" \
+      --manual="${REPO_URL}" \
+      --issues="${REPO_URL}/issues" \
+      --repository="${REPO_URL}" \
+      "${TYPO3_EXTENSION_KEY}"
+```
+
+### Verification
+
+After setting metadata, verify on the TER page:
+
+```bash
+# Check that all 4 sidebar links are present
+curl -s "https://extensions.typo3.org/extension/${EXT_KEY}" | \
+  grep -c 'Extension Manual\|Found an Issue\|Code Insights\|Packagist\.org'
+# Expected: 4
+```
+
+---
+
+## Packagist Listing
+
+Extensions with a `composer.json` should be listed on [Packagist](https://packagist.org):
+
+1. **Submit package** at https://packagist.org/packages/submit
+2. **Enable auto-update** via GitHub webhook (Packagist Settings > Enable GitHub Hook)
+3. **Verify** the package appears with correct description and version
+
+The `--composer` flag in `ter:update` creates the Packagist link on the TER page.
+
+---
+
+## Documentation Rendering on docs.typo3.org
+
+Extensions with a `Documentation/` directory and `guides.xml` can have their documentation rendered at docs.typo3.org:
+
+1. **Create** `Documentation/guides.xml` with project metadata
+2. **Add RST files** following TYPO3 documentation standards
+3. **Webhook** is automatically triggered when the extension is on Packagist
+4. **Verify** at `https://docs.typo3.org/p/vendor/package-name/main/en-us/`
+
+If not using docs.typo3.org, set `--manual` to the GitHub repository URL or a hosted documentation site.
+
+---
+
 ## Release Comment Best Practices
 
 ### Writing Effective Release Notes
@@ -368,6 +470,21 @@ GitHub Actions Workflow:
 [ ] Has fallback comment if body empty
 [ ] Uses typo3/tailor for publishing
 [ ] Secrets properly configured
+
+TER Metadata (MANDATORY for initial setup):
+[ ] tailor ter:update --manual has been run (Extension Manual link)
+[ ] tailor ter:update --issues has been run (Found an Issue link)
+[ ] tailor ter:update --repository has been run (Code Insights link)
+[ ] tailor ter:update --composer has been run (Packagist.org link)
+[ ] All 4 sidebar links visible on extensions.typo3.org
+
+Public Listings:
+[ ] Extension page exists on extensions.typo3.org
+[ ] Package exists on packagist.org
+[ ] Documentation available (docs.typo3.org or linked from TER)
+[ ] composer.json has support.issues URL
+[ ] composer.json has support.source URL
+[ ] composer.json has homepage URL
 
 Release Process:
 [ ] Semantic versioning followed

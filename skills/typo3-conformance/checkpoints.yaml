@@ -231,6 +231,28 @@ mechanical:
     severity: info
     desc: "ext_tables.php should exist for backend module registration (if needed)"
 
+  # === TER PUBLISHING CHECKS ===
+  - id: TC-55
+    type: json_path
+    target: composer.json
+    pattern: '.support.issues'
+    severity: warning
+    desc: "composer.json should define support.issues URL for bug tracker link"
+
+  - id: TC-56
+    type: json_path
+    target: composer.json
+    pattern: '.support.source'
+    severity: warning
+    desc: "composer.json should define support.source URL for repository link"
+
+  - id: TC-57
+    type: json_path
+    target: composer.json
+    pattern: '.homepage'
+    severity: warning
+    desc: "composer.json should define homepage URL"
+
 llm_reviews:
   # === CODE QUALITY REVIEWS ===
   - id: TC-60
@@ -281,3 +303,62 @@ llm_reviews:
       5. Verify version compatibility is clearly stated
     severity: info
     desc: "Extension documentation should be complete"
+
+  # === PUBLIC LISTING VERIFICATION ===
+  - id: TC-80
+    domain: publishing
+    prompt: |
+      Verify public listing presence and completeness for the extension.
+      Extract the composer package name from composer.json and the extension
+      key from ext_emconf.php, then check:
+
+      1. TER Listing (extensions.typo3.org/extension/{extension_key}):
+         - Extension page exists and is accessible
+         - Sidebar links are populated (Extension Manual, Found an Issue,
+           Code Insights, Packagist.org)
+         - If links are missing, they must be set via:
+           TYPO3_API_TOKEN=... tailor ter:update \
+             --composer="vendor/package-name" \
+             --manual="https://github.com/..." \
+             --issues="https://github.com/.../issues" \
+             --repository="https://github.com/..." \
+             {extension_key}
+         - Version shown matches latest release
+
+      2. Packagist Listing (packagist.org/packages/{vendor/name}):
+         - Package exists and is findable
+         - Description is meaningful (not empty)
+         - License is set
+         - Latest version is published
+
+      3. Documentation (docs.typo3.org):
+         - If Documentation/ directory with guides.xml exists, check if
+           rendered documentation is available at docs.typo3.org
+         - Alternatively, README or external docs linked from TER
+
+      Report missing or incomplete listings as actionable items.
+    severity: warning
+    desc: "Extension should have complete TER, Packagist, and documentation listings"
+
+  - id: TC-81
+    domain: publishing
+    prompt: |
+      Check the TER publishing workflow for metadata setup completeness:
+
+      1. Verify .github/workflows/ contains a TER publish workflow
+      2. Check if the workflow includes a tailor ter:update step that sets:
+         - --composer (package name for Packagist link)
+         - --manual (documentation/repository link)
+         - --issues (issue tracker link)
+         - --repository (source code link)
+      3. If ter:update is missing from the workflow, recommend adding it
+         as a post-publish step or as a separate one-time setup step
+
+      The ter:update command sets the sidebar links on extensions.typo3.org.
+      Without it, the TER page shows no links to documentation, issues,
+      source code, or Packagist - making the extension appear incomplete.
+
+      This is a MANDATORY step for initial TER setup. The links persist
+      across releases, so it only needs to run once (or when URLs change).
+    severity: warning
+    desc: "TER publish workflow should include metadata setup via tailor ter:update"
