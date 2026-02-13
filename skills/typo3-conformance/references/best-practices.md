@@ -405,70 +405,130 @@ fi
 
 ### 6. CI/CD Configuration
 
-**.github/workflows/tests.yml:**
+**.github/workflows/ci.yml** (OpenSSF Scorecard-optimized):
 
 ```yaml
-name: Tests
+name: CI
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
     branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# CRITICAL: deny-all at top level scores 10/10 on Token-Permissions
+permissions: {}
 
 jobs:
-  tests:
-    name: Tests (PHP ${{ matrix.php }}, TYPO3 ${{ matrix.typo3 }})
+  lint:
+    name: Lint (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read  # Only what this job needs
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.1', '8.2', '8.3']
-        typo3: ['12.4', '13.0']
-
+        php: ['8.2', '8.3', '8.4']
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@SHA # vX.Y.Z
+        with:
+          egress-policy: audit
+
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@SHA # vX.Y.Z
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@SHA # vX.Y.Z
         with:
           php-version: ${{ matrix.php }}
-          extensions: mbstring, xml, json, zip, curl
+          tools: php-cs-fixer
           coverage: none
-
-      - name: Get Composer Cache Directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-      - name: Cache Composer dependencies
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
-      - name: Lint PHP
-        run: find . -name \*.php ! -path "./vendor/*" ! -path "./.Build/*" -exec php -l {} \;
-
       - name: PHP CS Fixer
-        run: .Build/bin/php-cs-fixer fix --dry-run --diff
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
 
-      - name: PHPStan
-        run: .Build/bin/phpstan analyze
+  unit:
+    name: Unit Tests (PHP ${{ matrix.php }}, TYPO3 ${{ matrix.typo3 }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - php: '8.2'
+            typo3: '^13.4'
+          - php: '8.3'
+            typo3: '^13.4'
+          - php: '8.4'
+            typo3: '^13.4'
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@SHA # vX.Y.Z
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@SHA # vX.Y.Z
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@SHA # vX.Y.Z
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: pcov
+
+      - name: Install TYPO3
+        run: |
+          composer require --no-update "typo3/cms-core:${{ matrix.typo3 }}"
+          composer install --prefer-dist --no-progress
 
       - name: Unit Tests
-        run: .Build/bin/phpunit -c Build/phpunit/UnitTests.xml
+        run: vendor/bin/phpunit -c Build/phpunit/UnitTests.xml --coverage-clover=coverage.xml
 
-      - name: Functional Tests
-        run: |
-          typo3DatabaseDriver=pdo_sqlite \
-          .Build/bin/phpunit -c Build/phpunit/FunctionalTests.xml
+      - name: Upload coverage
+        uses: codecov/codecov-action@SHA # vX.Y.Z
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          fail_ci_if_error: false
 ```
+
+**Key Scorecard requirements** (apply to ALL workflow files, not just `ci.yml`):
+
+| Requirement | Pattern | Scorecard Check |
+|-------------|---------|-----------------|
+| Deny-all permissions | `permissions: {}` at workflow top | Token-Permissions (0→10) |
+| Per-job permissions | `permissions: contents: read` per job | Token-Permissions |
+| SHA-pinned actions | `uses: action@SHA # vX.Y.Z` | Pinned-Dependencies (0→9) |
+| Harden Runner | `step-security/harden-runner` first step | Workflow Hardening |
+| Coverage upload | `codecov/codecov-action` with token | Enterprise readiness |
+| Security audit | `composer audit --abandoned=ignore` | Vulnerabilities |
+
+**Common mistake**: Adding `permissions: {}` only to `ci.yml` but forgetting `codeql.yml`, `scorecard.yml`, `dependency-review.yml`. Scorecard checks ALL workflow files.
+
+#### Required Supporting Workflows
+
+Every TYPO3 extension should have these additional workflows:
+
+| Workflow | Purpose | Scorecard Impact |
+|----------|---------|------------------|
+| `codeql.yml` | Security scanning (JS + Actions) | SAST (0→10) |
+| `scorecard.yml` | OpenSSF Scorecard analysis | Enables scoring |
+| `dependency-review.yml` | PR dependency CVE check | Vulnerabilities |
+
+**Note**: CodeQL does NOT support PHP. Configure it for `javascript-typescript` and `actions` languages only.
+
+#### Scorecard Checks That Cannot Be Fixed
+
+| Check | Why | Score |
+|-------|-----|-------|
+| Fuzzing | Only recognizes OSS-Fuzz/ClusterFuzzLite, not PHPUnit fuzz | 0 |
+| Packaging | Requires GitHub Packages, not Packagist/TER | -1 |
+| Maintained | Based on recent commit frequency — penalizes stable projects | 0-10 |
 
 ### 7. Documentation Standards
 
