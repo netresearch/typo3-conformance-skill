@@ -739,6 +739,27 @@ git push origin test-branch:master
 - ✅ More flexible than legacy branch protection rules
 - ✅ Supports complex conditions and multiple rule types
 
+#### Required Conversation Resolution
+
+Enable `required_conversation_resolution` in branch protection to **enforce** that all PR review threads are resolved before merging. Without this, review feedback (including automated reviewers like GitHub Copilot) can be silently ignored.
+
+```bash
+# Check if enabled
+gh api repos/OWNER/REPO/branches/main/protection \
+  --jq 'if .required_conversation_resolution.enabled then "✅ Enabled" else "❌ NOT enabled" end'
+
+# Enable (include in full branch protection PUT)
+gh api repos/OWNER/REPO/branches/main/protection -X PUT \
+  --input - << 'EOF'
+{
+  ...existing settings...,
+  "required_conversation_resolution": true
+}
+EOF
+```
+
+Or via GitHub UI: Settings → Branches → Edit → Check **"Require conversation resolution before merging"**
+
 #### .gitignore Best Practices
 
 **Standard .gitignore for TYPO3 Extensions:**
@@ -1074,3 +1095,4 @@ public function __construct(
 - [ ] .gitignore with standard patterns (caches, build artifacts, vendor)
 - [ ] README.md with clear instructions
 - [ ] LICENSE file present
+- [ ] Branch protection with required conversation resolution enabled
