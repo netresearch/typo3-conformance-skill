@@ -86,6 +86,21 @@ Use these thresholds to guide recommendations:
 - **Critical issues** (security, data loss, TYPO3 core incompatibility) block production deployment regardless of score
 - **Nice-to-have** (code style, minor optimizations) can be deferred to future releases
 
+## OpenSSF Scorecard (Best Practices)
+
+TYPO3 extensions published to TER should aim for OpenSSF Scorecard ≥ 8.0. Key optimizations for TYPO3 extension repos:
+
+| Check | TYPO3-Specific Notes |
+|-------|---------------------|
+| Token-Permissions | All workflow `write` perms at job-level only (including TER publish, release-labeler) |
+| Branch-Protection | `required_approving_review_count: 1` + auto-approve for solo maintainers |
+| Security-Policy | SECURITY.md with private vulnerability reporting (NOT public issues) |
+| Pinned-Dependencies | SHA-pin all actions; SLSA generator is exempt (requires `@vX.Y.Z` tags) |
+| SAST | CodeQL for JavaScript; PHPStan for PHP (not detected by scorecard but equivalent) |
+| Fuzzing | Skip — OSS-Fuzz doesn't support PHP/TYPO3 |
+
+For the complete optimization playbook, delegate to the `enterprise-readiness` skill.
+
 ## CI Debugging: Extension Works Locally but CI Fails
 
 When an extension passes locally but fails in CI, check these common causes:
