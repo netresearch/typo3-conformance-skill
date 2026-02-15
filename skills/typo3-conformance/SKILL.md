@@ -51,8 +51,8 @@ After fixes, re-run conformance checks. Document score improvement (e.g., "58 ->
 
 **Base Score (0-100):** Architecture (20) + Guidelines (20) + PHP Patterns (20) + Testing (20) + Best Practices (20). Excellence bonus up to 22 additional points.
 
-| Score | Interpretation | Action |
-|-------|----------------|--------|
+| Score Range | Interpretation | Action |
+|------------|----------------|--------|
 | 90-100+ | Excellent | Ready for production and TER |
 | 80-89 | Good | Minor improvements recommended |
 | 70-79 | Acceptable | Address before major releases |
