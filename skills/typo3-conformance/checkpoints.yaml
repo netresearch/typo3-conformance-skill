@@ -43,7 +43,7 @@ mechanical:
   - id: TC-06
     type: regex
     target: ext_emconf.php
-    pattern: "'state'\s*=>\s*'(stable|beta|alpha|experimental|test|obsolete|excludeFromUpdates)'"
+    pattern: "'state'\\s*=>\\s*'(stable|beta|alpha|experimental|test|obsolete|excludeFromUpdates)'"
     severity: warning
     desc: "ext_emconf.php should define valid 'state' field"
 
