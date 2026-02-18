@@ -81,6 +81,69 @@ Bug fixes & improvements! See CHANGELOG.md for details...
 
 ---
 
+## Version Synchronization Check
+
+**CRITICAL:** The `typo3/tailor` tool rejects uploads where the tag version does not match `ext_emconf.php` `'version'`. This is a common release failure.
+
+### The Problem
+
+When creating a release tag (e.g. `0.4.1`), `ext_emconf.php` must already contain `'version' => '0.4.1'`. If the version was not bumped before tagging, `tailor ter:publish` fails with "configured version does not match".
+
+GitHub.com does not support custom pre-receive hooks, so server-side tag validation is not possible. Use **defense-in-depth**: local git hook + CI validation step.
+
+### CI Workflow Step
+
+Add this step to your TER publish workflow **after checkout and before publishing**:
+
+```yaml
+- name: Validate ext_emconf.php version
+  env:
+    TAG_VERSION: ${{ env.version }}
+  run: |
+    EMCONF_VERSION=$(grep -oP "'version'\s*=>\s*'\K[^']+" ext_emconf.php)
+    if [[ "${TAG_VERSION}" != "${EMCONF_VERSION}" ]]; then
+      echo "::error file=ext_emconf.php::Tag version (${TAG_VERSION}) does not match ext_emconf.php version (${EMCONF_VERSION}). Update ext_emconf.php before tagging."
+      exit 1
+    fi
+    echo "Version validated: ${TAG_VERSION} matches ext_emconf.php"
+```
+
+### CaptainHook Pre-Push Hook
+
+For local protection, add a pre-push hook script that checks any semver tag at HEAD:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+TAGS=$(git tag --points-at HEAD | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' || true)
+[[ -z "${TAGS}" ]] && exit 0
+
+EMCONF_VERSION=$(grep -oP "'version'\s*=>\s*'\K[^']+" ext_emconf.php)
+
+while IFS= read -r TAG; do
+    if [[ "${TAG}" != "${EMCONF_VERSION}" ]]; then
+        echo "ERROR: Tag ${TAG} does not match ext_emconf.php version ${EMCONF_VERSION}"
+        exit 1
+    fi
+done <<< "${TAGS}"
+```
+
+Register in `captainhook.json` under `pre-push.actions[]`:
+```json
+{ "action": "Build/Scripts/check-tag-version.sh" }
+```
+
+### Release Process Checklist Addition
+
+```
+[ ] ext_emconf.php version bumped BEFORE creating tag
+[ ] CI validates ext_emconf.php version matches tag
+[ ] Pre-push hook validates locally
+```
+
+---
+
 ## CRITICAL: Upload Comment Source
 
 **NEVER use git tag message for upload comments!**
@@ -489,9 +552,11 @@ Public Listings:
 Release Process:
 [ ] Semantic versioning followed
 [ ] CHANGELOG.md updated before release
-[ ] ext_emconf.php version matches tag
+[ ] ext_emconf.php version bumped and committed BEFORE tagging
+[ ] CI validates ext_emconf.php version matches tag (early fail)
 [ ] composer.json version (if present) matches tag
 [ ] Release notes follow TER format guidelines
+[ ] Pre-push hook validates ext_emconf.php version locally
 ```
 
 ---
