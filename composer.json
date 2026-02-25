@@ -1,5 +1,5 @@
 {
-  "name": "netresearch/agent-typo3-conformance",
+  "name": "netresearch/typo3-conformance-skill",
   "description": "Netresearch AI skill for TYPO3 extension conformance and coding standards assessment",
   "type": "ai-agent-skill",
   "license": "MIT",
@@ -15,6 +15,9 @@
   },
   "extra": {
     "ai-agent-skill": "skills/typo3-conformance/SKILL.md"
+  },
+  "replace": {
+    "netresearch/agent-typo3-conformance": "self.version"
   },
   "support": {
     "issues": "https://github.com/netresearch/typo3-conformance-skill/issues",
