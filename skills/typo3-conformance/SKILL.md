@@ -1,11 +1,6 @@
 ---
 name: typo3-conformance
 description: "Use when assessing TYPO3 extension quality, generating conformance reports, or planning modernization to v12/v13/v14 standards."
-file_triggers:
-  - "ext_emconf.php"
-  - "ext_localconf.php"
-  - "**/Configuration/TCA/**/*"
-  - "**/*.typoscript"
 ---
 
 # TYPO3 Extension Conformance Checker
