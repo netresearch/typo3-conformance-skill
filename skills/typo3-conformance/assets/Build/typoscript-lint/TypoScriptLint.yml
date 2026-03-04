@@ -16,9 +16,7 @@ sniffs:
   - class: DeadCode
 
   # Operator Whitespace - consistent spacing around operators
-  - class: Operator
-
-Whitespace
+  - class: OperatorWhitespace
 
   # Repeating RValue - detect duplicate values (can be noisy, disabled by default)
   - class: RepeatingRValue

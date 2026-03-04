@@ -58,11 +58,9 @@ jobs:
           COMMENT=$(echo "${COMMENT}" | sed 's/[#*+=~^|\\<>]//g')
 
           # Append release link on new line
-          COMMENT="${COMMENT}
+          COMMENT="${COMMENT}"$'\n\n'"Details: ${RELEASE_URL}"
 
-Details: ${RELEASE_URL}"
-
-          # Escape for GitHub Actions output (HEREDOC preserves newlines)
+          # Set GitHub Actions output (HEREDOC preserves newlines)
           {
             echo "comment<<EOF"
             echo "${COMMENT}"
