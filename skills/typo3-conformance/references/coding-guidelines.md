@@ -681,3 +681,26 @@ See `assets/Build/php-cs-fixer/php-cs-fixer.php` for a complete template.
 - [ ] No new errors added to phpstan-baseline.neon
 - [ ] Type-guards before casting mixed values (is_numeric, is_string, is_array)
 - [ ] php-cs-fixer config excludes ext_emconf.php via `->notName('ext_emconf.php')`
+- [ ] CGL vs PHPStan conflicts resolved in favor of CGL (see below)
+
+## CGL vs PHPStan Conflict Resolution
+
+When CGL (php-cs-fixer) and PHPStan disagree, **CGL is authoritative for code style**.
+
+### Static Assertions in PHPUnit 11
+
+CGL enforces `self::assertEquals()` but PHPUnit 11 marks assertion methods as non-static. PHPStan reports false positives.
+
+**Resolution:** Suppress PHPStan, not CGL:
+
+```yaml
+# Build/phpstan/phpstan.neon
+parameters:
+    ignoreErrors:
+        -
+            message: '#Call to an undefined static method .+::(assert|fail|mark)#'
+            reportUnmatched: false
+```
+
+- Use `reportUnmatched: false` — on TYPO3 12.4 with testing-framework v8 (PHPUnit 10), the pattern has no matches
+- This pattern is safe across the full TYPO3 12.4/13.4/14.0 matrix
