@@ -1283,8 +1283,12 @@ Contributions are welcome! Please follow these guidelines:
 
 ## License
 
-This skill is licensed under GPL-2.0-or-later, matching the TYPO3 project license.
+This project uses split licensing:
 
+- **Code** (scripts, workflows, configs): [MIT](LICENSE-MIT)
+- **Content** (skill definitions, documentation, references): [CC-BY-SA-4.0](LICENSE-CC-BY-SA-4.0)
+
+See the individual license files for full terms.
 ## Support
 
 **Issues and Questions:**

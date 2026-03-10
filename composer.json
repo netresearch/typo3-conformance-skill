@@ -1,26 +1,26 @@
 {
-  "name": "netresearch/typo3-conformance-skill",
-  "description": "Netresearch AI skill for TYPO3 extension conformance and coding standards assessment",
-  "type": "ai-agent-skill",
-  "license": "MIT",
-  "authors": [
-    {
-      "name": "Netresearch DTT GmbH",
-      "homepage": "https://www.netresearch.de/",
-      "role": "Manufacturer"
+    "name": "netresearch/typo3-conformance-skill",
+    "description": "Netresearch AI skill for TYPO3 extension conformance and coding standards assessment",
+    "type": "ai-agent-skill",
+    "license": "(MIT AND CC-BY-SA-4.0)",
+    "authors": [
+        {
+            "name": "Netresearch DTT GmbH",
+            "homepage": "https://www.netresearch.de/",
+            "role": "Manufacturer"
+        }
+    ],
+    "require": {
+        "netresearch/composer-agent-skill-plugin": "*"
+    },
+    "extra": {
+        "ai-agent-skill": "skills/typo3-conformance/SKILL.md"
+    },
+    "replace": {
+        "netresearch/agent-typo3-conformance": "self.version"
+    },
+    "support": {
+        "issues": "https://github.com/netresearch/typo3-conformance-skill/issues",
+        "source": "https://github.com/netresearch/typo3-conformance-skill"
     }
-  ],
-  "require": {
-    "netresearch/composer-agent-skill-plugin": "*"
-  },
-  "extra": {
-    "ai-agent-skill": "skills/typo3-conformance/SKILL.md"
-  },
-  "replace": {
-    "netresearch/agent-typo3-conformance": "self.version"
-  },
-  "support": {
-    "issues": "https://github.com/netresearch/typo3-conformance-skill/issues",
-    "source": "https://github.com/netresearch/typo3-conformance-skill"
-  }
 }
