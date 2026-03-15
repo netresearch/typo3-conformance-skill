@@ -231,6 +231,134 @@ mechanical:
     severity: info
     desc: "ext_tables.php is optional; in TYPO3 v13+ backend modules are registered via Configuration/Backend/Modules.php"
 
+  # === STRICT TYPES DECLARATION ===
+  - id: TC-07
+    type: not_contains
+    target: ext_emconf.php
+    pattern: "declare(strict_types"
+    severity: error
+    desc: "ext_emconf.php MUST NOT contain declare(strict_types=1) - TER upload will fail"
+
+  - id: TC-08
+    type: regex
+    target: ext_emconf.php
+    pattern: '\$EM_CONF\[\$_EXTKEY\]'
+    severity: error
+    desc: "ext_emconf.php must use $EM_CONF[$_EXTKEY], not a hardcoded extension key"
+
+  - id: TC-09
+    type: contains
+    target: ext_emconf.php
+    pattern: "'category'"
+    severity: warning
+    desc: "ext_emconf.php should define valid 'category' field"
+
+  # === CODING STANDARDS: STRICT TYPES ===
+  - id: TC-17
+    type: regex
+    target: Classes/**/*.php
+    pattern: 'declare\(strict_types=1\)'
+    severity: warning
+    desc: "All PHP files in Classes/ should declare strict_types=1"
+
+  # === COMPOSER.JSON ADDITIONAL CHECKS ===
+  - id: TC-18
+    type: json_path
+    target: composer.json
+    pattern: '.require["php"]'
+    severity: error
+    desc: "composer.json must declare PHP version constraint"
+
+  - id: TC-19
+    type: json_path
+    target: composer.json
+    pattern: '.license'
+    severity: warning
+    desc: "composer.json should declare license (GPL-2.0-or-later recommended)"
+
+  - id: TC-25
+    type: json_path
+    target: composer.json
+    pattern: '.description'
+    severity: warning
+    desc: "composer.json should have a meaningful description"
+
+  - id: TC-26
+    type: regex
+    target: composer.json
+    pattern: '"name"\s*:\s*"[a-z0-9-]+/[a-z0-9-]+"'
+    severity: error
+    desc: "composer.json name must follow vendor/package-name format"
+
+  - id: TC-27
+    type: not_contains
+    target: composer.json
+    pattern: '"typo3-ter/'
+    severity: warning
+    desc: "composer.json should not contain deprecated typo3-ter replace entries"
+
+  # === ADDITIONAL PROHIBITED PATTERNS ===
+  - id: TC-36
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "$GLOBALS['TYPO3_CONF_VARS']"
+    severity: warning
+    desc: "Should not access TYPO3_CONF_VARS via $GLOBALS; use ExtensionConfiguration"
+
+  - id: TC-37
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "$GLOBALS['BE_USER']"
+    severity: warning
+    desc: "Should not access BE_USER via $GLOBALS; use Context API"
+
+  - id: TC-38
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "$GLOBALS['LANG']"
+    severity: warning
+    desc: "Should not access LANG via $GLOBALS; use LanguageServiceFactory"
+
+  - id: TC-39
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "$GLOBALS['TCA']"
+    severity: warning
+    desc: "Should not access TCA via $GLOBALS; use TcaSchemaFactory (v14+) or inject TCA via DI"
+
+  # === BACKEND MODULE MODERNIZATION (v13+) ===
+  - id: TC-52
+    type: command
+    pattern: "grep -rn '<script' Resources/Private/Templates/ 2>/dev/null | head -1 && exit 1 || exit 0"
+    severity: warning
+    desc: "Templates should not contain inline <script> tags; use ES6 modules"
+
+  - id: TC-53
+    type: file_exists
+    target: Configuration/Icons.php
+    severity: info
+    scope: backend
+    desc: "Configuration/Icons.php should exist for icon registration (v12+)"
+
+  - id: TC-54
+    type: file_exists
+    target: Configuration/Sets/
+    severity: info
+    desc: "Configuration/Sets/ directory should exist for TYPO3 13 Site Sets"
+
+  # === EXCELLENCE INDICATORS (bonus) ===
+  - id: TC-58
+    type: file_exists
+    target: .gitattributes
+    severity: info
+    desc: ".gitattributes should exist with export-ignore for smaller TER packages"
+
+  - id: TC-59
+    type: file_exists
+    target: Makefile
+    severity: info
+    desc: "Makefile should exist for task automation"
+
   # === TER PUBLISHING CHECKS ===
   - id: TC-55
     type: json_path
