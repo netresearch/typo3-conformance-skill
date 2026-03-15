@@ -233,9 +233,9 @@ mechanical:
 
   # === STRICT TYPES DECLARATION ===
   - id: TC-07
-    type: not_contains
+    type: not_regex
     target: ext_emconf.php
-    pattern: "declare(strict_types"
+    pattern: '^[^/]*declare[[:space:]]*\([[:space:]]*strict_types'
     severity: error
     desc: "ext_emconf.php MUST NOT contain declare(strict_types=1) - TER upload will fail"
 
