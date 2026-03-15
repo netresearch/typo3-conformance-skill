@@ -698,7 +698,7 @@ CGL enforces `self::assertEquals()` but PHPUnit 11 marks assertion methods as no
 parameters:
     ignoreErrors:
         -
-            message: '#Call to an undefined static method .+::(assert|fail|mark)#'
+            message: '#Call to an undefined static method .+::(assert[A-Z]\w*|fail|markTest\w*)#'
             reportUnmatched: false
 ```
 
