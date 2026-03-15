@@ -235,7 +235,7 @@ mechanical:
   - id: TC-07
     type: not_regex
     target: ext_emconf.php
-    pattern: '^[^/]*declare[[:space:]]*\([[:space:]]*strict_types'
+    pattern: '^[[:space:]]*(<\?php[[:space:]]+)?declare[[:space:]]*\([[:space:]]*strict_types'
     severity: error
     desc: "ext_emconf.php MUST NOT contain declare(strict_types=1) - TER upload will fail"
 
