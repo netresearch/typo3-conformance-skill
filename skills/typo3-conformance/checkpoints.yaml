@@ -43,7 +43,7 @@ mechanical:
   - id: TC-06
     type: regex
     target: ext_emconf.php
-    pattern: "'state'\\s*=>\\s*'(stable|beta|alpha|experimental|test|obsolete|excludeFromUpdates)'"
+    pattern: "['\"]state['\"][[:space:]]*=>[[:space:]]*['\"](stable|beta|alpha|experimental|test|obsolete|excludeFromUpdates)['\"]"
     severity: warning
     desc: "ext_emconf.php should define valid 'state' field"
 
@@ -229,7 +229,7 @@ mechanical:
     type: file_exists
     target: ext_tables.php
     severity: info
-    desc: "ext_tables.php should exist for backend module registration (if needed)"
+    desc: "ext_tables.php is optional; in TYPO3 v13+ backend modules are registered via Configuration/Backend/Modules.php"
 
   # === TER PUBLISHING CHECKS ===
   - id: TC-55
