@@ -346,6 +346,34 @@ mechanical:
     severity: info
     desc: "Configuration/Sets/ directory should exist for TYPO3 13 Site Sets"
 
+  # === CI TOOLING CENTRALIZATION ===
+  - id: TC-90
+    type: json_path
+    target: composer.json
+    pattern: '.["require-dev"]["netresearch/typo3-ci-workflows"]'
+    severity: warning
+    desc: "require-dev should use netresearch/typo3-ci-workflows for centralized CI tooling"
+
+  - id: TC-91
+    type: not_contains
+    target: composer.json
+    pattern: '"friendsofphp/php-cs-fixer"'
+    severity: info
+    desc: "require-dev should not individually list php-cs-fixer (provided by typo3-ci-workflows)"
+
+  - id: TC-92
+    type: file_exists
+    target: Build/Scripts/runTests.sh
+    severity: warning
+    desc: "Build/Scripts/runTests.sh should exist for local test execution"
+
+  - id: TC-93
+    type: regex
+    target: "{Build/phpstan.neon,phpstan.neon}"
+    pattern: 'typo3-ci-workflows'
+    severity: info
+    desc: "PHPStan config should include shared config from typo3-ci-workflows"
+
   # === EXCELLENCE INDICATORS (bonus) ===
   - id: TC-58
     type: file_exists
