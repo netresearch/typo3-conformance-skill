@@ -884,51 +884,40 @@ Tests run concurrently across combinations, providing fast feedback on compatibi
 
 ## Installation
 
-### Option 1: Via Netresearch Marketplace (Recommended)
+### Marketplace (Recommended)
+
+Add the [Netresearch marketplace](https://github.com/netresearch/claude-code-marketplace) once, then browse and install skills:
 
 ```bash
+# Claude Code
 /plugin marketplace add netresearch/claude-code-marketplace
 ```
 
-Then browse skills with `/plugin`.
+### npx ([skills.sh](https://skills.sh))
 
-### Option 2: Download Release
-
-Download the [latest release](https://github.com/netresearch/typo3-conformance-skill/releases/latest) and extract to `~/.claude/skills/typo3-conformance/`
-
-### Option 3: Manual Installation
+Install with any [Agent Skills](https://agentskills.io)-compatible agent:
 
 ```bash
-# Using curl
-curl -L https://github.com/netresearch/typo3-conformance-skill/archive/refs/heads/main.zip -o typo3-conformance.zip
-unzip typo3-conformance.zip -d ~/.claude/skills/
-mv ~/.claude/skills/typo3-conformance-skill-main ~/.claude/skills/typo3-conformance
-
-# Or using git
-git clone https://github.com/netresearch/typo3-conformance-skill.git ~/.claude/skills/typo3-conformance
+npx skills add https://github.com/netresearch/typo3-conformance-skill --skill typo3-conformance
 ```
 
-### Install Ecosystem Skills (Recommended)
+### Download Release
 
-For comprehensive conformance analysis, install specialized skills:
+Download the [latest release](https://github.com/netresearch/typo3-conformance-skill/releases/latest) and extract to your agent's skills directory.
+
+### Git Clone
 
 ```bash
-# Install typo3-tests for deep testing analysis
-git clone https://github.com/netresearch/typo3-testing-skill.git ~/.claude/skills/typo3-tests
-
-# Install typo3-docs for comprehensive documentation validation
-git clone https://github.com/netresearch/typo3-docs-skill.git ~/.claude/skills/typo3-docs
+git clone https://github.com/netresearch/typo3-conformance-skill.git
 ```
 
-**Skill Dependencies:**
-- **Standalone:** typo3-conformance works independently with basic validation
-- **Enhanced:** Install typo3-tests and typo3-docs for production-ready conformance reports
-- **Automatic Delegation:** Conformance skill auto-detects and uses ecosystem skills when available
+### Composer (PHP Projects)
 
-### Verify Installation
+```bash
+composer require netresearch/typo3-conformance-skill
+```
 
-The skill automatically activates when analyzing TYPO3 extensions for standards compliance.
-
+Requires [netresearch/composer-agent-skill-plugin](https://github.com/netresearch/composer-agent-skill-plugin).
 ## Usage
 
 ### Automated Conformance Checking
