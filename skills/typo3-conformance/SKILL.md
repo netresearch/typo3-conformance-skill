@@ -1,19 +1,6 @@
 ---
 name: typo3-conformance
-description: "ALWAYS use for ANY TYPO3 extension quality assessment, conformance checking, standards compliance audit, modernization planning, or TER readiness validation. Triggers on: conformance, quality check, extension audit, TYPO3 standards, best practices review."
-license: "(MIT AND CC-BY-SA-4.0)"
-compatibility: "Requires php, composer. TYPO3 extension project."
-metadata:
-  version: "2.6.0"
-  repository: "https://github.com/netresearch/typo3-conformance-skill"
-  author: "Netresearch DTT GmbH"
-allowed-tools:
-  - "Bash(php:*)"
-  - "Bash(composer:*)"
-  - "Bash(grep:*)"
-  - "Read"
-  - "Glob"
-  - "Grep"
+description: "Use when assessing TYPO3 extension quality, conformance checking, standards compliance audits, modernization planning to v12/v13/v14 standards, TER readiness validation, or best practices review. Also triggers on: extension audit, quality score, coding guidelines check."
 ---
 
 # TYPO3 Extension Conformance Checker
@@ -105,4 +92,4 @@ Detailed guidance for each evaluation area:
 
 ### Asset Templates
 
-Quality tool configs in `assets/Build/`: PHPStan (`phpstan/`), PHP-CS-Fixer (`php-cs-fixer/`), Rector (`rector/`), ESLint (`eslint/`), Stylelint (`stylelint/`), TypoScript lint (`typoscript-lint/`).
+Quality tool configs in `assets/Build/`: PHPStan, PHP-CS-Fixer, Rector, ESLint, Stylelint, TypoScript lint.
