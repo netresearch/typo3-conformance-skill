@@ -1,6 +1,19 @@
 ---
 name: typo3-conformance
-description: "Use when assessing TYPO3 extension quality, generating conformance reports, or planning modernization to v12/v13/v14 standards."
+description: "ALWAYS use for ANY TYPO3 extension quality assessment, conformance checking, standards compliance audit, modernization planning, or TER readiness validation. Triggers on: conformance, quality check, extension audit, TYPO3 standards, best practices review."
+license: "(MIT AND CC-BY-SA-4.0)"
+compatibility: "Requires php, composer. TYPO3 extension project."
+metadata:
+  version: "2.6.0"
+  repository: "https://github.com/netresearch/typo3-conformance-skill"
+  author: "Netresearch DTT GmbH"
+allowed-tools:
+  - "Bash(php:*)"
+  - "Bash(composer:*)"
+  - "Bash(grep:*)"
+  - "Read"
+  - "Glob"
+  - "Grep"
 ---
 
 # TYPO3 Extension Conformance Checker

@@ -1,0 +1,34 @@
+[
+  {
+    "name": "conformance-check",
+    "prompt": "Check this extension for TYPO3 conformance",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Glob",
+        "description": "Scans extension file structure"
+      },
+      {
+        "type": "content_contains",
+        "value": "score",
+        "description": "Produces a conformance score"
+      }
+    ]
+  },
+  {
+    "name": "conformance-report",
+    "prompt": "Generate a conformance report",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Read",
+        "description": "Reads extension files for analysis"
+      },
+      {
+        "type": "content_contains",
+        "value": "Architecture",
+        "description": "Reports on architecture compliance"
+      }
+    ]
+  }
+]
