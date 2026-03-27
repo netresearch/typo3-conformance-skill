@@ -670,7 +670,6 @@ llm_reviews:
       across releases, so it only needs to run once (or when URLs change).
     severity: warning
     desc: "TER publish workflow should include metadata setup via tailor ter:update"
-<<<<<<< HEAD
 
   # === CONFIGURATION SYNC REVIEWS ===
   - id: TC-69
