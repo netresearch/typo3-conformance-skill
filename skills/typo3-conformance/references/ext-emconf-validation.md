@@ -373,7 +373,23 @@ EMCONF_TYPO3=$(grep -oP "'typo3' => '\K[0-9.-]+" ext_emconf.php)
 echo "Composer: $COMPOSER_TYPO3"
 echo "ext_emconf: $EMCONF_TYPO3"
 # Manual comparison required for ^x.y vs x.y.z-x.y.z format
+
+# Compare PHP versions
+COMPOSER_PHP=$(jq -r '.require.php' composer.json)
+EMCONF_PHP=$(grep -oP "'php' => '\K[0-9.-]+" ext_emconf.php)
+echo "Composer PHP: $COMPOSER_PHP"
+echo "ext_emconf PHP: $EMCONF_PHP"
 ```
+
+### Common Mismatch Scenarios
+
+| Scenario | composer.json | ext_emconf.php | Problem |
+|----------|--------------|----------------|---------|
+| PHP range drift | `"php": "^8.2"` | `'php' => '8.1.0-8.4.99'` | ext_emconf allows PHP 8.1 but composer.json does not |
+| TYPO3 range drift | `"typo3/cms-core": "^13.4"` | `'typo3' => '12.4.0-13.4.99'` | ext_emconf claims v12 support but composer.json does not |
+| Missing upper bound | `"php": ">=8.2"` | `'php' => '8.2.0-8.4.99'` | composer.json has no upper bound, ext_emconf does |
+
+**Severity:** 🔴 Critical - Mismatched constraints cause installation failures and misleading TER listings.
 
 ---
 

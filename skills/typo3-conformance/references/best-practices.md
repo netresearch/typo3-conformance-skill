@@ -537,9 +537,7 @@ Every TYPO3 extension should have these additional workflows:
 ```rst
 .. include:: /Includes.rst.txt
 
-==============
 My Extension
-==============
 
 :Extension key:
    my_extension
@@ -1660,18 +1658,76 @@ Add proper accessibility attributes to interactive elements:
 </table>
 ```
 
+||||||| parent of 4cac7a1 (feat: add learnings from 60+ agent review cycles):references/best-practices.md
+## XLIFF Translation Hygiene
+
+Periodically audit for unused translation keys defined in `locallang.xlf` (and language variants like `de.locallang.xlf`) but never referenced in PHP or Fluid templates. Dead keys accumulate during refactoring and clutter translation files.
+
+**Detection:**
+```bash
+# Extract all trans-unit IDs from XLIFF files
+grep -ohP 'id="[^"]+"' Resources/Private/Language/locallang*.xlf | \
+    sed 's/id="//;s/"//' | sort -u > /tmp/xliff_keys.txt
+
+# Search for each key in PHP and Fluid files
+while IFS= read -r key; do
+    if ! grep -rq "$key" Classes/ Resources/Private/Templates/ Resources/Private/Layouts/ Resources/Private/Partials/ Configuration/ 2>/dev/null; then
+        echo "UNUSED: $key"
+    fi
+done < /tmp/xliff_keys.txt
+```
+
+**Action:** Remove unused keys from ALL translation files (base `locallang.xlf` and every language variant). Do not leave orphaned keys in language-specific files when the base key is removed.
+
+**Severity:** 🟢 Recommended - Keeps translation files clean and reduces translator workload
+
+---
+
+## CI Workflow: Prevent Duplicate Runs
+
+When a GitHub Actions workflow has both `push:` and `pull_request:` triggers, pushes to PR branches trigger **two** CI runs (one for push, one for PR event). Restrict the `push:` trigger to `branches: [main]` to prevent duplicate runs.
+
+**Before (DUPLICATE RUNS):**
+```yaml
+on:
+  push:           # Triggers on ALL branch pushes
+  pull_request:
+    branches: [main]
+```
+
+**After (CORRECT):**
+```yaml
+on:
+  push:
+    branches: [main]    # Only trigger push on main (release/merge)
+  pull_request:
+    branches: [main]    # PR events handle feature branch CI
+```
+
+**Detection:**
+```bash
+# Check for push trigger without branch restriction
+grep -A 2 'push:' .github/workflows/*.yml | grep -v 'branches:'
+```
+
+**Severity:** 🟡 Important - Duplicate runs waste CI minutes and create confusing status checks
+
+---
+
 ## Conformance Checklist
 
 - [ ] Complete directory structure following best practices
 - [ ] composer.json with proper PSR-4 autoloading
 - [ ] Quality tools configured (php-cs-fixer, phpstan)
 - [ ] CI/CD pipeline (GitHub Actions or GitLab CI)
+- [ ] CI push trigger restricted to `branches: [main]` when `pull_request:` is also configured
 - [ ] Comprehensive test coverage (unit, functional, acceptance)
 - [ ] Complete documentation in RST format
 - [ ] Service configuration in Services.yaml
 - [ ] Backend modules in Configuration/Backend/
 - [ ] TCA files in Configuration/TCA/
 - [ ] Language files in XLIFF format
+- [ ] No unused XLIFF translation keys (periodic audit)
 - [ ] Dependency injection throughout
 - [ ] No global state access
 - [ ] Security best practices followed
