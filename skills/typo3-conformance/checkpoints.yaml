@@ -583,6 +583,22 @@ llm_reviews:
     severity: info
     desc: "TCA configuration should follow current standards"
 
+  # === TRANSLATION REVIEWS ===
+  - id: TC-63
+    name: Translation keys complete for all features
+    type: llm_review
+    severity: info
+    domain: i18n
+    prompt: |
+      Verify that all user-visible strings in the extension have
+      corresponding XLIFF translation keys. Check:
+      - Controller error messages (should use LLL references or trait)
+      - Template labels and buttons
+      - TCA column labels
+      - Module labels
+      - Configuration labels in ext_conf_template.txt
+    tags: [xliff, translation, i18n, completeness]
+
   # === DOCUMENTATION REVIEWS ===
   - id: TC-64
     domain: documentation
@@ -701,3 +717,13 @@ llm_reviews:
       4. Also flag translation keys referenced in code but missing from XLIFF
     severity: info
     desc: "Unused XLIFF translation keys should be removed to maintain translation hygiene"
+
+  # === CODING STANDARDS REVIEWS ===
+  - id: TC-95
+    domain: coding-standards
+    prompt: |
+      Check that ALL PHP files have a copyright/license header comment block.
+      This includes ext_localconf.php, ext_tables.php, Configuration/**/*.php,
+      and Build/*.php. Exception: ext_emconf.php (TER cannot parse strict_types).
+    severity: warning
+    desc: "Copyright headers on all PHP files including configuration"
