@@ -447,6 +447,22 @@ llm_reviews:
     severity: info
     desc: "TCA configuration should follow current standards"
 
+  # === TRANSLATION REVIEWS ===
+  - id: TC-63
+    name: Translation keys complete for all features
+    type: llm_review
+    severity: info
+    domain: i18n
+    prompt: |
+      Verify that all user-visible strings in the extension have
+      corresponding XLIFF translation keys. Check:
+      - Controller error messages (should use LLL references or trait)
+      - Template labels and buttons
+      - TCA column labels
+      - Module labels
+      - Configuration labels in ext_conf_template.txt
+    tags: [xliff, translation, i18n, completeness]
+
   # === DOCUMENTATION REVIEWS ===
   - id: TC-70
     domain: documentation
@@ -518,3 +534,40 @@ llm_reviews:
       across releases, so it only needs to run once (or when URLs change).
     severity: warning
     desc: "TER publish workflow should include metadata setup via tailor ter:update"
+
+  # === CODING STANDARDS REVIEWS ===
+  - id: TC-95
+    name: Copyright headers on all PHP files including configuration
+    type: llm_review
+    severity: warning
+    domain: coding-standards
+    prompt: |
+      Check that ALL PHP files have a copyright/license header comment block.
+      This includes not just Classes/ but also:
+      - ext_localconf.php
+      - ext_tables.php
+      - Configuration/Backend/Routes.php
+      - Configuration/Backend/AjaxRoutes.php
+      - Configuration/Backend/Modules.php
+      - Configuration/Icons.php
+      - Configuration/JavaScriptModules.php
+      - Configuration/TCA/*.php
+      - Build/*.php
+      Exception: ext_emconf.php (TER cannot parse with strict_types)
+    tags: [copyright, license, headers]
+
+  # === TRANSLATION HYGIENE REVIEWS ===
+  - id: TC-96
+    name: No orphaned XLIFF translation keys
+    type: llm_review
+    severity: info
+    domain: i18n
+    prompt: |
+      Cross-reference all trans-unit IDs in Resources/Private/Language/locallang*.xlf
+      against actual usage in:
+      - PHP code (grep for LLL:EXT:...locallang)
+      - Fluid templates (f:translate key=)
+      - JavaScript (TYPO3.lang[...])
+      - TCA label references
+      Report any keys defined in XLIFF but never referenced in code.
+    tags: [xliff, translation, i18n, dead-code]
