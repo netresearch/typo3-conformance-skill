@@ -416,6 +416,13 @@ mechanical:
     severity: warning
     desc: "Should use PersistenceManagerInterface in type hints, not concrete PersistenceManager class"
 
+  - id: TC-112
+    type: not_contains
+    target: Classes/**/*.php
+    pattern: "GeneralUtility::makeInstance(ExtensionConfiguration"
+    severity: warning
+    desc: "Should inject ExtensionConfiguration via constructor DI instead of using GeneralUtility::makeInstance"
+
   # === SECURITY PATTERN CHECKS ===
   - id: TC-120
     type: not_regex
@@ -437,6 +444,13 @@ mechanical:
     pattern: "\\bserialize\\s*\\("
     severity: warning
     desc: "Avoid serialize(); prefer json_encode/json_decode for data serialization"
+
+  - id: TC-122b
+    type: not_regex
+    target: Classes/**/*.php
+    pattern: "\\bunserialize\\s*\\("
+    severity: warning
+    desc: "Avoid unserialize(); use json_decode instead for data deserialization (unserialize without allowed_classes is a security risk)"
 
   - id: TC-123
     type: command
