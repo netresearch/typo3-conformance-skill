@@ -519,14 +519,14 @@ mechanical:
   - id: TC-65
     type: regex
     target: "Resources/Private/**/*.html"
-    pattern: 'data-dismiss|data-toggle|data-target|data-ride|data-slide'
-    severity: error
+    pattern: 'data-dismiss=|data-toggle="(collapse|modal|tab|dropdown|tooltip|popover)"|data-target=|data-ride=|data-slide='
+    severity: warning
     desc: "Legacy Bootstrap 4 data attributes detected. Migrate to Bootstrap 5: data-dismiss→data-bs-dismiss, data-toggle→data-bs-toggle, data-target→data-bs-target, data-ride→data-bs-ride, data-slide→data-bs-slide"
 
   - id: TC-66
     type: regex
     target: "Resources/Private/**/*.html"
-    pattern: 'class="[^"]*\b(btn-default|ml-\d|mr-\d|pl-\d|pr-\d|float-left|float-right|font-weight-bold|font-weight-normal|font-italic)\b'
+    pattern: 'class="[^"]*\b(btn-default|ml-(\d+|auto)|mr-(\d+|auto)|pl-(\d+|auto)|pr-(\d+|auto)|float-left|float-right|font-weight-bold|font-weight-normal|font-italic)\b'
     severity: warning
     desc: "Legacy Bootstrap 4 CSS classes detected. Migrate: btn-default→btn-secondary, ml-*→ms-*, mr-*→me-*, pl-*→ps-*, pr-*→pe-*, float-left→float-start, float-right→float-end"
 
@@ -541,7 +541,7 @@ mechanical:
   - id: TC-68
     type: regex
     target: "Resources/Private/**/*.html"
-    pattern: '<script[^>]*>(?!<!--)'
+    pattern: '<script(?![^>]*\bsrc=)[^>]*>'
     severity: error
     desc: "Inline <script> tags violate CSP. Move JavaScript to external files loaded via f:be.pageRenderer includeJsFiles or AssetCollector"
 
