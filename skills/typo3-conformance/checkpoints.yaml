@@ -526,7 +526,7 @@ mechanical:
   - id: TC-66
     type: regex
     target: "Resources/Private/**/*.html"
-    pattern: 'class="[^"]*\b(btn-default|ml-(\d+|auto)|mr-(\d+|auto)|pl-(\d+|auto)|pr-(\d+|auto)|float-left|float-right|font-weight-bold|font-weight-normal|font-italic)\b'
+    pattern: '\bclass="[^"]*\b(btn-default|ml-(\d+|auto)|mr-(\d+|auto)|pl-(\d+|auto)|pr-(\d+|auto)|float-left|float-right|font-weight-bold|font-weight-normal|font-italic)\b'
     severity: warning
     desc: "Legacy Bootstrap 4 CSS classes detected. Migrate: btn-default→btn-secondary, ml-*→ms-*, mr-*→me-*, pl-*→ps-*, pr-*→pe-*, float-left→float-start, float-right→float-end"
 
