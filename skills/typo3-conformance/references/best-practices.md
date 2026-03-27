@@ -1136,6 +1136,530 @@ public function __construct(
 // Configuration/Services.yaml
 ```
 
+## Netresearch CI Integration
+
+Netresearch extensions use the shared `netresearch/typo3-ci-workflows` package to standardize tooling and CI pipelines across all TYPO3 projects.
+
+### Single require-dev Dependency
+
+Extensions should use `netresearch/typo3-ci-workflows` as the **single** `require-dev` dependency instead of listing individual tools (phpstan, php-cs-fixer, rector, etc.) separately.
+
+```json
+{
+    "require-dev": {
+        "netresearch/typo3-ci-workflows": "^1.0"
+    }
+}
+```
+
+**Do NOT add individual tool packages to require-dev:**
+
+```json
+// ❌ Wrong: Individual tool packages
+{
+    "require-dev": {
+        "phpstan/phpstan": "^1.10",
+        "friendsofphp/php-cs-fixer": "^3.0",
+        "rector/rector": "^1.0",
+        "phpunit/phpunit": "^10.5"
+    }
+}
+```
+
+### Required allowed-plugins
+
+All allowed-plugins from the CI workflow must be listed in `composer.json`:
+
+```json
+{
+    "config": {
+        "allow-plugins": {
+            "typo3/class-alias-loader": true,
+            "typo3/cms-composer-installers": true,
+            "phpstan/extension-installer": true,
+            "a9f/fractor-extension-installer": true,
+            "infection/extension-installer": true,
+            "captainhook/hook-installer": true,
+            "dg/bypass-finals": true
+        }
+    }
+}
+```
+
+### Reusable CI Workflows
+
+CI workflows must only use **reusable workflows** from `netresearch/typo3-ci-workflows`. Never use direct actions or define jobs inline.
+
+```yaml
+# ✅ Right: Reusable workflow
+jobs:
+  ci:
+    uses: netresearch/typo3-ci-workflows/.github/workflows/ci.yml@main
+```
+
+```yaml
+# ❌ Wrong: Direct actions and inline jobs
+jobs:
+  phpstan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: vendor/bin/phpstan analyse
+```
+
+### Push Trigger Restriction
+
+The `push` trigger in `ci.yml` must be restricted to `branches: [main]` to avoid duplicate runs on pull requests (PRs already trigger their own workflow run).
+
+```yaml
+on:
+  push:
+    branches: [main]  # ✅ Only main — prevents duplicate runs on PRs
+  pull_request:
+```
+
+```yaml
+# ❌ Wrong: Unrestricted push trigger causes duplicate CI runs
+on:
+  push:
+  pull_request:
+```
+
+## TYPO3 v13 TCA Requirements
+
+### l10n_parent Field Type
+
+The `l10n_parent` field **MUST** use `type=select` / `renderType=selectSingle` with `foreign_table`, **NOT** `type=group`.
+
+```php
+// ✅ Right: select/selectSingle for l10n_parent
+'l10n_parent' => [
+    'label' => 'LLL:EXT:core/Resources/Private/Language/locallang_general.xlf:LGL.l18n_parent',
+    'config' => [
+        'type' => 'select',
+        'renderType' => 'selectSingle',
+        'items' => [
+            ['label' => '', 'value' => 0],
+        ],
+        'foreign_table' => 'tx_myext_domain_model_item',
+        'foreign_table_where' =>
+            'AND {#tx_myext_domain_model_item}.{#pid}=###CURRENT_PID###'
+            . ' AND {#tx_myext_domain_model_item}.{#sys_language_uid} IN (-1,0)',
+        'default' => 0,
+    ],
+],
+```
+
+```php
+// ❌ Wrong: type=group for l10n_parent (not supported in v13)
+'l10n_parent' => [
+    'config' => [
+        'type' => 'group',
+        'allowed' => 'tx_myext_domain_model_item',
+    ],
+],
+```
+
+### Deprecated eval Values
+
+`eval=trim` is **deprecated** for `type=input` and `type=text` in TYPO3 v13. Remove it from all TCA column definitions.
+
+```php
+// ✅ Right: No eval=trim in v13
+'title' => [
+    'config' => [
+        'type' => 'input',
+        'size' => 30,
+        'max' => 255,
+        'required' => true,  // Use 'required' as standalone config key
+    ],
+],
+
+// ❌ Wrong: eval=trim is deprecated
+'title' => [
+    'config' => [
+        'type' => 'input',
+        'eval' => 'trim,required',
+    ],
+],
+```
+
+### Removed ctrl Options
+
+`prependAtCopy` and `hideAtCopy` were **removed** in TYPO3 v13. Remove them from `ctrl` sections.
+
+```php
+// ❌ Wrong: Removed in v13
+'ctrl' => [
+    'prependAtCopy' => 'LLL:EXT:core/...:LGL.prependAtCopy',
+    'hideAtCopy' => true,
+],
+```
+
+### Select Field Defaults
+
+Select fields referencing foreign tables should have an explicit `default => 0`:
+
+```php
+'category' => [
+    'config' => [
+        'type' => 'select',
+        'renderType' => 'selectSingle',
+        'foreign_table' => 'tx_myext_category',
+        'default' => 0,  // ✅ Explicit default
+    ],
+],
+```
+
+### System Column Definitions
+
+System columns (`uid`, `pid`, `tstamp`, `crdate`, `deleted`, `hidden`) should **NOT** have explicit column definitions in TCA. TYPO3 v13 auto-creates them from `ctrl` settings.
+
+```php
+// ✅ Right: Only declare in ctrl, not in columns
+'ctrl' => [
+    'tstamp' => 'tstamp',
+    'crdate' => 'crdate',
+    'delete' => 'deleted',
+    'enablecolumns' => [
+        'disabled' => 'hidden',
+    ],
+],
+'columns' => [
+    // Do NOT add uid, pid, tstamp, crdate, deleted, hidden here
+    'title' => [ /* ... */ ],
+],
+```
+
+```php
+// ❌ Wrong: Explicit column definitions for system fields
+'columns' => [
+    'hidden' => [
+        'label' => 'Hidden',
+        'config' => ['type' => 'check'],
+    ],
+    'tstamp' => [
+        'label' => 'Timestamp',
+        'config' => ['type' => 'passthrough'],
+    ],
+],
+```
+
+## Security Patterns
+
+### Shell Execution
+
+Never use `shell_exec()` or similar shell functions. Use PHP file functions instead.
+
+```php
+// ✅ Right: PHP file functions
+$content = file_get_contents($filePath);
+$files = scandir($directory);
+copy($source, $destination);
+unlink($tempFile);
+
+// ❌ Wrong: Shell execution
+$content = shell_exec('cat ' . $filePath);
+$files = shell_exec('ls ' . $directory);
+```
+
+### Secure Random Data
+
+Use `random_bytes()` for generating tokens and secrets, not `md5(uniqid())`.
+
+```php
+// ✅ Right: Cryptographically secure
+$token = bin2hex(random_bytes(32));
+
+// ❌ Wrong: Predictable, not cryptographically secure
+$token = md5(uniqid('', true));
+```
+
+### Data Serialization
+
+Use `json_encode`/`json_decode` for data storage, not `serialize`/`unserialize` (which can lead to object injection attacks).
+
+```php
+// ✅ Right: JSON for data storage
+$stored = json_encode($data, JSON_THROW_ON_ERROR);
+$restored = json_decode($stored, true, 512, JSON_THROW_ON_ERROR);
+
+// ❌ Wrong: PHP serialization (object injection risk)
+$stored = serialize($data);
+$restored = unserialize($stored);
+```
+
+### Template Output Escaping
+
+All template output of user-controlled data must use `f:format.htmlspecialchars()` or rely on Fluid auto-escaping.
+
+```html
+<!-- ✅ Right: Explicit escaping -->
+<span>{entry.title -> f:format.htmlspecialchars()}</span>
+
+<!-- ✅ Right: Fluid auto-escaping (default for inline notation) -->
+<span>{entry.title}</span>
+
+<!-- ❌ Wrong: Raw output of user data -->
+<f:format.raw>{entry.userInput}</f:format.raw>
+```
+
+### XML Export Safety
+
+When generating XML output, escape attributes properly and handle CDATA breakout:
+
+```php
+// ✅ Right: Proper XML attribute escaping
+$attr = htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+echo '<element attr="' . $attr . '">';
+
+// ✅ Right: Handle CDATA ]]> breakout
+$cdataContent = str_replace(']]>', ']]]]><![CDATA[>', $value);
+echo '<![CDATA[' . $cdataContent . ']]>';
+```
+
+### File Upload Validation
+
+Always check the upload error code before processing uploaded files:
+
+```php
+// ✅ Right: Check error code first
+if ($uploadedFile->getError() === UPLOAD_ERR_OK) {
+    $stream = $uploadedFile->getStream();
+    // Process file...
+}
+
+// ❌ Wrong: Skip error check
+$stream = $uploadedFile->getStream(); // May fail silently
+```
+
+### libxml Error Cleanup
+
+Always call `libxml_clear_errors()` after `libxml_get_errors()` to prevent memory leaks:
+
+```php
+// ✅ Right: Clear errors after retrieval
+$errors = libxml_get_errors();
+libxml_clear_errors();
+foreach ($errors as $error) {
+    // Handle error...
+}
+
+// ❌ Wrong: Errors accumulate in memory
+$errors = libxml_get_errors();
+// Missing libxml_clear_errors()
+```
+
+## Performance Patterns
+
+### In-Memory Caching
+
+Add in-memory translation and result caches in services, keyed by lookup parameters:
+
+```php
+final class TranslationService
+{
+    /** @var array<string, string> */
+    private array $translationCache = [];
+
+    public function translate(string $key, string $language): string
+    {
+        $cacheKey = $key . ':' . $language;
+        if (!isset($this->translationCache[$cacheKey])) {
+            $this->translationCache[$cacheKey] = $this->performLookup($key, $language);
+        }
+        return $this->translationCache[$cacheKey];
+    }
+}
+```
+
+### Config Lookup Caching
+
+Cache configuration lookups (e.g., `getConfiguredPageId()`) in instance properties to avoid repeated database or configuration queries:
+
+```php
+final class ConfigService
+{
+    private ?int $configuredPageId = null;
+
+    public function getConfiguredPageId(): int
+    {
+        if ($this->configuredPageId === null) {
+            $this->configuredPageId = (int)$this->extensionConfiguration->get(
+                'my_extension',
+                'storagePid'
+            );
+        }
+        return $this->configuredPageId;
+    }
+}
+```
+
+### Efficient Query Result Checks
+
+Use `getFirst()` with a null check instead of `count() === 0` followed by `getFirst()`. The count pattern executes an extra `COUNT` SQL query.
+
+```php
+// ✅ Right: Single query
+$result = $repository->findByIdentifier($id);
+if ($result === null) {
+    return; // Not found
+}
+// Use $result...
+
+// ✅ Right: getFirst() null check
+$first = $queryResult->getFirst();
+if ($first === null) {
+    return;
+}
+
+// ❌ Wrong: Two queries (COUNT + SELECT)
+if ($queryResult->count() === 0) {
+    return;
+}
+$first = $queryResult->getFirst();
+```
+
+### Batch Persistence
+
+Batch `persistAll()` calls at the end of an import operation, not per-entry:
+
+```php
+// ✅ Right: Single persistAll at end
+foreach ($entries as $entry) {
+    $model = $this->mapToModel($entry);
+    $this->repository->add($model);
+}
+$this->persistenceManager->persistAll();  // One flush
+
+// ❌ Wrong: persistAll per entry (N database flushes)
+foreach ($entries as $entry) {
+    $model = $this->mapToModel($entry);
+    $this->repository->add($model);
+    $this->persistenceManager->persistAll();  // Flush per entry
+}
+```
+
+### ViewHelper Delegation
+
+ViewHelpers should delegate to cached service methods, not duplicate lookup logic:
+
+```php
+// ✅ Right: Delegate to cached service
+final class TranslateViewHelper extends AbstractViewHelper
+{
+    public function __construct(
+        private readonly TranslationService $translationService
+    ) {}
+
+    public function render(): string
+    {
+        return $this->translationService->translate(
+            $this->arguments['key'],
+            $this->arguments['language']
+        );
+    }
+}
+
+// ❌ Wrong: Duplicate lookup logic in ViewHelper
+final class TranslateViewHelper extends AbstractViewHelper
+{
+    public function render(): string
+    {
+        // Performs uncached DB query on every render call
+        $repository = GeneralUtility::makeInstance(TranslationRepository::class);
+        return $repository->findByKey($this->arguments['key'])->getValue();
+    }
+}
+```
+
+## Template Patterns (TYPO3 v13 / Bootstrap 5)
+
+### Bootstrap 5 Class Migration
+
+Use Bootstrap 5 utility classes. Many Bootstrap 3/4 classes are removed or renamed:
+
+| Bootstrap 3/4 (Wrong) | Bootstrap 5 (Right) | Notes |
+|----------------------|---------------------|-------|
+| `form-inline` | `d-flex gap-3` | Inline forms use flex utilities |
+| `form-row` | `row g-3` | Form rows use gutter utilities |
+| `btn-default` | `btn-secondary` | Default button renamed |
+| `form-group` | `mb-3` | Form groups use margin utilities |
+| `form-control-file` | `form-control` | File inputs use standard class |
+
+```html
+<!-- ✅ Right: Bootstrap 5 -->
+<div class="d-flex gap-3 align-items-end mb-3">
+    <div>
+        <label class="form-label">Filter</label>
+        <input class="form-control" type="text" />
+    </div>
+    <button class="btn btn-secondary">Apply</button>
+</div>
+
+<!-- ❌ Wrong: Bootstrap 3/4 classes -->
+<div class="form-inline form-group">
+    <input class="form-control" type="text" />
+    <button class="btn btn-default">Apply</button>
+</div>
+```
+
+### Table Semantics
+
+Do not use `role="grid"` on data tables. Use native HTML table semantics:
+
+```html
+<!-- ✅ Right: Native table semantics -->
+<table class="table table-striped" aria-label="Product list">
+    <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Price</th>
+        </tr>
+    </thead>
+    <tbody>
+        <f:for each="{products}" as="product">
+            <tr>
+                <td>{product.name -> f:format.htmlspecialchars()}</td>
+                <td>{product.price}</td>
+            </tr>
+        </f:for>
+    </tbody>
+</table>
+
+<!-- ❌ Wrong: role="grid" on a data table -->
+<table role="grid">
+    <tr><th>Name</th></tr>
+</table>
+```
+
+### Accessibility Attributes
+
+Add proper accessibility attributes to interactive elements:
+
+- `scope="col"` on all `<th>` elements
+- `aria-label` on `<form>`, `<nav>`, and `<table>` elements
+- `f:format.htmlspecialchars()` on all user-controlled output
+
+```html
+<nav aria-label="{f:translate(key: 'pagination.label')}">
+    <!-- pagination markup -->
+</nav>
+
+<form aria-label="{f:translate(key: 'filter.label')}" method="post">
+    <!-- form fields -->
+</form>
+
+<table class="table" aria-label="{f:translate(key: 'results.label')}">
+    <thead>
+        <tr>
+            <th scope="col">{f:translate(key: 'column.name')}</th>
+            <th scope="col">{f:translate(key: 'column.status')}</th>
+        </tr>
+    </thead>
+</table>
+```
+
 ## Conformance Checklist
 
 - [ ] Complete directory structure following best practices
@@ -1156,3 +1680,17 @@ public function __construct(
 - [ ] README.md with clear instructions
 - [ ] LICENSE file present
 - [ ] Branch protection with required conversation resolution enabled
+- [ ] Netresearch CI workflows used (not individual tool packages)
+- [ ] TCA l10n_parent uses select/selectSingle (not group)
+- [ ] No eval=trim on type=input or type=text fields
+- [ ] No prependAtCopy or hideAtCopy in ctrl
+- [ ] System columns not redefined in TCA columns
+- [ ] No shell_exec usage
+- [ ] random_bytes() used for token generation
+- [ ] json_encode/json_decode used (not serialize/unserialize)
+- [ ] Template output properly escaped
+- [ ] In-memory caches for repeated lookups
+- [ ] Batch persistAll() for import operations
+- [ ] Bootstrap 5 classes used (not 3/4)
+- [ ] Proper table semantics (no role="grid" on data tables)
+- [ ] Accessibility attributes on forms, nav, and tables

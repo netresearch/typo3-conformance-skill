@@ -806,6 +806,121 @@ class UniqueProductTitleValidator extends AbstractValidator
 
 ## Common Patterns
 
+## Dependency Injection Patterns
+
+### Service Instantiation
+
+Never use `GeneralUtility::makeInstance()` for services. Always use constructor dependency injection.
+
+```php
+// ✅ Right: Constructor DI
+final class ImportService
+{
+    public function __construct(
+        private readonly ProductRepository $productRepository,
+        private readonly PersistenceManagerInterface $persistenceManager,
+    ) {}
+}
+
+// ❌ Wrong: Service locator
+final class ImportService
+{
+    public function doImport(): void
+    {
+        $repo = GeneralUtility::makeInstance(ProductRepository::class);
+    }
+}
+```
+
+### Interface-Based Injection
+
+Use `PersistenceManagerInterface` not the concrete `PersistenceManager` class:
+
+```php
+// ✅ Right: Interface injection
+use TYPO3\CMS\Extbase\Persistence\PersistenceManagerInterface;
+
+public function __construct(
+    private readonly PersistenceManagerInterface $persistenceManager,
+) {}
+
+// ❌ Wrong: Concrete class
+use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
+
+public function __construct(
+    private readonly PersistenceManager $persistenceManager,
+) {}
+```
+
+### PHPStan Extension Discovery
+
+PHPStan extensions are auto-discovered via `phpstan/extension-installer` (included in `netresearch/typo3-ci-workflows`). Do NOT manually include extension configs in `phpstan.neon`:
+
+```neon
+# ✅ Right: Only project-specific config
+parameters:
+    level: 9
+    paths:
+        - Classes
+        - Configuration
+```
+
+```neon
+# ❌ Wrong: Manual extension includes (auto-discovered)
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/saschaegerer/phpstan-typo3/extension.neon
+parameters:
+    level: 9
+```
+
+### Repository Cache Scope
+
+Repository and service caches should be instance properties, not static properties:
+
+```php
+// ✅ Right: Instance property cache
+final class TranslationRepository extends Repository
+{
+    /** @var array<string, Translation|null> */
+    private array $cache = [];
+
+    public function findByKey(string $key): ?Translation
+    {
+        if (!array_key_exists($key, $this->cache)) {
+            $this->cache[$key] = $this->findOneBy(['lookupKey' => $key]);
+        }
+        return $this->cache[$key];
+    }
+}
+
+// ❌ Wrong: Static cache (persists across requests in long-running processes)
+final class TranslationRepository extends Repository
+{
+    private static array $cache = [];
+}
+```
+
+### Singleton Flag Safety
+
+When using `setCreateIfMissing(true)` on shared singleton query settings, always reset in a `finally` block to prevent leaking state:
+
+```php
+// ✅ Right: Reset in finally block
+$querySettings = $this->createQuery()->getQuerySettings();
+$querySettings->setCreateIfMissing(true);
+try {
+    $result = $this->findByCondition($criteria);
+} finally {
+    $querySettings->setCreateIfMissing(false);
+}
+
+// ❌ Wrong: No reset — leaks state to subsequent queries
+$querySettings->setCreateIfMissing(true);
+$result = $this->findByCondition($criteria);
+// If findByCondition throws, flag stays true for all subsequent queries
+```
+
 ### Factory Pattern
 
 ```php
