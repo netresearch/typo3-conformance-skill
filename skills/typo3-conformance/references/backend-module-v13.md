@@ -52,7 +52,79 @@ Notification.error('Error', 'Failed in nr_temporal_cache');
 
 ---
 
-### 2. JavaScript Modernization (ES6 Modules)
+### 2. CSP Compliance: No Inline Scripts or Styles
+
+**Problem:** Inline `<script>` and `<style>` blocks violate Content Security Policy (CSP). TYPO3 v13+ backend enforces CSP by default, so inline code will be blocked silently.
+
+**TYPO3 v13 Standard:** Move ALL inline JavaScript and CSS to external files. Load via `f:be.pageRenderer` attributes or `PageRenderer` PHP API.
+
+**Before (CSP VIOLATION):**
+```html
+<f:section name="Content">
+    <style>
+        .my-module .status { color: green; }
+    </style>
+    <!-- template content -->
+</f:section>
+<f:section name="FooterAssets">
+    <script>
+        document.addEventListener('DOMContentLoaded', function() { /* ... */ });
+    </script>
+</f:section>
+```
+
+**After (CSP-COMPLIANT):**
+```html
+<!-- Resources/Private/Layouts/Module.html -->
+<f:be.pageRenderer
+    includeCssFiles="{0: 'EXT:my_extension/Resources/Public/Css/BackendModule.css'}"
+    includeJsFiles="{0: 'EXT:my_extension/Resources/Public/JavaScript/BackendModule.js'}"
+/>
+```
+
+Or via PHP in the controller:
+```php
+$moduleTemplate->getPageRenderer()->addCssFile(
+    'EXT:my_extension/Resources/Public/Css/BackendModule.css'
+);
+$moduleTemplate->getPageRenderer()->loadJavaScriptModule(
+    '@vendor/my-extension/backend-module.js'
+);
+```
+
+> **WARNING: `f:be.pageRenderer` Attribute Name Gotcha**
+>
+> The correct attribute for JavaScript files is **`includeJsFiles`**, NOT `includeJavaScriptFiles`.
+> Fluid silently ignores unknown ViewHelper attributes, so using the wrong name produces
+> **no error and no output** — your JS simply will not load. This is a common and hard-to-debug mistake.
+>
+> ```html
+> <!-- WRONG: silently fails, no error, no JS loaded -->
+> <f:be.pageRenderer includeJavaScriptFiles="{0: 'EXT:my_ext/...'}" />
+>
+> <!-- CORRECT: loads the JS file -->
+> <f:be.pageRenderer includeJsFiles="{0: 'EXT:my_ext/...'}" />
+> ```
+>
+> Similarly, use `includeCssFiles` (not `includeCssStylesheetFiles` or similar).
+
+**Detection:**
+```bash
+# Check for inline scripts/styles in templates (CSP violations)
+grep -rn "<script" Resources/Private/Templates/
+grep -rn "<style" Resources/Private/Templates/
+
+# Check for wrong f:be.pageRenderer attribute names (silent failures)
+grep -rn "includeJavaScriptFiles" Resources/Private/
+```
+
+**Impact:** CSP compliance, prevents silent JS loading failures, better caching, maintainability
+
+**Severity:** 🔴 Critical - TYPO3 v13 backend CSP enforcement blocks inline code silently
+
+---
+
+### 3. JavaScript Modernization (ES6 Modules)
 
 **Problem:** Inline JavaScript in templates is deprecated, not CSP-compliant, and hard to maintain
 
@@ -272,7 +344,7 @@ grep "loadJavaScriptModule" Classes/Controller/Backend/*.php
 
 ---
 
-### 3. Module Layout Pattern
+### 4. Module Layout Pattern
 
 **Problem:** Old `Default.html` layout is non-standard for TYPO3 v13
 
@@ -347,7 +419,7 @@ ls -l Resources/Private/Layouts/Module.html
 
 ---
 
-### 4. DocHeader Component Integration
+### 5. DocHeader Component Integration
 
 **Problem:** Backend modules should have standard DocHeader with refresh, shortcut, and action-specific buttons
 
@@ -472,7 +544,7 @@ grep "makeLinkButton\|makeShortcutButton\|makeHelpButton" Classes/Controller/Bac
 
 ---
 
-### 5. TYPO3 Modal and Notification APIs
+### 6. TYPO3 Modal and Notification APIs
 
 **Problem:** Browser `alert()`, `confirm()`, `prompt()` are deprecated and not user-friendly
 
@@ -562,7 +634,63 @@ grep "import.*Notification" Resources/Public/JavaScript/*.js
 
 ---
 
-### 6. Accessibility (ARIA Labels and Roles)
+### 7. Bootstrap 5 Migration Patterns
+
+**Problem:** TYPO3 v13 backend uses Bootstrap 5. Extensions still using Bootstrap 4 data attributes and classes will have non-functional UI components (e.g., dismiss buttons, dropdowns, modals).
+
+**Bootstrap 4 → 5 Migration Map:**
+
+| Bootstrap 4 (WRONG) | Bootstrap 5 (CORRECT) | Impact |
+|---------------------|----------------------|--------|
+| `data-dismiss="modal"` | `data-bs-dismiss="modal"` | Dismiss buttons stop working |
+| `data-toggle="dropdown"` | `data-bs-toggle="dropdown"` | Dropdowns stop working |
+| `data-toggle="collapse"` | `data-bs-toggle="collapse"` | Collapsible panels stop working |
+| `data-target="#id"` | `data-bs-target="#id"` | Target references break |
+| `btn-default` | `btn-secondary` | Button renders unstyled |
+| `bg-success` + `style="color: #fff"` | `text-bg-success` | Use combined text-bg utility |
+| `bg-warning text-dark` | `text-bg-warning` | Use combined text-bg utility |
+| `bg-danger` + inline color | `text-bg-danger` | Use combined text-bg utility |
+| `ml-*` / `mr-*` | `ms-*` / `me-*` | Margin classes renamed (logical properties) |
+| `pl-*` / `pr-*` | `ps-*` / `pe-*` | Padding classes renamed (logical properties) |
+| `float-left` / `float-right` | `float-start` / `float-end` | Float utilities renamed |
+
+**Before (BOOTSTRAP 4 - BROKEN in TYPO3 v13):**
+```html
+<div class="alert alert-success bg-success" style="color: #fff;">
+    <button type="button" class="close" data-dismiss="alert">&times;</button>
+    Operation completed
+</div>
+
+<button class="btn btn-default ml-2">Cancel</button>
+```
+
+**After (BOOTSTRAP 5 - CORRECT):**
+```html
+<div class="alert alert-success text-bg-success">
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    Operation completed
+</div>
+
+<button class="btn btn-secondary ms-2">Cancel</button>
+```
+
+**Detection:**
+```bash
+# Find Bootstrap 4 data attributes (must be migrated)
+grep -rn 'data-dismiss\|data-toggle\|data-target\|data-ride' Resources/Private/
+
+# Find deprecated Bootstrap 4 classes
+grep -rn 'btn-default\|ml-[0-9]\|mr-[0-9]\|pl-[0-9]\|pr-[0-9]\|float-left\|float-right' Resources/Private/
+
+# Find inline color styles that should use text-bg-* utilities
+grep -rn 'bg-success.*color\|bg-warning.*text-dark\|bg-danger.*color' Resources/Private/
+```
+
+**Severity:** 🟡 Important - Non-functional UI components in TYPO3 v13 backend
+
+---
+
+### 8. Accessibility (ARIA Labels and Roles)
 
 **Problem:** Backend modules must be accessible for screen readers and keyboard navigation
 
@@ -676,7 +804,7 @@ grep -rn "keydown\|keyup\|keypress" Resources/Public/JavaScript/
 
 ---
 
-### 7. Icon Registration (Configuration/Icons.php)
+### 9. Icon Registration (Configuration/Icons.php)
 
 **Problem:** Icon registration in `ext_localconf.php` using `IconRegistry` is deprecated in TYPO3 v13
 
@@ -733,7 +861,7 @@ grep -A 3 "return \[" Configuration/Icons.php
 
 ---
 
-### 8. CSRF Protection (URI Generation)
+### 10. CSRF Protection (URI Generation)
 
 **Problem:** Hardcoded action URLs bypass TYPO3 CSRF protection
 
@@ -827,7 +955,21 @@ grep -rn "EXT:temporal_cache/" Resources/ # Should find ZERO
 grep -rn "EXT:nr_temporal_cache/" Resources/ | wc -l # Should find ALL
 ```
 
-### Phase 2: JavaScript Modernization (Important)
+### Phase 2: CSP Compliance (Critical)
+- [ ] Remove ALL inline `<script>` blocks from templates
+- [ ] Remove ALL inline `<style>` blocks from templates
+- [ ] Move CSS to `Resources/Public/Css/BackendModule.css`
+- [ ] Load CSS via `f:be.pageRenderer includeCssFiles` or `PageRenderer->addCssFile()`
+- [ ] Verify `f:be.pageRenderer` uses `includeJsFiles` (NOT `includeJavaScriptFiles`)
+
+**Validation:**
+```bash
+grep -rn "<script" Resources/Private/Templates/ # Should find ZERO
+grep -rn "<style" Resources/Private/Templates/ # Should find ZERO
+grep -rn "includeJavaScriptFiles" Resources/Private/ # Should find ZERO (wrong attribute)
+```
+
+### Phase 3: JavaScript Modernization (Important)
 - [ ] Create `Resources/Public/JavaScript/BackendModule.js` as ES6 module
 - [ ] Import `@typo3/backend/modal.js` and `@typo3/backend/notification.js`
 - [ ] Implement class-based structure with proper initialization
@@ -835,7 +977,6 @@ grep -rn "EXT:nr_temporal_cache/" Resources/ | wc -l # Should find ALL
 - [ ] Replace all `confirm()` with `Modal.confirm()`
 - [ ] Add keyboard navigation support (Ctrl+A, etc.)
 - [ ] Remove ALL `<f:section name="FooterAssets">` from templates
-- [ ] Remove ALL inline `<script>` tags from templates
 - [ ] Load module via `$moduleTemplate->getPageRenderer()->loadJavaScriptModule()`
 
 **Validation:**
@@ -846,7 +987,7 @@ ls -lh Resources/Public/JavaScript/BackendModule.js # Should exist
 grep "loadJavaScriptModule" Classes/Controller/Backend/*.php # Should find usage
 ```
 
-### Phase 3: Layout Pattern (Important)
+### Phase 4: Layout Pattern (Important)
 - [ ] Create `Resources/Private/Layouts/Module.html` with TYPO3 v13 structure
 - [ ] Add `xmlns:core` namespace to Module.html
 - [ ] Include `<f:flashMessages />` in Module.html
@@ -861,7 +1002,7 @@ grep -n "f:layout name=" Resources/Private/Templates/Backend/**/*.html | grep -v
 grep -n "xmlns:core" Resources/Private/Templates/Backend/**/*.html | wc -l # Should match template count
 ```
 
-### Phase 4: DocHeader Integration (Important)
+### Phase 5: DocHeader Integration (Important)
 - [ ] Add `use TYPO3\CMS\Backend\Template\Components\ButtonBar;` import
 - [ ] Add `use TYPO3\CMS\Core\Imaging\Icon;` import
 - [ ] Add `use TYPO3\CMS\Core\Imaging\IconFactory;` import
@@ -879,7 +1020,7 @@ grep -A 5 "addDocHeaderButtons" Classes/Controller/Backend/*.php # Should find m
 grep "makeLinkButton\|makeShortcutButton" Classes/Controller/Backend/*.php # Should find usage
 ```
 
-### Phase 5: TYPO3 APIs (Important)
+### Phase 6: TYPO3 APIs (Important)
 - [ ] Import `Modal` and `Notification` in ES6 module
 - [ ] Replace `confirm()` with `Modal.confirm()` with severity levels
 - [ ] Replace `alert()` success with `Notification.success()`
@@ -895,7 +1036,25 @@ grep "Modal.confirm" Resources/Public/JavaScript/*.js # Should find usage
 grep "Notification\.(success\|error)" Resources/Public/JavaScript/*.js # Should find usage
 ```
 
-### Phase 6: Accessibility (Recommended)
+### Phase 7: Bootstrap 5 Migration (Important)
+- [ ] Replace `data-dismiss` with `data-bs-dismiss` in all templates
+- [ ] Replace `data-toggle` with `data-bs-toggle` in all templates
+- [ ] Replace `data-target` with `data-bs-target` in all templates
+- [ ] Replace `btn-default` with `btn-secondary`
+- [ ] Replace `bg-success` + inline color with `text-bg-success`
+- [ ] Replace `bg-warning text-dark` with `text-bg-warning`
+- [ ] Replace `ml-*`/`mr-*` with `ms-*`/`me-*`
+- [ ] Replace `pl-*`/`pr-*` with `ps-*`/`pe-*`
+- [ ] Replace `float-left`/`float-right` with `float-start`/`float-end`
+
+**Validation:**
+```bash
+grep -rn 'data-dismiss\|data-toggle\|data-target' Resources/Private/ # Should find ZERO
+grep -rn 'btn-default' Resources/Private/ # Should find ZERO
+grep -rn 'ml-[0-9]\|mr-[0-9]' Resources/Private/ # Should find ZERO
+```
+
+### Phase 8: Accessibility (Recommended)
 - [ ] Add `role="grid"` to data tables
 - [ ] Add `role="row"` to table rows
 - [ ] Add `role="columnheader"` to table headers
@@ -911,7 +1070,7 @@ grep -rn "aria-label" Resources/Private/Templates/ # Should find accessibility l
 grep -rn 'role="grid\|row\|columnheader"' Resources/Private/Templates/ # Should find semantic roles
 ```
 
-### Phase 7: Icon Registration (Important)
+### Phase 9: Icon Registration (Important)
 - [ ] Create `Configuration/Icons.php` if missing
 - [ ] Migrate icon registration from `ext_localconf.php`
 - [ ] Use proper return array structure
@@ -925,7 +1084,7 @@ ls -l Configuration/Icons.php # Should exist
 grep -rn "IconRegistry" ext_localconf.php # Should find ZERO
 ```
 
-### Phase 8: CSRF Protection (Critical)
+### Phase 10: CSRF Protection (Critical)
 - [ ] Use `uriBuilder->uriFor()` for all action URIs
 - [ ] Pass URIs to templates via `assignMultiple()`
 - [ ] Use data attributes in templates: `data-action-uri="{harmonizeActionUri}"`
@@ -938,7 +1097,7 @@ grep -rn '"/typo3/' Resources/ # Should find ZERO (except maybe comments)
 grep "uriFor(" Classes/Controller/Backend/*.php # Should find URI generation
 ```
 
-### Phase 9: Testing and Validation (Critical)
+### Phase 11: Testing and Validation (Critical)
 - [ ] Run unit tests: `composer test:unit`
 - [ ] Run functional tests: `composer test:functional`
 - [ ] Check for PHP deprecation warnings
@@ -957,7 +1116,7 @@ vendor/bin/typo3 cache:flush # Clear caches
 # Manual testing in backend
 ```
 
-### Phase 10: Documentation (Important)
+### Phase 12: Documentation (Important)
 - [ ] Document backend module usage in `Documentation/`
 - [ ] Add screenshots of module UI
 - [ ] Document keyboard shortcuts

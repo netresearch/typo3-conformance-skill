@@ -574,6 +574,52 @@ services:
     public: true
 ```
 
+### Factory Wiring
+
+```yaml
+# ✅ Right: Factory method to create a service via another service
+services:
+  cache.my_extension:
+    class: TYPO3\CMS\Core\Cache\Frontend\VariableFrontend
+    factory: ['@TYPO3\CMS\Core\Cache\CacheManager', 'getCache']
+    arguments: ['my_extension']
+
+  Vendor\ExtensionKey\Service\ConnectionService:
+    factory: ['@TYPO3\CMS\Core\Database\ConnectionPool', 'getConnectionForTable']
+    arguments: ['tx_myext_domain_model_item']
+```
+
+The `factory` shorthand `['@ServiceClass', 'methodName']` calls `ServiceClass->methodName()` with the listed arguments to produce the service instance.
+
+### Interface Aliases
+
+```yaml
+# ✅ Right: Bind interface to concrete implementation
+services:
+  Vendor\ExtensionKey\Service\ImageOptimizerInterface:
+    alias: Vendor\ExtensionKey\Service\DefaultImageOptimizer
+```
+
+This allows constructor injection via the interface type-hint, resolved to the concrete class at runtime.
+
+### EventDispatcher Autowiring
+
+TYPO3 core provides `Psr\EventDispatcher\EventDispatcherInterface` via `#[AsAlias]` — **no Services.yaml entry is needed**. Simply type-hint the interface in your constructor:
+
+```php
+// ✅ Right: Just inject — no YAML registration required
+public function __construct(
+    private readonly EventDispatcherInterface $eventDispatcher,
+) {}
+```
+
+```yaml
+# ❌ Wrong: Unnecessary manual alias for EventDispatcher
+services:
+  Psr\EventDispatcher\EventDispatcherInterface:
+    alias: TYPO3\CMS\Core\EventDispatcher\EventDispatcher
+```
+
 **Advanced Services.yaml Conformance Checklist:**
 - [ ] Event listeners registered with proper tags
 - [ ] Console commands tagged with schedulable flag
@@ -582,6 +628,9 @@ services:
 - [ ] ViewHelpers marked public if needed externally
 - [ ] Service tags include all required attributes (identifier, event, method)
 - [ ] Commands have meaningful names and descriptions
+- [ ] Factory wiring uses `['@ServiceClass', 'method']` shorthand
+- [ ] Interface aliases used for swappable implementations
+- [ ] No unnecessary YAML entries for services autowired by TYPO3 core (e.g., EventDispatcher)
 
 ## PSR-15 Middleware
 
