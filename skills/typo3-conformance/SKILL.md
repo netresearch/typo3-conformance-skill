@@ -1,11 +1,11 @@
 ---
 name: typo3-conformance
-description: "Use when assessing TYPO3 extension quality, conformance checking, standards compliance, modernization to v12/v13/v14, TER readiness, or best practices review. Also triggers on: extension audit, quality score, full assessment, fix all findings, conformance audit."
+description: "Use when assessing TYPO3 extension quality, conformance checking, standards compliance, modernization to v12/v13/v14, TER readiness, or best practices review. Also triggers on: extension audit, quality score, full assessment, fix all findings, conformance audit, Bootstrap 5 migration, CSP compliance, ViewHelper security, XLIFF hygiene."
 ---
 
 # TYPO3 Extension Conformance Checker
 
-Evaluate TYPO3 extensions for standards compliance, architecture patterns, and best practices.
+Evaluate TYPO3 extensions for standards compliance, architecture, and best practices.
 
 ## When to Use
 
@@ -16,15 +16,15 @@ Evaluate TYPO3 extensions for standards compliance, architecture patterns, and b
 
 ## Skill Delegation
 
-- **Testing details**: Delegate to `typo3-testing` skill
-- **Documentation validation**: Delegate to `typo3-docs` skill
+- **Testing**: Delegate to `typo3-testing` skill
+- **Documentation**: Delegate to `typo3-docs` skill
 - **OpenSSF Scorecard**: Delegate to `enterprise-readiness` skill
 
 ## Evaluation Workflow
 
 ### Step 0: Understand Extension Context (always first)
 
-Before checking files, understand: purpose, target TYPO3/PHP version, extension type (plugin, module, site package, library), criticality (production vs experimental), and codebase scope.
+Before checking files, understand: purpose, target TYPO3/PHP version, extension type (plugin, module, site package, library), criticality, and codebase scope.
 
 ### Steps 1-9: Conformance Checks
 
@@ -40,7 +40,7 @@ Before checking files, understand: purpose, target TYPO3/PHP version, extension 
 
 ### Step 10: Verification Loop
 
-After fixes, re-run conformance checks. Document score improvement (e.g., "58 -> 82"). Ensure no regressions.
+After fixes, re-run checks. Document score improvement (e.g., "58 -> 82"). Ensure no regressions.
 
 ## Scoring System
 
@@ -73,7 +73,7 @@ scripts/generate-report.sh /path/to/extension
 
 ## References
 
-Detailed guidance for each evaluation area:
+Guidance for each evaluation area:
 
 - `references/extension-architecture.md` -- Directory structure, required files
 - `references/coding-guidelines.md` -- PSR-12, naming conventions, TYPO3 style
