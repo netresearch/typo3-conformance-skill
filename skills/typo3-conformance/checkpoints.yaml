@@ -409,6 +409,36 @@ mechanical:
     severity: warning
     desc: "composer.json should define homepage URL"
 
+  # === BOOTSTRAP 5 MIGRATION CHECKS ===
+  - id: TC-65
+    type: regex
+    target: "Resources/Private/**/*.html"
+    pattern: 'data-dismiss|data-toggle|data-target|data-ride|data-slide'
+    severity: error
+    desc: "Legacy Bootstrap 4 data attributes detected. Migrate to Bootstrap 5: data-dismiss→data-bs-dismiss, data-toggle→data-bs-toggle, data-target→data-bs-target, data-ride→data-bs-ride, data-slide→data-bs-slide"
+
+  - id: TC-66
+    type: regex
+    target: "Resources/Private/**/*.html"
+    pattern: 'class="[^"]*\b(btn-default|ml-\d|mr-\d|pl-\d|pr-\d|float-left|float-right|font-weight-bold|font-weight-normal|font-italic)\b'
+    severity: warning
+    desc: "Legacy Bootstrap 4 CSS classes detected. Migrate: btn-default→btn-secondary, ml-*→ms-*, mr-*→me-*, pl-*→ps-*, pr-*→pe-*, float-left→float-start, float-right→float-end"
+
+  # === TEMPLATE QUALITY CHECKS ===
+  - id: TC-67
+    type: regex
+    target: "Resources/Private/**/*.html"
+    pattern: 'includeJavaScriptFiles|includeCssFiles'
+    severity: error
+    desc: "Wrong f:be.pageRenderer attribute name. Use includeJsFiles (NOT includeJavaScriptFiles) and includeCssLibs (NOT includeCssFiles). Wrong names silently fail to load assets"
+
+  - id: TC-68
+    type: regex
+    target: "Resources/Private/**/*.html"
+    pattern: '<script[^>]*>(?!<!--)'
+    severity: error
+    desc: "Inline <script> tags violate CSP. Move JavaScript to external files loaded via f:be.pageRenderer includeJsFiles or AssetCollector"
+
 llm_reviews:
   # === CODE QUALITY REVIEWS ===
   - id: TC-60
@@ -448,7 +478,7 @@ llm_reviews:
     desc: "TCA configuration should follow current standards"
 
   # === DOCUMENTATION REVIEWS ===
-  - id: TC-70
+  - id: TC-64
     domain: documentation
     prompt: |
       Check extension documentation completeness:
@@ -518,3 +548,50 @@ llm_reviews:
       across releases, so it only needs to run once (or when URLs change).
     severity: warning
     desc: "TER publish workflow should include metadata setup via tailor ter:update"
+
+  # === CONFIGURATION SYNC REVIEWS ===
+  - id: TC-69
+    domain: configuration
+    prompt: |
+      Compare TYPO3 version constraints between ext_emconf.php and composer.json:
+      1. Check that 'typo3' constraint in ext_emconf.php constraints.depends matches composer.json require.typo3/cms-core version range
+      2. Check that PHP version constraint matches between both files
+      3. Flag any mismatch that would cause installation failures
+    severity: error
+    desc: "ext_emconf.php and composer.json version constraints must be synchronized to prevent installation failures"
+
+  # === DEPENDENCY INJECTION REVIEWS ===
+  - id: TC-70
+    domain: architecture
+    prompt: |
+      Review Services.yaml for proper dependency injection patterns:
+      1. Check factory wiring uses correct syntax: factory: ['@ServiceClass', 'methodName'] with arguments
+      2. Check interface alias bindings map interfaces to concrete implementations
+      3. Check EventDispatcherInterface is properly autowired for event-dispatching services
+      4. Flag any manual service definition that could use autowiring instead
+    severity: warning
+    desc: "Services.yaml should use proper factory wiring, interface bindings, and EventDispatcher autowiring patterns"
+
+  # === SECURITY REVIEWS ===
+  - id: TC-71
+    domain: security
+    prompt: |
+      Review custom ViewHelper classes for XSS prevention:
+      1. Check that ALL dynamic attribute values in tag() or manual HTML construction use htmlspecialchars() with ENT_QUOTES
+      2. Check that render() methods don't concatenate user input into HTML without escaping
+      3. Check that TagBuilder is used instead of manual string concatenation where possible
+      4. Flag any unescaped attribute value as critical XSS risk
+    severity: error
+    desc: "Custom ViewHelper tag attributes must use htmlspecialchars(value, ENT_QUOTES) to prevent XSS"
+
+  # === TRANSLATION HYGIENE REVIEWS ===
+  - id: TC-72
+    domain: quality
+    prompt: |
+      Check for unused XLIFF translation keys:
+      1. List all trans-unit id values in Resources/Private/Language/*.xlf files
+      2. Search for each key in Classes/**/*.php (LLL: references) and Resources/Private/Templates/**/*.html (f:translate references)
+      3. Flag keys that appear in XLIFF but are never referenced in code or templates
+      4. Also flag translation keys referenced in code but missing from XLIFF
+    severity: info
+    desc: "Unused XLIFF translation keys should be removed to maintain translation hygiene"

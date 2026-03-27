@@ -1,6 +1,6 @@
 ---
 name: typo3-conformance
-description: "Use when assessing TYPO3 extension quality, conformance checking, standards compliance audits, modernization planning to v12/v13/v14 standards, TER readiness validation, or best practices review. Also triggers on: extension audit, quality score, coding guidelines check."
+description: "Use when assessing TYPO3 extension quality, conformance checking, standards compliance audits, modernization planning to v12/v13/v14 standards, TER readiness validation, or best practices review. Also triggers on: extension audit, quality score, coding guidelines check, Bootstrap 5 migration, CSP compliance, ViewHelper security, XLIFF translation hygiene, Services.yaml patterns."
 ---
 
 # TYPO3 Extension Conformance Checker
