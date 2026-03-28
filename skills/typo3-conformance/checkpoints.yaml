@@ -882,7 +882,7 @@ llm_reviews:
       missing=0
       for tag in $(git tag --sort=-v:refname 2>/dev/null | head -20); do
         version=$(echo "$tag" | sed 's/^v//')
-        if ! grep -qP "^##.*${version}" CHANGELOG.md 2>/dev/null; then
+        if ! grep -qP "^## \\[${version}\\]" CHANGELOG.md 2>/dev/null; then
           echo "WARN: No CHANGELOG.md entry for tag $tag"
           missing=$((missing+1))
         fi
