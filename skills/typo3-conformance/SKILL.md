@@ -24,9 +24,9 @@ Evaluate TYPO3 extensions for standards compliance, architecture, and best pract
 
 ### Step 0: Understand Extension Context (always first)
 
-Before checking files, understand: purpose, target TYPO3/PHP version, extension type (plugin, module, site package, library), criticality, and codebase scope.
+Understand: purpose, target TYPO3/PHP version, extension type (plugin, module, site package, library), criticality, codebase scope.
 
-### Steps 1-9: Conformance Checks
+### Steps 1-10: Conformance Checks
 
 1. **Initial Assessment** -- Extension key, target TYPO3 version, extension type
 2. **File Structure** -- composer.json, ext_emconf.php, required directories
@@ -37,14 +37,15 @@ Before checking files, understand: purpose, target TYPO3/PHP version, extension 
 7. **Testing** -- PHPUnit setup, Playwright E2E, coverage >70%
 8. **Best Practices** -- DDEV setup, runTests.sh, quality tools, CI/CD
 9. **TER Publishing** -- Workflow, upload comment format, CI compatibility
+10. **Assessment Audit Checks** -- PHPStan baseline, TCA searchFields/default_sortby, DI interface aliases, enum constants, cache double-lookup, repository query properties, XLIFF completeness
 
-### Step 10: Verification Loop
+### Step 11: Verification Loop
 
 After fixes, re-run checks. Document score improvement (e.g., "58 -> 82"). Ensure no regressions.
 
 ## Scoring System
 
-**Base Score (0-100):** Architecture (20) + Guidelines (20) + PHP Patterns (20) + Testing (20) + Best Practices (20). Excellence bonus up to 22 additional points.
+**Base Score (0-100):** Architecture (20) + Guidelines (20) + PHP Patterns (20) + Testing (20) + Best Practices (20). Excellence bonus up to 22 points.
 
 | Score Range | Interpretation | Action |
 |------------|----------------|--------|
@@ -54,16 +55,13 @@ After fixes, re-run checks. Document score improvement (e.g., "58 -> 82"). Ensur
 | 50-69 | Needs Work | Significant improvements required |
 | Below 50 | Critical | Block deployment until resolved |
 
-**Critical issues** (security, data loss, core incompatibility) block deployment regardless of score.
+**Critical issues** (security, data loss, core incompatibility) block deployment regardless.
 
 ## Running Checks
 
 ```bash
-# Full conformance check
-scripts/check-conformance.sh /path/to/extension
-
-# Individual checks
-scripts/check-file-structure.sh /path/to/extension
+scripts/check-conformance.sh /path/to/extension    # Full check
+scripts/check-file-structure.sh /path/to/extension  # Individual checks
 scripts/check-coding-standards.sh /path/to/extension
 scripts/check-architecture.sh /path/to/extension
 scripts/check-testing.sh /path/to/extension
@@ -76,19 +74,19 @@ scripts/generate-report.sh /path/to/extension
 Guidance for each evaluation area:
 
 - `references/extension-architecture.md` -- Directory structure, required files
-- `references/coding-guidelines.md` -- PSR-12, naming conventions, TYPO3 style
-- `references/php-architecture.md` -- DI, services, events, Extbase, middleware
-- `references/testing-standards.md` -- PHPUnit and Playwright requirements
-- `references/composer-validation.md` -- composer.json validation rules
-- `references/ext-emconf-validation.md` -- TER requirements, field specs
-- `references/version-requirements.md` -- TYPO3/PHP compatibility matrix
+- `references/coding-guidelines.md` -- PSR-12, naming, TYPO3 style
+- `references/php-architecture.md` -- DI, services, events, middleware
+- `references/testing-standards.md` -- PHPUnit/Playwright requirements
+- `references/composer-validation.md` -- composer.json rules
+- `references/ext-emconf-validation.md` -- TER field specs
+- `references/version-requirements.md` -- TYPO3/PHP compatibility
 - `references/dual-version-compatibility.md` -- v12+v13 patterns
-- `references/v13-deprecations.md` -- Deprecated APIs and migration paths
-- `references/backend-module-v13.md` -- ES6, Modal API, accessibility
+- `references/v13-deprecations.md` -- Deprecated APIs, migration
+- `references/backend-module-v13.md` -- ES6, Modal API, a11y
 - `references/ter-publishing.md` -- TER publication requirements
-- `references/report-template.md` -- Standard report structure
-- `references/excellence-indicators.md` -- Bonus scoring criteria
-- `references/best-practices.md` -- Tea extension organizational patterns
+- `references/report-template.md` -- Report structure
+- `references/excellence-indicators.md` -- Bonus scoring
+- `references/best-practices.md` -- Organizational patterns
 
 ### Asset Templates
 

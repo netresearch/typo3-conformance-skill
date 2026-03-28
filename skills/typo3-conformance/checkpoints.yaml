@@ -500,6 +500,61 @@ mechanical:
     severity: info
     desc: "require-dev should reference netresearch/typo3-ci-workflows for centralized CI tooling"
 
+  # === PHPSTAN BASELINE CHECKS ===
+  - id: TC-150
+    type: command
+    pattern: "if [ -f phpstan-baseline.neon ]; then count=$(grep -c 'message:' phpstan-baseline.neon 2>/dev/null || echo 0); if [ \"$count\" -gt 10 ]; then echo \"WARN: PHPStan baseline has $count suppressed errors (should trend toward 0)\" && exit 1; fi; elif [ -f Build/phpstan-baseline.neon ]; then count=$(grep -c 'message:' Build/phpstan-baseline.neon 2>/dev/null || echo 0); if [ \"$count\" -gt 10 ]; then echo \"WARN: PHPStan baseline has $count suppressed errors (should trend toward 0)\" && exit 1; fi; fi; exit 0"
+    severity: warning
+    desc: "PHPStan baseline should be empty or minimal (>10 suppressed errors indicates technical debt)"
+
+  # === TCA SEARCHFIELDS AND SORTBY CHECKS ===
+  - id: TC-151
+    type: command
+    pattern: "find Configuration/TCA/ -name '*.php' 2>/dev/null | xargs grep -lP \"'ctrl'\" 2>/dev/null | while read f; do if ! grep -qP \"'searchFields'\" \"$f\" 2>/dev/null; then echo \"FAIL: $f missing searchFields in ctrl\" && exit 1; fi; done || exit 1"
+    severity: error
+    desc: "All TCA ctrl arrays must define searchFields for backend search functionality"
+
+  - id: TC-152
+    type: command
+    pattern: "find Configuration/TCA/ -name '*.php' 2>/dev/null | xargs grep -lP \"['\\\"]sortby['\\\"]\" 2>/dev/null | while read f; do if ! grep -qP \"['\\\"]default_sortby['\\\"]\" \"$f\" 2>/dev/null; then echo \"WARN: $f has sortby but no default_sortby\" && exit 1; fi; done"
+    severity: warning
+    desc: "TCA tables with sortby should also define default_sortby for consistent ordering"
+
+  # === DI INTERFACE ALIAS CHECKS ===
+  - id: TC-153
+    type: command
+    pattern: "interfaces=$(grep -rhoP '[A-Z][a-zA-Z0-9_]*Interface' Classes/ 2>/dev/null | sort -u); if [ -n \"$interfaces\" ] && [ -f Configuration/Services.yaml ]; then missing=0; for iface in $interfaces; do case $iface in ServerRequestInterface|ResponseInterface|ContainerInterface|LoggerInterface|EventDispatcherInterface|CacheInterface|RequestFactoryInterface|UriFactoryInterface|StreamFactoryInterface) continue ;; esac; if ! grep -q \"$iface\" Configuration/Services.yaml 2>/dev/null; then echo \"WARN: Interface $iface used in Classes/ but not aliased in Services.yaml\"; missing=1; fi; done; if [ \"$missing\" -eq 1 ]; then exit 1; fi; fi; exit 0"
+    severity: warning
+    desc: "Interfaces used for constructor injection should have explicit aliases in Services.yaml"
+
+  # === CACHE DOUBLE-LOOKUP ANTI-PATTERN ===
+  - id: TC-154
+    type: command
+    pattern: "grep -rnP '->has\\(' Classes/ 2>/dev/null | grep -i cache | head -3 && echo 'WARN: Cache has() followed by get() is a double-lookup anti-pattern; use get() directly and check for false' && exit 1 || exit 0"
+    severity: warning
+    desc: "Cache get should not be preceded by has() -- use get() directly and check for false"
+
+  # === REPOSITORY QUERY PROPERTY NAME CHECK ===
+  - id: TC-155
+    type: command
+    pattern: "grep -rnP '->equals\\(' Classes/Domain/Repository/ 2>/dev/null | grep -P '_[a-z]' | head -3 && echo 'WARN: Extbase repository queries should use model property names (camelCase), not database column names (snake_case)' && exit 1 || exit 0"
+    severity: error
+    desc: "Extbase repository queries must use model property names (camelCase), not database column names (snake_case)"
+
+  # === XLIFF COMPLETENESS CHECK ===
+  - id: TC-156
+    type: command
+    pattern: "lll_refs=$(grep -rhoP 'LLL:EXT:[^/]+/Resources/Private/Language/[^:]+:[a-zA-Z0-9_.]+' Configuration/ Classes/ Resources/Private/Templates/ 2>/dev/null | sed 's/.*://' | sort -u); if [ -n \"$lll_refs\" ]; then missing=0; for key in $lll_refs; do if ! grep -rq \"id=\\\"$key\\\"\" Resources/Private/Language/ 2>/dev/null; then echo \"MISSING XLIFF key: $key\"; missing=$((missing+1)); fi; done; if [ $missing -gt 0 ]; then echo \"FAIL: $missing LLL references have no XLIFF trans-unit\" && exit 1; fi; fi; exit 0"
+    severity: error
+    desc: "All LLL: references in TCA, classes, and templates must have corresponding XLIFF trans-unit entries"
+
+  # === DEPRECATED CONSTANTS WITH ENUM REPLACEMENTS ===
+  - id: TC-157
+    type: command
+    pattern: "grep -rnP '@deprecated' Classes/ 2>/dev/null | grep -i 'const ' | head -3 && grep -rlP '\\benum\\b' Classes/ 2>/dev/null | head -1 && echo 'WARN: Deprecated constants coexist with enum replacements -- verify deprecated constants are not still referenced in active code paths' && exit 1 || exit 0"
+    severity: warning
+    desc: "Deprecated string constants should not coexist with enum replacements in active code paths"
+
   # === EXCELLENCE INDICATORS (bonus) ===
   - id: TC-58
     type: file_exists
@@ -737,6 +792,57 @@ llm_reviews:
       4. Also flag translation keys referenced in code but missing from XLIFF
     severity: info
     desc: "Unused XLIFF translation keys should be removed to maintain translation hygiene"
+
+  # === ASSESSMENT AUDIT REVIEWS (from comprehensive audit session) ===
+  - id: TC-73
+    domain: architecture
+    prompt: |
+      Review dependency injection completeness:
+      1. List all constructor parameters with interface type-hints in Classes/
+      2. Check Configuration/Services.yaml for explicit alias bindings for each interface
+      3. PSR interfaces (Psr\*) and core TYPO3 interfaces (LoggerInterface, EventDispatcherInterface)
+         are autowired and don't need aliases -- skip these
+      4. Custom or extension-specific interfaces MUST have explicit aliases in Services.yaml
+      5. Flag any interface used in constructor injection that lacks a Services.yaml alias
+    severity: error
+    desc: "All custom interfaces used for constructor injection must have explicit aliases in Services.yaml"
+
+  - id: TC-74
+    domain: i18n
+    prompt: |
+      Cross-reference all LLL: translation key usage with XLIFF definitions:
+      1. Collect all LLL:EXT:*/Resources/Private/Language/*:key references from TCA files,
+         PHP classes, and Fluid templates
+      2. Parse all .xlf files in Resources/Private/Language/ for trans-unit id values
+      3. Report keys referenced in code but missing from XLIFF (broken translations)
+      4. Report keys defined in XLIFF but never referenced (dead translations)
+      5. Check that default language XLIFF has all keys used in the extension
+    severity: error
+    desc: "All LLL: references must have corresponding XLIFF entries; orphaned XLIFF keys should be removed"
+
+  - id: TC-75
+    domain: code-quality
+    prompt: |
+      Check for deprecated constants that coexist with enum replacements:
+      1. Find all class constants marked @deprecated in Classes/
+      2. Check if enum classes exist that provide replacement values
+      3. Search for references to the deprecated constants in active (non-deprecated) code paths
+      4. Flag any active code that still uses deprecated constants when enum equivalents exist
+      5. Recommend migration path from constants to enums
+    severity: warning
+    desc: "Deprecated constants should not be referenced in active code when enum replacements exist"
+
+  - id: TC-76
+    domain: performance
+    prompt: |
+      Check for cache double-lookup anti-pattern:
+      1. Find all cache interaction code in Classes/ (FrontendInterface, CacheManager)
+      2. Identify patterns where cache->has() is called before cache->get() in the same method
+      3. This is an anti-pattern because it requires two cache lookups instead of one
+      4. The correct pattern is: $result = $cache->get($key); if ($result === false) { ... }
+      5. Flag all instances of has()-then-get() pattern with suggested fix
+    severity: warning
+    desc: "Cache has()+get() double-lookup should be replaced with get() and false check"
 
   # === CODING STANDARDS REVIEWS ===
   - id: TC-95
