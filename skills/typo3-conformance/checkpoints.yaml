@@ -853,3 +853,184 @@ llm_reviews:
       and Build/*.php. Exception: ext_emconf.php (TER cannot parse strict_types).
     severity: warning
     desc: "Copyright headers on all PHP files including configuration"
+
+  # === ASSESSMENT-DERIVED CHECKPOINTS (quality audit findings) ===
+
+  # --- Mechanical checks from assessment findings ---
+
+  - id: TC-160
+    name: makeinstance-usage
+    type: command
+    pattern: "grep -rnP 'GeneralUtility::makeInstance\\(' Classes/ 2>/dev/null | grep -v 'Classes/Task/' | grep -v 'Classes/Scheduler/' | grep -v 'ConnectionPool' | grep -v 'QueryBuilder' | grep -v 'Typo3QuerySettings' | grep -v 'FlashMessage' | head -5 && echo 'WARN: GeneralUtility::makeInstance in non-Scheduler classes should use constructor DI' && exit 1 || exit 0"
+    severity: warning
+    desc: "GeneralUtility::makeInstance in non-Scheduler classes should use constructor dependency injection instead"
+    tags: [di, architecture, assessment]
+
+  - id: TC-161
+    name: datahandler-hook-completeness
+    type: command
+    pattern: "if grep -qP 'processDatamapClass' ext_localconf.php 2>/dev/null; then if ! grep -qP 'processCmdmapClass' ext_localconf.php 2>/dev/null; then echo 'FAIL: processDatamapClass registered but processCmdmapClass missing -- delete/copy operations will not be handled'; exit 1; fi; fi; exit 0"
+    severity: warning
+    desc: "If processDatamapClass is registered, processCmdmapClass should also be registered for delete/copy handling"
+    tags: [hooks, datahandler, completeness, assessment]
+
+  - id: TC-162
+    name: changelog-completeness
+    type: command
+    command: |
+      [ ! -f CHANGELOG.md ] && exit 0
+      missing=0
+      for tag in $(git tag --sort=-v:refname 2>/dev/null | head -20); do
+        version=$(echo "$tag" | sed 's/^v//')
+        if ! grep -qP "^##.*${version}" CHANGELOG.md 2>/dev/null; then
+          echo "WARN: No CHANGELOG.md entry for tag $tag"
+          missing=$((missing+1))
+        fi
+      done
+      if [ "$missing" -gt 0 ]; then
+        echo "FAIL: $missing tagged versions missing from CHANGELOG.md"
+        exit 1
+      fi
+      exit 0
+    severity: warning
+    desc: "CHANGELOG.md should have entries for all tagged versions (compare git tags vs changelog headings)"
+    tags: [documentation, changelog, completeness, assessment]
+
+  # --- LLM review checks from assessment findings ---
+
+  - id: TC-96
+    name: version-consistency
+    domain: configuration
+    prompt: |
+      Compare the version declared in guides.xml (if it exists in Documentation/)
+      with the version in ext_emconf.php:
+      1. Extract the <release> or <version> value from Documentation/guides.xml
+      2. Extract the 'version' value from ext_emconf.php
+      3. These MUST match exactly
+      4. Also check composer.json version field if present
+      5. Flag any mismatch as it causes documentation rendering to show wrong version
+    severity: error
+    desc: "guides.xml version must match ext_emconf.php version to avoid documentation version mismatch"
+    tags: [documentation, version, sync, assessment]
+
+  - id: TC-97
+    name: n-plus-one-queries
+    domain: performance
+    prompt: |
+      Detect N+1 query patterns in Classes/:
+      1. Look for loop constructs (foreach, for, while) that contain calls to
+         repository methods (findBy*, findAll, findOneBy*) or adapter/client
+         methods (retrieve, fetch, get, list, query) inside the loop body
+      2. The classic pattern is: list items in outer call, then retrieve details
+         for each item inside a loop (list-then-retrieve anti-pattern)
+      3. Flag any repository or service method called inside a loop that could
+         be batched into a single query with an IN-clause or bulk fetch
+      4. Check for DataMapper/QueryBuilder calls inside foreach loops
+      5. Suggest batching strategy for each finding
+    severity: warning
+    desc: "Detect loop-inside-loop patterns where inner loop calls repository/adapter methods (N+1 query anti-pattern)"
+    tags: [performance, queries, n-plus-one, assessment]
+
+  - id: TC-98
+    name: interface-implementation-sync
+    domain: architecture
+    prompt: |
+      Check that interface and implementation classes are synchronized:
+      1. Find all interfaces defined in Classes/ (files ending in Interface.php)
+      2. For each interface, find the implementing class(es)
+      3. Compare public methods: all public methods on the implementation that
+         are part of the domain contract should be declared in the interface
+      4. Flag public methods on implementations that are missing from their interface
+         (excluding __construct, framework-required methods, and getter/setter pairs
+         for internal state)
+      5. This ensures the interface remains the complete contract for DI consumers
+    severity: warning
+    desc: "All public domain methods on implementation classes should be declared in their interface"
+    tags: [architecture, interfaces, di, assessment]
+
+  - id: TC-99
+    name: hardcoded-template-strings
+    domain: i18n
+    prompt: |
+      Check Fluid templates (.html) in Resources/Private/ for hardcoded English strings:
+      1. Scan all .html files for quoted string attributes containing 3+ English words
+         (e.g. title="Click here to submit", placeholder="Enter your name")
+      2. Check for bare text content between HTML tags that is clearly English prose
+         (not Fluid expressions, not HTML entities, not CSS class names)
+      3. These should use f:translate viewhelper or LLL: references instead
+      4. Exclude: Fluid namespace declarations, xmlns attributes, CSS class names,
+         JavaScript code, and technical identifiers
+      5. Flag each finding with the file, line, and suggested f:translate replacement
+    severity: warning
+    desc: "Fluid templates should use f:translate instead of hardcoded English strings (check quoted strings >3 words in attributes)"
+    tags: [i18n, templates, hardcoded-strings, assessment]
+
+  - id: TC-100b
+    name: makefile-agents-consistency
+    domain: documentation
+    prompt: |
+      Cross-reference AGENTS.md and Makefile for consistency:
+      1. Parse AGENTS.md for any documented make targets or commands referencing
+         'make <target>' patterns
+      2. Parse Makefile for actually defined targets
+      3. Flag targets mentioned in AGENTS.md that do not exist in Makefile
+      4. Flag important Makefile targets that are not documented in AGENTS.md
+      5. This ensures agent instructions match available automation
+    severity: info
+    desc: "Targets documented in AGENTS.md should exist in Makefile and vice versa"
+    tags: [documentation, consistency, makefile, agents, assessment]
+
+  - id: TC-100c
+    name: upgrade-wizard-for-schema
+    domain: architecture
+    prompt: |
+      Check if database schema changes have corresponding upgrade wizards:
+      1. Parse ext_tables.sql for column definitions
+      2. Check git history or compare with previous tagged versions for NEW columns
+         (columns not present in earlier versions)
+      3. If new columns are added that require data migration (not just nullable
+         additions), verify an UpgradeWizardInterface implementation exists in
+         Classes/Updates/ or Classes/Upgrade/
+      4. New required columns (NOT NULL without DEFAULT), renamed columns, or
+         type changes especially need upgrade wizards
+      5. Flag schema changes that likely need migration but lack an upgrade wizard
+    severity: warning
+    desc: "New ext_tables.sql columns requiring data migration should have an UpgradeWizardInterface implementation"
+    tags: [architecture, upgrade, schema, assessment]
+
+  - id: TC-100d
+    name: ext-conf-template-alignment
+    domain: configuration
+    prompt: |
+      Verify ext_conf_template.txt options match implemented functionality:
+      1. Parse all option keys from ext_conf_template.txt (or system.yaml
+         extension configuration)
+      2. Search Classes/ for references to each configuration option via
+         ExtensionConfiguration->get() or $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']
+      3. Flag options defined in ext_conf_template.txt but never read in code
+         (phantom options for unimplemented features)
+      4. Flag options read in code but not defined in ext_conf_template.txt
+         (missing configuration UI)
+      5. Check that option descriptions match actual behavior
+    severity: warning
+    desc: "Options in ext_conf_template.txt should match implemented functionality (no phantom options)"
+    tags: [configuration, alignment, assessment]
+
+  - id: TC-100e
+    name: domain-model-validation
+    domain: architecture
+    prompt: |
+      Check domain models with cryptographic or hash fields for proper validation:
+      1. Find domain model classes in Classes/Domain/Model/ that contain properties
+         for hashes, checksums, signatures, tokens, or cryptographic values
+      2. Check if these models have a named constructor (static factory method)
+         that validates field consistency (e.g. verifying a checksum matches its
+         source data, or a signature is valid for its payload)
+      3. If models only have a default constructor with setters, there is no
+         guarantee of field consistency at creation time
+      4. Flag models with crypto fields that lack validation in their construction
+      5. Recommend implementing a named constructor pattern like
+         ::createVerified() or ::fromPayload() that enforces invariants
+    severity: warning
+    desc: "Domain models with cryptographic fields should have a named constructor that validates field consistency"
+    tags: [architecture, domain-model, validation, security, assessment]
