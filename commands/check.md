@@ -34,12 +34,18 @@ Run a conformance assessment on the current TYPO3 extension.
    - Dependency injection (Services.yaml)
    - No direct $GLOBALS access
    - No deprecated API usage
+   - PHPStan baseline size (should trend toward zero)
+   - Deprecated constants not coexisting with enum replacements in active code
 
 4. **TYPO3 Best Practices**
    - FlexForms in Configuration/FlexForms/
    - TypoScript in Configuration/TypoScript/
-   - TCA in Configuration/TCA/
+   - TCA in Configuration/TCA/ with searchFields and default_sortby
    - Fluid templates in Resources/Private/Templates/
+   - DI interface aliases for all injected interfaces in Services.yaml
+   - XLIFF key completeness (all LLL: references have matching trans-units)
+   - No cache has()+get() double-lookup anti-pattern
+   - Extbase repository queries use model property names, not column names
 
 5. **Testing Infrastructure**
    - PHPUnit configuration

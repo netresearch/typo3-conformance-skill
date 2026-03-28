@@ -26,7 +26,7 @@ Evaluate TYPO3 extensions for standards compliance, architecture, and best pract
 
 Before checking files, understand: purpose, target TYPO3/PHP version, extension type (plugin, module, site package, library), criticality, and codebase scope.
 
-### Steps 1-9: Conformance Checks
+### Steps 1-10: Conformance Checks
 
 1. **Initial Assessment** -- Extension key, target TYPO3 version, extension type
 2. **File Structure** -- composer.json, ext_emconf.php, required directories
@@ -37,6 +37,7 @@ Before checking files, understand: purpose, target TYPO3/PHP version, extension 
 7. **Testing** -- PHPUnit setup, Playwright E2E, coverage >70%
 8. **Best Practices** -- DDEV setup, runTests.sh, quality tools, CI/CD
 9. **TER Publishing** -- Workflow, upload comment format, CI compatibility
+10. **Assessment Audit Checks** -- PHPStan baseline size, TCA searchFields/default_sortby, DI interface aliases, deprecated constants alongside enums, cache double-lookup anti-pattern, repository query property names, XLIFF key completeness
 
 ### Step 10: Verification Loop
 
