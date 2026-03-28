@@ -516,14 +516,14 @@ mechanical:
 
   - id: TC-152
     type: command
-    pattern: "find Configuration/TCA/ -name '*.php' 2>/dev/null | xargs grep -lP \"'sortby'\" 2>/dev/null | while read f; do if ! grep -qP \"'default_sortby'\" \"$f\" 2>/dev/null; then echo \"WARN: $f has sortby but no default_sortby\" && exit 1; fi; done || exit 0"
+    pattern: "find Configuration/TCA/ -name '*.php' 2>/dev/null | xargs grep -lP \"['\\\"]sortby['\\\"]\" 2>/dev/null | while read f; do if ! grep -qP \"['\\\"]default_sortby['\\\"]\" \"$f\" 2>/dev/null; then echo \"WARN: $f has sortby but no default_sortby\" && exit 1; fi; done"
     severity: warning
     desc: "TCA tables with sortby should also define default_sortby for consistent ordering"
 
   # === DI INTERFACE ALIAS CHECKS ===
   - id: TC-153
     type: command
-    pattern: "interfaces=$(grep -rhoP '[A-Z][a-zA-Z0-9_]*Interface' Classes/ 2>/dev/null | sort -u); if [ -n \"$interfaces\" ] && [ -f Configuration/Services.yaml ]; then for iface in $interfaces; do case $iface in ServerRequestInterface|ResponseInterface|ContainerInterface|LoggerInterface|EventDispatcherInterface|CacheInterface|RequestFactoryInterface|UriFactoryInterface|StreamFactoryInterface) continue ;; esac; if ! grep -q \"$iface\" Configuration/Services.yaml 2>/dev/null; then echo \"WARN: Interface $iface used in Classes/ but not aliased in Services.yaml\"; fi; done; fi; exit 0"
+    pattern: "interfaces=$(grep -rhoP '[A-Z][a-zA-Z0-9_]*Interface' Classes/ 2>/dev/null | sort -u); if [ -n \"$interfaces\" ] && [ -f Configuration/Services.yaml ]; then missing=0; for iface in $interfaces; do case $iface in ServerRequestInterface|ResponseInterface|ContainerInterface|LoggerInterface|EventDispatcherInterface|CacheInterface|RequestFactoryInterface|UriFactoryInterface|StreamFactoryInterface) continue ;; esac; if ! grep -q \"$iface\" Configuration/Services.yaml 2>/dev/null; then echo \"WARN: Interface $iface used in Classes/ but not aliased in Services.yaml\"; missing=1; fi; done; if [ \"$missing\" -eq 1 ]; then exit 1; fi; fi; exit 0"
     severity: warning
     desc: "Interfaces used for constructor injection should have explicit aliases in Services.yaml"
 
