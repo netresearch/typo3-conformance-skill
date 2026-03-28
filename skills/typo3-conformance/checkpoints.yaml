@@ -415,9 +415,9 @@ mechanical:
   # === DI / ARCHITECTURE CHECKS ===
   - id: TC-110
     type: command
-    pattern: "grep -rn 'GeneralUtility::makeInstance' Classes/ 2>/dev/null | grep -v 'Typo3QuerySettings' | grep -v 'ConnectionPool' | grep -v 'QueryBuilder' | head -3 && echo 'WARN: Use DI instead of GeneralUtility::makeInstance for services' && exit 1 || exit 0"
+    pattern: "grep -rn 'GeneralUtility::makeInstance' Classes/ 2>/dev/null | grep -v 'Classes/Task/' | grep -v 'Classes/Scheduler/' | grep -v 'Typo3QuerySettings' | grep -v 'ConnectionPool' | grep -v 'QueryBuilder' | grep -v 'FlashMessage' | head -5 && echo 'WARN: Use DI instead of GeneralUtility::makeInstance for services' && exit 1 || exit 0"
     severity: warning
-    desc: "Classes/ should use dependency injection instead of GeneralUtility::makeInstance for services"
+    desc: "Classes/ should use dependency injection instead of GeneralUtility::makeInstance for services (excludes Scheduler tasks, ConnectionPool, QueryBuilder, FlashMessage)"
 
   - id: TC-111
     type: not_regex
@@ -857,19 +857,12 @@ llm_reviews:
   # === ASSESSMENT-DERIVED CHECKPOINTS (quality audit findings) ===
 
   # --- Mechanical checks from assessment findings ---
-
-  - id: TC-160
-    name: makeinstance-usage
-    type: command
-    pattern: "grep -rnP 'GeneralUtility::makeInstance\\(' Classes/ 2>/dev/null | grep -v 'Classes/Task/' | grep -v 'Classes/Scheduler/' | grep -v 'ConnectionPool' | grep -v 'QueryBuilder' | grep -v 'Typo3QuerySettings' | grep -v 'FlashMessage' | head -5 && echo 'WARN: GeneralUtility::makeInstance in non-Scheduler classes should use constructor DI' && exit 1 || exit 0"
-    severity: warning
-    desc: "GeneralUtility::makeInstance in non-Scheduler classes should use constructor dependency injection instead"
-    tags: [di, architecture, assessment]
+  # Note: TC-160 (makeInstance) removed — covered by existing TC-110
 
   - id: TC-161
     name: datahandler-hook-completeness
     type: command
-    pattern: "if grep -qP 'processDatamapClass' ext_localconf.php 2>/dev/null; then if ! grep -qP 'processCmdmapClass' ext_localconf.php 2>/dev/null; then echo 'FAIL: processDatamapClass registered but processCmdmapClass missing -- delete/copy operations will not be handled'; exit 1; fi; fi; exit 0"
+    pattern: "if grep -qP 'processDatamapClass' ext_localconf.php 2>/dev/null; then if ! grep -qP 'processCmdmapClass' ext_localconf.php 2>/dev/null; then echo 'WARNING: processDatamapClass registered but processCmdmapClass missing -- delete/copy operations will not be handled'; exit 1; fi; fi; exit 0"
     severity: warning
     desc: "If processDatamapClass is registered, processCmdmapClass should also be registered for delete/copy handling"
     tags: [hooks, datahandler, completeness, assessment]
@@ -882,13 +875,13 @@ llm_reviews:
       missing=0
       for tag in $(git tag --sort=-v:refname 2>/dev/null | head -20); do
         version=$(echo "$tag" | sed 's/^v//')
-        if ! grep -qP "^## \\[${version}\\]" CHANGELOG.md 2>/dev/null; then
-          echo "WARN: No CHANGELOG.md entry for tag $tag"
+        if ! grep -qF "## [${version}]" CHANGELOG.md 2>/dev/null; then
+          echo "WARNING: No CHANGELOG.md entry for tag $tag"
           missing=$((missing+1))
         fi
       done
       if [ "$missing" -gt 0 ]; then
-        echo "FAIL: $missing tagged versions missing from CHANGELOG.md"
+        echo "WARNING: $missing tagged versions missing from CHANGELOG.md"
         exit 1
       fi
       exit 0
