@@ -398,7 +398,17 @@ mechanical:
 
   - id: TC-103
     type: command
-    pattern: "grep -rlP 'foreign_table' Configuration/TCA/ 2>/dev/null | xargs grep -LP 'default' 2>/dev/null | head -1 && echo 'WARN: select fields with foreign_table should define a default value' && exit 1 || exit 0"
+    command: |
+      found=$(find Configuration/TCA/ -name '*.php' -exec grep -lP 'foreign_table' {} + 2>/dev/null)
+      [ -z "$found" ] && exit 0
+      missing=$(echo "$found" | while IFS= read -r f; do
+        grep -LP 'default' "$f" 2>/dev/null
+      done)
+      if [ -n "$missing" ]; then
+        echo "TCA files with foreign_table but no default value: $missing"
+        exit 1
+      fi
+      exit 0
     severity: warning
     desc: "TCA select fields with foreign_table should define a default value to avoid NULL issues"
 
@@ -425,9 +435,14 @@ mechanical:
 
   # === SECURITY PATTERN CHECKS ===
   - id: TC-120
-    type: not_regex
-    target: Classes/**/*.php
-    pattern: "(shell_exec|\\bexec\\s*\\(|\\bsystem\\s*\\(|passthru\\s*\\()"
+    type: command
+    command: |
+      found=$(find Classes/ -name '*.php' -exec grep -lP '(shell_exec|\bexec\s*\(|\bsystem\s*\(|passthru\s*\()' {} + 2>/dev/null)
+      if [ -n "$found" ]; then
+        echo "Prohibited function usage found in: $found"
+        exit 1
+      fi
+      exit 0
     severity: error
     desc: "Must not use shell_exec, exec, system, or passthru; use CommandUtility or Symfony Process"
 
@@ -435,22 +450,22 @@ mechanical:
     type: not_contains
     target: Classes/**/*.php
     pattern: "md5(uniqid"
-    severity: warning
-    desc: "Should not use md5(uniqid()); use random_bytes() or GeneralUtility::makeInstance(Random::class)"
+    severity: error
+    desc: "Must not use md5(uniqid()); use random_bytes() or GeneralUtility::makeInstance(Random::class) — md5(uniqid()) is cryptographically weak and a security vulnerability"
 
   - id: TC-122
     type: not_regex
     target: Classes/**/*.php
     pattern: "\\bserialize\\s*\\("
-    severity: warning
-    desc: "Avoid serialize(); prefer json_encode/json_decode for data serialization"
+    severity: error
+    desc: "Must not use serialize(); prefer json_encode/json_decode — serialize() enables object injection attacks"
 
   - id: TC-122b
     type: not_regex
     target: Classes/**/*.php
     pattern: "\\bunserialize\\s*\\("
-    severity: warning
-    desc: "Avoid unserialize(); use json_decode instead for data deserialization (unserialize without allowed_classes is a security risk)"
+    severity: error
+    desc: "Must not use unserialize(); use json_decode instead — unserialize() without allowed_classes is an object injection vulnerability"
 
   - id: TC-123
     type: command
@@ -469,7 +484,12 @@ mechanical:
   # === CI CONFIGURATION CHECKS ===
   - id: TC-140
     type: command
-    pattern: "grep -A2 '^on:' .github/workflows/ci.yml 2>/dev/null | grep -q 'push:' && grep -A5 'push:' .github/workflows/ci.yml 2>/dev/null | grep -q 'branches' && exit 0 || echo 'WARN: ci.yml push trigger should restrict to specific branches' && exit 1"
+    command: |
+      # Only fail if push trigger exists WITHOUT branch restrictions
+      grep -A2 '^on:' .github/workflows/ci.yml 2>/dev/null | grep -q 'push:' || exit 0
+      grep -A5 'push:' .github/workflows/ci.yml 2>/dev/null | grep -q 'branches' && exit 0
+      echo 'ci.yml has unrestricted push trigger — should restrict to specific branches'
+      exit 1
     severity: warning
     desc: "CI workflow push trigger should be restricted to specific branches, not bare push:"
 
