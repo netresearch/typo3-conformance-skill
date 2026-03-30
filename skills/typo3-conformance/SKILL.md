@@ -37,7 +37,7 @@ Understand: purpose, target TYPO3/PHP version, extension type (plugin, module, s
 7. **Testing** -- PHPUnit setup, Playwright E2E, coverage >70%
 8. **Best Practices** -- DDEV setup, runTests.sh, quality tools, CI/CD
 9. **TER Publishing** -- Workflow, upload comment format, CI compatibility
-10. **Assessment Audit Checks** -- PHPStan baseline, TCA searchFields/default_sortby, DI interface aliases, enum constants, cache double-lookup, repository query properties, XLIFF completeness
+10. **Assessment Audit Checks** -- PHPStan baseline, TCA searchFields/default_sortby, DI interface aliases, enum constants, cache double-lookup, repository query properties, XLIFF completeness, multi-version dependency adapters, PHPStan multi-version compatibility, Services.yaml adapter wiring
 
 ### Step 11: Verification Loop
 
@@ -81,6 +81,7 @@ Guidance for each evaluation area:
 - `references/ext-emconf-validation.md` -- TER field specs
 - `references/version-requirements.md` -- TYPO3/PHP compatibility
 - `references/dual-version-compatibility.md` -- v12+v13 patterns
+- `references/multi-version-dependency-compatibility.md` -- Adapter pattern for multi-major-version deps
 - `references/v13-deprecations.md` -- Deprecated APIs, migration
 - `references/backend-module-v13.md` -- ES6, Modal API, a11y
 - `references/ter-publishing.md` -- TER publication requirements
