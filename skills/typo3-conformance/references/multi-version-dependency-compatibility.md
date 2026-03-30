@@ -147,7 +147,7 @@ public function process(object $manager): void
 // ✅ BEST: Use adapter pattern, no method_exists() needed
 public function process(ImageProcessorInterface $processor): void
 {
-    $processor->process($path);  // Clean, testable, version-agnostic
+    $processor->resize($path);  // Clean, testable, version-agnostic
 }
 ```
 

@@ -1015,19 +1015,20 @@ llm_reviews:
     type: command
     command: |
       # Check if composer.json has multi-major-version constraints (^X || ^Y)
-      multi_deps=$(grep -oP '"[^"]+"\s*:\s*"[^"]*\|\|[^"]*"' composer.json 2>/dev/null | grep -vP '"(php|typo3/cms-)')
+      multi_deps=$(grep -oP '"[^"]+"\s*:\s*"[^"]*\|\|[^"]*"' composer.json 2>/dev/null | grep -vP '^"php"\s*:|^"typo3/cms-[^"]*"\s*:')
       [ -z "$multi_deps" ] && exit 0
       # For each multi-version dep, check if version-specific classes are used outside Adapter/
       violations=0
-      echo "$multi_deps" | while IFS= read -r dep; do
+      while IFS= read -r dep; do
         pkg=$(echo "$dep" | grep -oP '"[^"]+"' | head -1 | tr -d '"')
-        # Check for direct instantiation of classes from the package outside Adapter dirs
-        vendor_ns=$(echo "$pkg" | sed 's|/|\\\\|g' | sed 's|-||g')
-        if grep -rnP "use ${vendor_ns}" Classes/ 2>/dev/null | grep -vP 'Adapter/|Factory/' | head -3; then
+        # Use the vendor segment (before the first /) as a namespace prefix and search case-insensitively
+        vendor=$(echo "$pkg" | cut -d'/' -f1)
+        vendor_ns_prefix=$(echo "$vendor" | sed 's|/|\\\\|g')
+        if grep -rinP "use\s+${vendor_ns_prefix}\\\\\\\\" Classes/ 2>/dev/null | grep -vP 'Adapter/|Factory/' | head -3; then
           echo "WARN: Direct use of multi-version dependency $pkg outside Adapter/ classes"
           violations=1
         fi
-      done
+      done <<<"$multi_deps"
       [ "$violations" -gt 0 ] && exit 1
       exit 0
     severity: warning
@@ -1038,22 +1039,21 @@ llm_reviews:
     name: multi-version-adapter-interface-exists
     type: command
     command: |
-      multi_deps=$(grep -oP '"[^"]+"\s*:\s*"[^"]*\|\|[^"]*"' composer.json 2>/dev/null | grep -vP '"(php|typo3/cms-)')
+      multi_deps=$(grep -oP '"[^"]+"\s*:\s*"[^"]*\|\|[^"]*"' composer.json 2>/dev/null | grep -vP '^"php"\s*:|^"typo3/cms-[^"]*"\s*:')
       [ -z "$multi_deps" ] && exit 0
-      # If multi-version deps exist, check for adapter interfaces
+      # Only require adapters when TC-170 detected direct API usage (version-specific code)
+      # Without direct API usage evidence, the dependency APIs may be identical across versions
       if [ -d Classes/Adapter ] || [ -d Classes/Service ]; then
         ifaces=$(find Classes/Adapter Classes/Service -name '*Interface.php' 2>/dev/null)
         if [ -z "$ifaces" ]; then
-          echo "WARN: Multi-version dependencies found but no adapter interfaces in Classes/Adapter/ or Classes/Service/"
-          exit 1
+          echo "HINT: Multi-version dependencies found but no adapter interfaces in Classes/Adapter/ or Classes/Service/ — consider adding adapters if APIs differ between versions"
         fi
       else
-        echo "WARN: Multi-version dependencies found but no Classes/Adapter/ directory for version abstraction"
-        exit 1
+        echo "HINT: Multi-version dependencies found but no Classes/Adapter/ directory — consider adding adapters if APIs differ between versions"
       fi
       exit 0
-    severity: warning
-    desc: "Extensions with multi-version dependencies should have adapter interfaces to abstract version-specific APIs"
+    severity: info
+    desc: "Extensions with multi-version dependencies may benefit from adapter interfaces when APIs differ between major versions"
     tags: [architecture, multi-version, adapter, interface]
 
   - id: TC-172
@@ -1061,17 +1061,21 @@ llm_reviews:
     type: command
     command: |
       # Find adapter interfaces in Classes/
-      ifaces=$(find Classes/Adapter Classes/Service -name '*Interface.php' 2>/dev/null | sed 's|Classes/||;s|/|\\|g;s|\.php||')
+      ifaces=$(find Classes/Adapter Classes/Service -name '*Interface.php' 2>/dev/null | sed 's|^Classes/||')
       [ -z "$ifaces" ] && exit 0
       [ ! -f Configuration/Services.yaml ] && echo "FAIL: Adapter interfaces exist but no Services.yaml" && exit 1
       missing=0
-      for iface in $ifaces; do
-        classname=$(basename "$iface" | sed 's|\\|/|g')
+      # Iterate safely over newline-delimited interfaces and search by short interface name
+      while IFS= read -r iface; do
+        # Normalise any backslashes to forward slashes, then extract the short class name without extension
+        iface_path=$(printf '%s\n' "$iface" | sed 's|\\|/|g')
+        classname=${iface_path##*/}
+        classname=${classname%.php}
         if ! grep -q "$classname" Configuration/Services.yaml 2>/dev/null; then
           echo "FAIL: Interface $iface not wired in Services.yaml"
           missing=1
         fi
-      done
+      done <<<"$ifaces"
       [ "$missing" -eq 1 ] && exit 1
       exit 0
     severity: error
@@ -1109,7 +1113,7 @@ llm_reviews:
       found=$(grep -rnP '@phpstan-ignore\s+(method\.notFound|call\.notFound|argument\.type)' Classes/ 2>/dev/null | head -5)
       if [ -n "$found" ]; then
         # Only flag if multi-version deps exist
-        multi_deps=$(grep -oP '"[^"]+"\s*:\s*"[^"]*\|\|[^"]*"' composer.json 2>/dev/null | grep -vP '"(php|typo3/cms-)')
+        multi_deps=$(grep -oP '"[^"]+"\s*:\s*"[^"]*\|\|[^"]*"' composer.json 2>/dev/null | grep -vP '^"php"\s*:|^"typo3/cms-[^"]*"\s*:')
         if [ -n "$multi_deps" ]; then
           echo "$found"
           echo "WARN: @phpstan-ignore tags for method/call/argument issues may be version-specific — use adapter pattern instead"
@@ -1131,7 +1135,7 @@ llm_reviews:
       [ -z "$found" ] && exit 0
       # Check if any of these are inside methods with typed parameters (not object type)
       violations=0
-      echo "$found" | while IFS= read -r line; do
+      while IFS= read -r line; do
         file=$(echo "$line" | cut -d: -f1)
         varname=$(echo "$line" | grep -oP 'method_exists\s*\(\s*\$\K[a-zA-Z_]+')
         # Check if the variable has a concrete type hint (not object) in the method signature
@@ -1139,7 +1143,7 @@ llm_reviews:
           echo "WARN: method_exists() used with typed parameter \$$varname — use 'object' type to avoid PHPStan narrowing issues"
           violations=1
         fi
-      done
+      done <<<"$found"
       [ "$violations" -gt 0 ] && exit 1
       exit 0
     severity: warning
