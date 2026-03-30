@@ -16,9 +16,9 @@ Evaluate TYPO3 extensions for standards compliance, architecture, and best pract
 
 ## Skill Delegation
 
-- **Testing**: Delegate to `typo3-testing` skill
-- **Documentation**: Delegate to `typo3-docs` skill
-- **OpenSSF Scorecard**: Delegate to `enterprise-readiness` skill
+- **Testing**: Delegate to `typo3-testing`
+- **Documentation**: Delegate to `typo3-docs`
+- **OpenSSF Scorecard**: Delegate to `enterprise-readiness`
 
 ## Evaluation Workflow
 
@@ -37,7 +37,7 @@ Understand: purpose, target TYPO3/PHP version, extension type (plugin, module, s
 7. **Testing** -- PHPUnit setup, Playwright E2E, coverage >70%
 8. **Best Practices** -- DDEV setup, runTests.sh, quality tools, CI/CD
 9. **TER Publishing** -- Workflow, upload comment format, CI compatibility
-10. **Assessment Audit Checks** -- PHPStan baseline, TCA searchFields/default_sortby, DI interface aliases, enum constants, cache double-lookup, repository query properties, XLIFF completeness
+10. **Assessment Audit Checks** -- PHPStan baseline, TCA searchFields/default_sortby, DI interface aliases, enum constants, cache double-lookup, XLIFF completeness, multi-version dependency adapters
 
 ### Step 11: Verification Loop
 
@@ -55,7 +55,7 @@ After fixes, re-run checks. Document score improvement (e.g., "58 -> 82"). Ensur
 | 50-69 | Needs Work | Significant improvements required |
 | Below 50 | Critical | Block deployment until resolved |
 
-**Critical issues** (security, data loss, core incompatibility) block deployment regardless.
+**Critical issues** block deployment regardless.
 
 ## Running Checks
 
@@ -81,6 +81,7 @@ Guidance for each evaluation area:
 - `references/ext-emconf-validation.md` -- TER field specs
 - `references/version-requirements.md` -- TYPO3/PHP compatibility
 - `references/dual-version-compatibility.md` -- v12+v13 patterns
+- `references/multi-version-dependency-compatibility.md` -- Adapter pattern for multi-major-version deps
 - `references/v13-deprecations.md` -- Deprecated APIs, migration
 - `references/backend-module-v13.md` -- ES6, Modal API, a11y
 - `references/ter-publishing.md` -- TER publication requirements

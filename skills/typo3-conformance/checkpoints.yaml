@@ -1009,6 +1009,200 @@ llm_reviews:
     desc: "Options in ext_conf_template.txt should match implemented functionality (no phantom options)"
     tags: [configuration, alignment, assessment]
 
+  # === MULTI-VERSION DEPENDENCY COMPATIBILITY CHECKS ===
+  - id: TC-170
+    name: multi-version-direct-api-usage
+    type: command
+    command: |
+      # Check if composer.json has multi-major-version constraints (^X || ^Y)
+      multi_deps=$(grep -oP '"[^"]+"\s*:\s*"[^"]*\|\|[^"]*"' composer.json 2>/dev/null | grep -vP '^"php"\s*:|^"typo3/cms-[^"]*"\s*:')
+      [ -z "$multi_deps" ] && exit 0
+      # For each multi-version dep, check if version-specific classes are used outside Adapter/
+      violations=0
+      while IFS= read -r dep; do
+        pkg=$(echo "$dep" | grep -oP '"[^"]+"' | head -1 | tr -d '"')
+        # Use the vendor segment (before the first /) as a namespace prefix and search case-insensitively
+        vendor=$(echo "$pkg" | cut -d'/' -f1)
+        vendor_ns_prefix=$(echo "$vendor" | sed 's|/|\\\\|g')
+        if grep -rinP "use\s+${vendor_ns_prefix}\\\\\\\\" Classes/ 2>/dev/null | grep -vP 'Adapter/|Factory/' | head -3; then
+          echo "WARN: Direct use of multi-version dependency $pkg outside Adapter/ classes"
+          violations=1
+        fi
+      done <<<"$multi_deps"
+      [ "$violations" -gt 0 ] && exit 1
+      exit 0
+    severity: warning
+    desc: "Multi-version dependencies (^X || ^Y) should be accessed through adapter interfaces, not used directly in business logic"
+    tags: [architecture, multi-version, adapter, dependency]
+
+  - id: TC-171
+    name: multi-version-adapter-interface-exists
+    type: command
+    command: |
+      multi_deps=$(grep -oP '"[^"]+"\s*:\s*"[^"]*\|\|[^"]*"' composer.json 2>/dev/null | grep -vP '^"php"\s*:|^"typo3/cms-[^"]*"\s*:')
+      [ -z "$multi_deps" ] && exit 0
+      # Only require adapters when TC-170 detected direct API usage (version-specific code)
+      # Without direct API usage evidence, the dependency APIs may be identical across versions
+      if [ -d Classes/Adapter ] || [ -d Classes/Service ]; then
+        ifaces=$(find Classes/Adapter Classes/Service -name '*Interface.php' 2>/dev/null)
+        if [ -z "$ifaces" ]; then
+          echo "HINT: Multi-version dependencies found but no adapter interfaces in Classes/Adapter/ or Classes/Service/ — consider adding adapters if APIs differ between versions"
+        fi
+      else
+        echo "HINT: Multi-version dependencies found but no Classes/Adapter/ directory — consider adding adapters if APIs differ between versions"
+      fi
+      exit 0
+    severity: info
+    desc: "Extensions with multi-version dependencies may benefit from adapter interfaces when APIs differ between major versions"
+    tags: [architecture, multi-version, adapter, interface]
+
+  - id: TC-172
+    name: adapter-interface-wired-in-services-yaml
+    type: command
+    command: |
+      # Find adapter interfaces in Classes/
+      ifaces=$(find Classes/Adapter Classes/Service -name '*Interface.php' 2>/dev/null | sed 's|^Classes/||')
+      [ -z "$ifaces" ] && exit 0
+      [ ! -f Configuration/Services.yaml ] && echo "FAIL: Adapter interfaces exist but no Services.yaml" && exit 1
+      missing=0
+      # Iterate safely over newline-delimited interfaces and search by short interface name
+      while IFS= read -r iface; do
+        # Normalise any backslashes to forward slashes, then extract the short class name without extension
+        iface_path=$(printf '%s\n' "$iface" | sed 's|\\|/|g')
+        classname=${iface_path##*/}
+        classname=${classname%.php}
+        if ! grep -q "$classname" Configuration/Services.yaml 2>/dev/null; then
+          echo "FAIL: Interface $iface not wired in Services.yaml"
+          missing=1
+        fi
+      done <<<"$ifaces"
+      [ "$missing" -eq 1 ] && exit 1
+      exit 0
+    severity: error
+    desc: "Adapter interfaces must be wired in Services.yaml (alias or factory) for dependency injection to resolve them"
+    tags: [architecture, di, services-yaml, adapter]
+
+  - id: TC-173
+    name: concrete-adapter-typehint
+    type: command
+    command: |
+      # Find concrete adapter implementations (non-interface PHP files in Adapter/)
+      adapters=$(find Classes/Adapter -name '*.php' ! -name '*Interface.php' ! -name '*Factory.php' 2>/dev/null | sed 's|Classes/||;s|\.php||;s|/|\\\\|g')
+      [ -z "$adapters" ] && exit 0
+      violations=0
+      for adapter in $adapters; do
+        shortname=$(echo "$adapter" | grep -oP '[^\\]+$')
+        # Check if concrete adapter class is type-hinted in constructors outside Adapter/
+        if grep -rnP "(private|protected|public)\s+(readonly\s+)?${shortname}\s+" Classes/ 2>/dev/null | grep -vP 'Adapter/|Factory/' | head -3; then
+          echo "WARN: Concrete adapter class $shortname type-hinted in constructor — use interface instead"
+          violations=1
+        fi
+      done
+      [ "$violations" -gt 0 ] && exit 1
+      exit 0
+    severity: warning
+    desc: "Constructors should type-hint adapter interfaces, not concrete adapter implementations"
+    tags: [architecture, di, adapter, type-hint]
+
+  # === PHPSTAN MULTI-VERSION COMPATIBILITY CHECKS ===
+  - id: TC-174
+    name: phpstan-version-specific-ignore
+    type: command
+    command: |
+      # Check for @phpstan-ignore tags in PHP files that reference version-specific issues
+      found=$(grep -rnP '@phpstan-ignore\s+(method\.notFound|call\.notFound|argument\.type)' Classes/ 2>/dev/null | head -5)
+      if [ -n "$found" ]; then
+        # Only flag if multi-version deps exist
+        multi_deps=$(grep -oP '"[^"]+"\s*:\s*"[^"]*\|\|[^"]*"' composer.json 2>/dev/null | grep -vP '^"php"\s*:|^"typo3/cms-[^"]*"\s*:')
+        if [ -n "$multi_deps" ]; then
+          echo "$found"
+          echo "WARN: @phpstan-ignore tags for method/call/argument issues may be version-specific — use adapter pattern instead"
+          exit 1
+        fi
+      fi
+      exit 0
+    severity: warning
+    desc: "PHPStan ignore tags for method.notFound/call.notFound/argument.type suggest version-specific code — use adapter pattern instead"
+    tags: [phpstan, multi-version, ignore-tags]
+
+  - id: TC-175
+    name: method-exists-typed-parameter
+    type: command
+    command: |
+      # Check for method_exists() calls with typed (non-object) first argument
+      # This causes PHPStan type narrowing issues across versions
+      found=$(grep -rnP 'method_exists\s*\(\s*\$' Classes/ 2>/dev/null | head -10)
+      [ -z "$found" ] && exit 0
+      # Check if any of these are inside methods with typed parameters (not object type)
+      violations=0
+      while IFS= read -r line; do
+        file=$(echo "$line" | cut -d: -f1)
+        varname=$(echo "$line" | grep -oP 'method_exists\s*\(\s*\$\K[a-zA-Z_]+')
+        # Check if the variable has a concrete type hint (not object) in the method signature
+        if grep -P "(${varname})\s*[,)]" "$file" 2>/dev/null | grep -vP 'object\s+\$' | grep -P '[A-Z][a-zA-Z]+\s+\$'"${varname}" | head -1; then
+          echo "WARN: method_exists() used with typed parameter \$$varname — use 'object' type to avoid PHPStan narrowing issues"
+          violations=1
+        fi
+      done <<<"$found"
+      [ "$violations" -gt 0 ] && exit 1
+      exit 0
+    severity: warning
+    desc: "method_exists() for version detection should use 'object' type parameter to avoid PHPStan type narrowing across versions"
+    tags: [phpstan, multi-version, method-exists, type-narrowing]
+
+  # === MULTI-VERSION DEPENDENCY LLM REVIEWS ===
+  - id: TC-100f
+    name: multi-version-api-divergence
+    domain: architecture
+    prompt: |
+      Check for multi-version dependency compatibility:
+      1. Parse composer.json for dependencies with multi-major-version constraints
+         (e.g., "^3 || ^4", "^1.0 || ^2.0") — exclude php and typo3/cms-* packages
+      2. For each such dependency, identify API differences between the major versions
+         that could cause runtime errors (changed method signatures, removed classes,
+         renamed methods, changed constructor arguments)
+      3. Check if the extension uses an adapter/interface pattern to abstract these
+         differences, or if version-specific APIs are called directly in business logic
+      4. Verify that adapter implementations exist for EACH supported major version
+      5. Flag any direct usage of version-specific APIs outside of adapter classes
+    severity: error
+    desc: "Multi-version dependencies must use adapter pattern when APIs differ between major versions"
+    tags: [architecture, multi-version, adapter, dependency, assessment]
+
+  - id: TC-100g
+    name: phpstan-multi-version-analysis
+    domain: code-quality
+    prompt: |
+      Check PHPStan configuration and ignore tags for multi-version compatibility:
+      1. Check if PHPStan config includes analysis for all supported dependency versions
+      2. Find all @phpstan-ignore and @phpstan-ignore-next-line tags in Classes/
+      3. Determine if any ignore tags exist BECAUSE of version-specific API differences
+         (e.g., ignoring method.notFound for a method that only exists in one version)
+      4. These version-specific ignores will cause PHPStan errors when analyzed against
+         the other version — they must be replaced with adapter pattern
+      5. Check that PHPStan baseline does not contain version-specific suppressions
+    severity: warning
+    desc: "PHPStan ignore tags must not be version-specific — replace with adapter pattern for multi-version deps"
+    tags: [phpstan, multi-version, static-analysis, assessment]
+
+  - id: TC-100h
+    name: services-yaml-adapter-wiring
+    domain: architecture
+    prompt: |
+      Verify Services.yaml properly wires adapter interfaces for DI:
+      1. Find all interface files in Classes/Adapter/ or Classes/Service/ directories
+      2. Check Configuration/Services.yaml for explicit alias or factory wiring for
+         each adapter interface
+      3. Verify that constructor parameters throughout the codebase type-hint the
+         interface, NOT the concrete adapter implementation
+      4. If a factory pattern is used, verify the factory class exists and has a
+         create() method that performs version detection
+      5. Flag: interfaces without Services.yaml wiring, concrete type-hints where
+         interface exists, missing factory implementations
+    severity: error
+    desc: "Adapter interfaces must be wired in Services.yaml and type-hinted in constructors (not concrete classes)"
+    tags: [architecture, di, services-yaml, adapter, assessment]
+
   - id: TC-100e
     name: domain-model-validation
     domain: architecture
