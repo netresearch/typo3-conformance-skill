@@ -505,7 +505,7 @@ mechanical:
     type: command
     pattern: "if [ -f phpstan-baseline.neon ]; then count=$(grep -c 'message:' phpstan-baseline.neon 2>/dev/null || echo 0); if [ \"$count\" -gt 10 ]; then echo \"WARN: PHPStan baseline has $count suppressed errors (should trend toward 0)\" && exit 1; fi; elif [ -f Build/phpstan-baseline.neon ]; then count=$(grep -c 'message:' Build/phpstan-baseline.neon 2>/dev/null || echo 0); if [ \"$count\" -gt 10 ]; then echo \"WARN: PHPStan baseline has $count suppressed errors (should trend toward 0)\" && exit 1; fi; fi; exit 0"
     severity: warning
-    desc: "PHPStan baseline should be empty or minimal (>10 suppressed errors indicates technical debt)"
+    desc: "PHPStan baseline should be empty — zero suppressed errors at level 10 is the target (>10 indicates significant technical debt)"
 
   # === TCA SEARCHFIELDS AND SORTBY CHECKS ===
   - id: TC-151
@@ -619,6 +619,34 @@ mechanical:
     pattern: '<script(?![^>]*\bsrc=)[^>]*>'
     severity: error
     desc: "Inline <script> tags violate CSP. Move JavaScript to external files loaded via f:be.pageRenderer includeJsFiles or AssetCollector"
+
+  # === CODECOV PATCH TARGET CHECK ===
+  - id: TC-160
+    type: command
+    command: "grep -oP 'target:\\s*\\K[0-9]+%?' codecov.yml 2>/dev/null | head -1"
+    expected: "^(auto|[0-9]{1,2}%)$"
+    severity: warning
+    desc: "codecov patch target should not be 100% — use 80% or auto when only unit test coverage is uploaded"
+    tags: [ci, codecov, coverage]
+
+  # === PHPSTAN LEVEL 10 CHECK ===
+  - id: TC-161
+    type: regex
+    target: "{Build/phpstan.neon,phpstan.neon}"
+    pattern: 'level:\s*(10|max)'
+    severity: warning
+    desc: "PHPStan should use level 10 (max) for extensions using typo3-ci-workflows shared config"
+    tags: [phpstan, ci, static-analysis]
+
+  # === PHPSTAN EMPTY BASELINE (ASPIRATIONAL) ===
+  - id: TC-162
+    type: regex_not
+    target: "{Build/phpstan-baseline.neon,phpstan-baseline.neon}"
+    pattern: 'ignoreErrors:\s*\[\]'
+    severity: info
+    desc: "PHPStan baseline should be empty — zero suppressed errors at level 10 is the target"
+    tags: [phpstan, baseline, aspirational]
+    # Note: TC-162 is aspirational; TC-150 catches excessive baselines
 
 llm_reviews:
   # === CODE QUALITY REVIEWS ===
