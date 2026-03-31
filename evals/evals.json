@@ -14,6 +14,11 @@
         "description": "Reads ext_emconf.php and composer.json for metadata"
       },
       {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Searches for prohibited patterns or missing declarations"
+      },
+      {
         "type": "content_contains",
         "value": "score",
         "description": "Produces a numeric conformance score"
@@ -289,12 +294,17 @@
       {
         "type": "tool_use",
         "tool": "Grep",
-        "description": "Searches templates for Bootstrap 4 classes and data attributes"
+        "description": "Searches templates for Bootstrap 4 data attributes like data-toggle, data-dismiss"
       },
       {
         "type": "content_contains",
         "value": "Bootstrap",
         "description": "References Bootstrap migration requirements"
+      },
+      {
+        "type": "content_contains",
+        "value": "data-bs-",
+        "description": "Recommends Bootstrap 5 data-bs- prefix"
       }
     ]
   },
@@ -337,6 +347,11 @@
         "type": "content_contains",
         "value": "Action",
         "description": "Includes prioritized action items"
+      },
+      {
+        "type": "content_contains",
+        "value": "/20",
+        "description": "Shows per-category scores out of 20"
       }
     ]
   },
@@ -409,13 +424,18 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Glob",
-        "description": "Re-scans extension after fixes"
+        "tool": "Grep",
+        "description": "Re-checks patterns after fixes"
       },
       {
         "type": "content_contains",
         "value": "score",
         "description": "Shows updated conformance score"
+      },
+      {
+        "type": "content_contains",
+        "value": "->",
+        "description": "Shows score delta with arrow notation"
       }
     ]
   },
@@ -485,6 +505,95 @@
         "type": "content_contains",
         "value": "camelCase",
         "description": "Identifies correct property name format"
+      }
+    ]
+  },
+  {
+    "name": "php84-implicit-nullable-check",
+    "prompt": "Check this extension for PHP 8.4 implicit nullable parameter deprecations. Find parameters with type hints that have =null default but no ? prefix.",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Searches for implicit nullable parameters in PHP files"
+      },
+      {
+        "type": "content_contains",
+        "value": "nullable",
+        "description": "Reports on nullable type findings"
+      },
+      {
+        "type": "content_contains",
+        "value": "PHP 8.4",
+        "description": "References PHP 8.4 deprecation"
+      }
+    ]
+  },
+  {
+    "name": "ext-emconf-strict-types-check",
+    "prompt": "Check if ext_emconf.php incorrectly has declare(strict_types=1). TYPO3 requires ext_emconf.php must NOT have strict_types.",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Checks ext_emconf.php for strict_types declaration"
+      },
+      {
+        "type": "content_contains",
+        "value": "ext_emconf",
+        "description": "Specifically addresses ext_emconf.php"
+      },
+      {
+        "type": "content_contains",
+        "value": "strict_types",
+        "description": "Reports on the strict_types exclusion rule"
+      }
+    ]
+  },
+  {
+    "name": "cgl-phpstan-conflict-resolution",
+    "prompt": "PHPStan reports errors about static assertion methods in tests, but php-cs-fixer enforces self::assertEquals(). Which takes precedence?",
+    "assertions": [
+      {
+        "type": "content_contains",
+        "value": "CGL",
+        "description": "References CGL as authoritative for code style"
+      },
+      {
+        "type": "content_contains",
+        "value": "PHPStan",
+        "description": "Addresses PHPStan suppression"
+      },
+      {
+        "type": "content_contains",
+        "value": "reportUnmatched",
+        "description": "Recommends reportUnmatched: false pattern"
+      }
+    ]
+  },
+  {
+    "name": "quick-check-grep-patterns",
+    "prompt": "Give me quick grep commands to check this TYPO3 extension for the most common conformance issues",
+    "assertions": [
+      {
+        "type": "content_contains",
+        "value": "grep",
+        "description": "Provides grep command patterns"
+      },
+      {
+        "type": "content_contains",
+        "value": "strict_types",
+        "description": "Includes strict_types check pattern"
+      },
+      {
+        "type": "content_contains",
+        "value": "GLOBALS",
+        "description": "Includes $GLOBALS check pattern"
+      },
+      {
+        "type": "content_contains",
+        "value": "makeInstance",
+        "description": "Includes makeInstance check pattern"
       }
     ]
   }

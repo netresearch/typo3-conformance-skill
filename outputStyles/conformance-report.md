@@ -36,32 +36,35 @@ description: "Formatted TYPO3 conformance assessment report"
 {Detailed findings per category}
 ```
 
-## Categories
+## Categories (5 x 20 = 100 base)
 
-1. **Structure (20 points)**
-   - Required files present
-   - Correct directory layout
-   - Proper namespacing
+1. **Architecture (20 points)**
+   - Required files present (composer.json, ext_emconf.php)
+   - Correct directory layout (Classes/, Configuration/, Resources/)
+   - Proper namespacing and PSR-4 autoloading
 
-2. **Code Quality (25 points)**
+2. **Coding Guidelines (20 points)**
    - PSR-12 compliance
-   - Strict types
-   - No deprecated APIs
+   - Strict types in all PHP files (except ext_emconf.php)
+   - PHP 8.4 explicit nullable types
+   - PHPStan baseline hygiene
 
-3. **TYPO3 Patterns (25 points)**
-   - Dependency injection
-   - Event system usage
-   - TCA configuration
+3. **PHP Patterns (20 points)**
+   - Dependency injection via Services.yaml
+   - PSR-14 event system usage
+   - No $GLOBALS, no makeInstance for services
+   - TCA searchFields/default_sortby
 
-4. **Testing (15 points)**
-   - Unit tests present
-   - Functional tests
-   - CI configuration
+4. **Testing (20 points)**
+   - PHPUnit unit + functional tests
+   - CI configuration with test matrix
+   - Coverage target >70%
 
-5. **Documentation (15 points)**
-   - README.md
-   - Documentation/ folder
-   - Changelog
+5. **Best Practices (20 points)**
+   - DDEV/runTests.sh setup
+   - Quality tools (PHPStan, php-cs-fixer, Rector)
+   - CI/CD pipeline
+   - XLIFF completeness
 
 ## Action Items
 

@@ -28,14 +28,15 @@ Run a conformance assessment on the current TYPO3 extension.
    - .github/workflows/
    ```
 
-3. **Code Quality Checks**
+3. **Code Quality Checks** (use grep recipes for speed)
    - PSR-12 compliance (check for php-cs-fixer config)
-   - Strict types declaration in all PHP files
-   - Dependency injection (Services.yaml)
-   - No direct $GLOBALS access
-   - No deprecated API usage
+   - Strict types in all PHP files: `grep -rL 'strict_types' Classes/ --include='*.php'`
+   - ext_emconf.php must NOT have strict_types: `grep -l 'strict_types' ext_emconf.php`
+   - No direct $GLOBALS: `grep -rn '\$GLOBALS' Classes/ --include='*.php'`
+   - No makeInstance for services: `grep -rn 'GeneralUtility::makeInstance' Classes/ --include='*.php'`
+   - PHP 8.4 implicit nullable: `grep -rPn '\(\s*[A-Za-z\\]+\s+\$\w+\s*=\s*null' Classes/ --include='*.php' | grep -v '?'`
    - PHPStan baseline size (should trend toward zero)
-   - Deprecated constants not coexisting with enum replacements in active code
+   - No deprecated API usage
 
 4. **TYPO3 Best Practices**
    - FlexForms in Configuration/FlexForms/
@@ -44,7 +45,8 @@ Run a conformance assessment on the current TYPO3 extension.
    - Fluid templates in Resources/Private/Templates/
    - DI interface aliases for all injected interfaces in Services.yaml
    - XLIFF key completeness (all LLL: references have matching trans-units)
-   - No cache has()+get() double-lookup anti-pattern
+   - No cache has()+get() anti-pattern: `grep -rn '->has(' Classes/ --include='*.php'`
+   - Bootstrap 5 migration: `grep -rn 'data-toggle\|data-dismiss\|data-ride' Resources/ --include='*.html'`
    - Extbase repository queries use model property names, not column names
 
 5. **Testing Infrastructure**
