@@ -118,6 +118,19 @@ The TYPO3 conformance checker validates extensions against:
 - New array functions
 - HTML5 support in DOM extension
 
+### PHP 8.5 Features (TYPO3 13.4+ / 14.0+)
+- Pipe operator (`|>`) for functional composition
+- `Locale` class for locale handling
+- `array_first()` / `array_last()` helper functions
+- Closures from callable strings improvements
+- Deprecated: implicit `float` to `int` conversions with precision loss
+
+**Conformance impact:**
+- Update `ext_emconf.php` PHP range to include 8.5: `'php' => '8.2.0-8.5.99'`
+- Update `composer.json` PHP constraint: `"php": "^8.2"`
+- Check for implicit float-to-int conversions (`(int)$floatVar` without `round()`)
+- Test extension on PHP 8.5 before declaring support
+
 ## Migration Paths
 
 ### From TYPO3 11 to 12
@@ -131,16 +144,24 @@ The TYPO3 conformance checker validates extensions against:
 3. Remove deprecated API usage
 4. Update Services.yaml for TYPO3 13 changes (if any)
 
+### From TYPO3 13 to 14
+1. Ensure PHP 8.3+ is already in use (recommended: 8.5+)
+2. Update TYPO3 dependencies to ^14.0
+3. Replace `$GLOBALS['TCA']` with `TcaSchemaFactory` DI
+4. Remove all v13-deprecated APIs (ext_localconf.php addService, etc.)
+5. Test on PHP 8.5
+
 ## Deprecation Timeline
 
 **PHP Versions:**
 - PHP 8.0: End of Life - November 2023 (Not supported by TYPO3 12/13)
-- PHP 8.1: Security fixes until November 2025
-- PHP 8.2: Security fixes until December 2026
+- PHP 8.1: Security fixes until November 2025 (TYPO3 12 minimum)
+- PHP 8.2: Security fixes until December 2026 (TYPO3 13 minimum)
 - PHP 8.3: Security fixes until December 2027
 - PHP 8.4: Security fixes until December 2028
+- PHP 8.5: Security fixes until December 2029
 
-**Recommendation:** Target PHP 8.2+ for new extensions to ensure long-term support alignment with TYPO3 13 LTS lifecycle.
+**Recommendation:** Target PHP 8.2+ for extensions supporting TYPO3 13. Target PHP 8.3+ for TYPO3 14 readiness.
 
 ## References
 

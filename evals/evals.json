@@ -596,5 +596,57 @@
         "description": "Includes makeInstance check pattern"
       }
     ]
+  },
+  {
+    "name": "php85-compatibility-check",
+    "prompt": "Check this TYPO3 extension for PHP 8.5 compatibility. Are there any deprecated patterns that need fixing?",
+    "assertions": [
+      {
+        "type": "content_contains",
+        "value": "float",
+        "description": "Checks for implicit float-to-int conversions deprecated in PHP 8.5"
+      },
+      {
+        "type": "content_contains",
+        "value": "nullable",
+        "description": "Checks PHP 8.4 explicit nullable (still relevant)"
+      },
+      {
+        "type": "content_contains",
+        "value": "8.5",
+        "description": "Explicitly references PHP 8.5"
+      },
+      {
+        "type": "content_contains",
+        "value": "ext_emconf",
+        "description": "Recommends updating PHP version range in ext_emconf.php"
+      }
+    ]
+  },
+  {
+    "name": "typo3-v14-readiness",
+    "prompt": "Is this extension ready for TYPO3 v14? What needs to change?",
+    "assertions": [
+      {
+        "type": "content_contains",
+        "value": "v14",
+        "description": "Explicitly addresses TYPO3 v14"
+      },
+      {
+        "type": "content_contains",
+        "value": "PHP 8.3",
+        "description": "Notes PHP 8.3+ requirement for TYPO3 14"
+      },
+      {
+        "type": "content_contains",
+        "value": "TCA",
+        "description": "Checks for TcaSchemaFactory migration (replaces $GLOBALS TCA)"
+      },
+      {
+        "type": "content_contains",
+        "value": "deprecated",
+        "description": "Identifies v13-deprecated APIs that are removed in v14"
+      }
+    ]
   }
 ]

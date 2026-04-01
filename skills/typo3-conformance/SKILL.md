@@ -1,6 +1,6 @@
 ---
 name: typo3-conformance
-description: "Use when assessing TYPO3 extension quality, conformance checking, standards compliance, modernization to v12/v13/v14, TER readiness, or best practices review. Also triggers on: extension audit, quality score, full assessment, fix all findings, conformance audit, Bootstrap 5 migration, CSP compliance, ViewHelper security, XLIFF hygiene, PHP 8.4 nullable."
+description: "Use when assessing TYPO3 extension quality, conformance checking, standards compliance, modernization to v12/v13/v14, TER readiness, or best practices review. Also triggers on: extension audit, quality score, full assessment, fix all findings, conformance audit, Bootstrap 5 migration, CSP compliance, ViewHelper security, XLIFF hygiene, PHP 8.4/8.5 compat."
 ---
 
 # TYPO3 Extension Conformance Checker
@@ -27,7 +27,7 @@ Read ext_emconf.php + composer.json to determine TYPO3/PHP version, extension ty
 
 1. **Metadata** -- Extension key, TYPO3 version, type
 2. **Structure** -- composer.json, ext_emconf.php, Classes/, Configuration/, Resources/
-3. **Coding** -- strict_types, PSR-12, PHP 8.4 explicit nullable
+3. **Coding** -- strict_types, PSR-12, PHP 8.4 explicit nullable, PHP 8.5 float-to-int
 4. **Prohibited** -- No `$GLOBALS`, no `GeneralUtility::makeInstance()` for services
 5. **Architecture** -- Constructor DI, Services.yaml, PSR-14 events
 6. **Backend** -- ES6 modules, Modal API, CSRF, CSP (v13+)
@@ -55,6 +55,8 @@ grep -rPn '\(\s*[A-Za-z\\]+\s+\$\w+\s*=\s*null' Classes/ --include='*.php' | gre
 grep -rn '->has(' Classes/ --include='*.php'
 # ext_emconf must NOT have strict_types
 grep -l 'strict_types' ext_emconf.php
+# PHP 8.5 implicit float-to-int (deprecated)
+grep -rn '(int)\s*\$' Classes/ --include='*.php'
 # Bootstrap 4 data attributes in Fluid
 grep -rn 'data-toggle\|data-dismiss\|data-ride' Resources/ --include='*.html'
 ```
