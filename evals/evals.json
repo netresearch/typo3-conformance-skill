@@ -1,33 +1,651 @@
 [
   {
-    "name": "conformance-check",
-    "prompt": "Check this extension for TYPO3 conformance",
+    "name": "full-conformance-check",
+    "prompt": "Check this TYPO3 extension for conformance to current standards",
     "assertions": [
       {
         "type": "tool_use",
         "tool": "Glob",
-        "description": "Scans extension file structure"
+        "description": "Scans extension file structure for required files"
+      },
+      {
+        "type": "tool_use",
+        "tool": "Read",
+        "description": "Reads ext_emconf.php and composer.json for metadata"
+      },
+      {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Searches for prohibited patterns or missing declarations"
       },
       {
         "type": "content_contains",
         "value": "score",
-        "description": "Produces a conformance score"
-      }
-    ]
-  },
-  {
-    "name": "conformance-report",
-    "prompt": "Generate a conformance report",
-    "assertions": [
-      {
-        "type": "tool_use",
-        "tool": "Read",
-        "description": "Reads extension files for analysis"
+        "description": "Produces a numeric conformance score"
       },
       {
         "type": "content_contains",
         "value": "Architecture",
-        "description": "Reports on architecture compliance"
+        "description": "Reports on architecture compliance category"
+      }
+    ]
+  },
+  {
+    "name": "file-structure-validation",
+    "prompt": "Validate the file structure of this TYPO3 extension",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Glob",
+        "description": "Scans directory structure for required directories"
+      },
+      {
+        "type": "content_contains",
+        "value": "ext_emconf.php",
+        "description": "Checks for ext_emconf.php presence"
+      },
+      {
+        "type": "content_contains",
+        "value": "composer.json",
+        "description": "Checks for composer.json presence"
+      },
+      {
+        "type": "content_contains",
+        "value": "Classes",
+        "description": "Checks for Classes/ directory"
+      }
+    ]
+  },
+  {
+    "name": "coding-standards-check",
+    "prompt": "Check the PHP coding standards of this TYPO3 extension. Are strict_types declared? Is PSR-12 followed?",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Searches PHP files for strict_types declarations"
+      },
+      {
+        "type": "content_contains",
+        "value": "strict_types",
+        "description": "Reports on strict_types compliance"
+      },
+      {
+        "type": "content_contains",
+        "value": "PSR-12",
+        "description": "References PSR-12 coding standard"
+      }
+    ]
+  },
+  {
+    "name": "prohibited-patterns-detection",
+    "prompt": "Check this TYPO3 extension for prohibited patterns like direct $GLOBALS access, deprecated API usage, and GeneralUtility::makeInstance for services",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Searches for prohibited patterns in PHP files"
+      },
+      {
+        "type": "content_contains",
+        "value": "GLOBALS",
+        "description": "Reports on $GLOBALS usage findings"
+      },
+      {
+        "type": "content_contains",
+        "value": "dependency injection",
+        "description": "Recommends DI instead of prohibited patterns"
+      }
+    ]
+  },
+  {
+    "name": "di-architecture-review",
+    "prompt": "Review the dependency injection architecture of this TYPO3 extension. Check Services.yaml, constructor injection, and PSR-14 event usage.",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Read",
+        "description": "Reads Services.yaml configuration"
+      },
+      {
+        "type": "content_contains",
+        "value": "Services.yaml",
+        "description": "Analyzes Services.yaml configuration"
+      },
+      {
+        "type": "content_contains",
+        "value": "autowire",
+        "description": "Checks autowire configuration"
+      }
+    ]
+  },
+  {
+    "name": "backend-module-v13-check",
+    "prompt": "Check this extension's backend modules for TYPO3 v13 compliance. Are ES6 modules used? Is the Modal API correct? Is CSRF protection in place?",
+    "assertions": [
+      {
+        "type": "content_contains",
+        "value": "ES6",
+        "description": "References ES6 module requirements"
+      },
+      {
+        "type": "content_contains",
+        "value": "CSP",
+        "description": "Addresses Content Security Policy compliance"
+      }
+    ]
+  },
+  {
+    "name": "testing-infrastructure-check",
+    "prompt": "Evaluate the testing setup of this TYPO3 extension. Is PHPUnit configured? Are there unit and functional tests?",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Glob",
+        "description": "Searches for test directories and configuration"
+      },
+      {
+        "type": "content_contains",
+        "value": "PHPUnit",
+        "description": "Evaluates PHPUnit configuration"
+      },
+      {
+        "type": "content_contains",
+        "value": "Tests",
+        "description": "Reports on test directory structure"
+      }
+    ]
+  },
+  {
+    "name": "ter-readiness-assessment",
+    "prompt": "Is this TYPO3 extension ready for TER publishing? Check all requirements.",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Read",
+        "description": "Reads ext_emconf.php for TER-required fields"
+      },
+      {
+        "type": "content_contains",
+        "value": "ext_emconf",
+        "description": "Validates ext_emconf.php fields for TER"
+      },
+      {
+        "type": "content_contains",
+        "value": "TER",
+        "description": "Provides TER publishing assessment"
+      },
+      {
+        "type": "content_contains",
+        "value": "version",
+        "description": "Checks version constraints"
+      }
+    ]
+  },
+  {
+    "name": "composer-json-validation",
+    "prompt": "Validate the composer.json of this TYPO3 extension for correctness and completeness",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Read",
+        "description": "Reads composer.json for validation"
+      },
+      {
+        "type": "content_contains",
+        "value": "typo3-cms-extension",
+        "description": "Validates package type is typo3-cms-extension"
+      },
+      {
+        "type": "content_contains",
+        "value": "PSR-4",
+        "description": "Checks PSR-4 autoload configuration"
+      }
+    ]
+  },
+  {
+    "name": "modernize-to-v13",
+    "prompt": "What do I need to change to modernize this extension for TYPO3 v13?",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Read",
+        "description": "Reads extension files to assess v13 readiness"
+      },
+      {
+        "type": "content_contains",
+        "value": "deprecated",
+        "description": "Identifies deprecated APIs needing migration"
+      },
+      {
+        "type": "content_contains",
+        "value": "v13",
+        "description": "References TYPO3 v13 specific changes"
+      }
+    ]
+  },
+  {
+    "name": "phpstan-baseline-audit",
+    "prompt": "Audit the PHPStan baseline of this extension. How many suppressed errors are there? Is it trending toward zero?",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Glob",
+        "description": "Finds PHPStan baseline file"
+      },
+      {
+        "type": "content_contains",
+        "value": "baseline",
+        "description": "Reports on PHPStan baseline status"
+      },
+      {
+        "type": "content_contains",
+        "value": "error",
+        "description": "Counts or reports suppressed errors"
+      }
+    ]
+  },
+  {
+    "name": "tca-quality-check",
+    "prompt": "Check the TCA configuration of this TYPO3 extension. Are searchFields defined? Is default_sortby set? Are there deprecated TCA patterns?",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Read",
+        "description": "Reads TCA configuration files"
+      },
+      {
+        "type": "content_contains",
+        "value": "searchFields",
+        "description": "Checks for searchFields in TCA ctrl"
+      },
+      {
+        "type": "content_contains",
+        "value": "TCA",
+        "description": "Provides TCA-specific analysis"
+      }
+    ]
+  },
+  {
+    "name": "xliff-completeness-check",
+    "prompt": "Check XLIFF translation completeness. Are all LLL: references in the code matched by XLIFF trans-unit entries?",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Searches for LLL: references across code and templates"
+      },
+      {
+        "type": "content_contains",
+        "value": "XLIFF",
+        "description": "Reports on XLIFF completeness"
+      },
+      {
+        "type": "content_contains",
+        "value": "translation",
+        "description": "Discusses translation key coverage"
+      }
+    ]
+  },
+  {
+    "name": "bootstrap5-migration-check",
+    "prompt": "Check this extension's Fluid templates for Bootstrap 4 patterns that need migrating to Bootstrap 5",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Searches templates for Bootstrap 4 data attributes like data-toggle, data-dismiss"
+      },
+      {
+        "type": "content_contains",
+        "value": "Bootstrap",
+        "description": "References Bootstrap migration requirements"
+      },
+      {
+        "type": "content_contains",
+        "value": "data-bs-",
+        "description": "Recommends Bootstrap 5 data-bs- prefix"
+      }
+    ]
+  },
+  {
+    "name": "security-pattern-review",
+    "prompt": "Review this TYPO3 extension for security patterns. Check for shell_exec usage, serialize/unserialize, XSS in ViewHelpers, and CSP violations.",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Searches for security-critical patterns"
+      },
+      {
+        "type": "content_contains",
+        "value": "security",
+        "description": "Provides security assessment findings"
+      },
+      {
+        "type": "content_contains",
+        "value": "XSS",
+        "description": "Checks for XSS vulnerabilities"
+      }
+    ]
+  },
+  {
+    "name": "scoring-report-generation",
+    "prompt": "Generate a full conformance report with scoring for this TYPO3 extension",
+    "assertions": [
+      {
+        "type": "content_contains",
+        "value": "score",
+        "description": "Includes numeric score in report"
+      },
+      {
+        "type": "content_contains",
+        "value": "Findings",
+        "description": "Includes findings section in report"
+      },
+      {
+        "type": "content_contains",
+        "value": "Action",
+        "description": "Includes prioritized action items"
+      },
+      {
+        "type": "content_contains",
+        "value": "/20",
+        "description": "Shows per-category scores out of 20"
+      }
+    ]
+  },
+  {
+    "name": "dual-version-compatibility",
+    "prompt": "This extension needs to support both TYPO3 v12 and v13. What dual-version compatibility patterns should I use?",
+    "assertions": [
+      {
+        "type": "content_contains",
+        "value": "v12",
+        "description": "Addresses TYPO3 v12 compatibility"
+      },
+      {
+        "type": "content_contains",
+        "value": "v13",
+        "description": "Addresses TYPO3 v13 compatibility"
+      },
+      {
+        "type": "content_contains",
+        "value": "compatibility",
+        "description": "Discusses compatibility patterns"
+      }
+    ]
+  },
+  {
+    "name": "best-practices-review",
+    "prompt": "Review this extension against TYPO3 best practices. Check for DDEV setup, runTests.sh, quality tools, and CI/CD configuration.",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Glob",
+        "description": "Searches for CI/CD and tooling configuration files"
+      },
+      {
+        "type": "content_contains",
+        "value": "CI",
+        "description": "Evaluates CI/CD configuration"
+      },
+      {
+        "type": "content_contains",
+        "value": "runTests",
+        "description": "Checks for runTests.sh presence"
+      }
+    ]
+  },
+  {
+    "name": "fix-all-findings",
+    "prompt": "Fix all conformance findings in this TYPO3 extension. Start with critical issues, then warnings.",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Read",
+        "description": "Reads files before making changes"
+      },
+      {
+        "type": "content_contains",
+        "value": "fix",
+        "description": "Describes fixes being applied"
+      },
+      {
+        "type": "content_contains",
+        "value": "critical",
+        "description": "Prioritizes critical issues first"
+      }
+    ]
+  },
+  {
+    "name": "verification-loop",
+    "prompt": "I just fixed the conformance issues. Re-run the checks and show me the score improvement.",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Re-checks patterns after fixes"
+      },
+      {
+        "type": "content_contains",
+        "value": "score",
+        "description": "Shows updated conformance score"
+      },
+      {
+        "type": "content_contains",
+        "value": "->",
+        "description": "Shows score delta with arrow notation"
+      }
+    ]
+  },
+  {
+    "name": "extension-context-detection",
+    "prompt": "Analyze this extension and tell me what type it is, what TYPO3 versions it targets, and its current quality level.",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Read",
+        "description": "Reads ext_emconf.php and composer.json for context"
+      },
+      {
+        "type": "content_contains",
+        "value": "TYPO3",
+        "description": "Identifies target TYPO3 version"
+      },
+      {
+        "type": "content_contains",
+        "value": "PHP",
+        "description": "Identifies PHP version requirements"
+      }
+    ]
+  },
+  {
+    "name": "multi-version-dependency-check",
+    "prompt": "This extension uses a dependency that has different APIs across major versions. How should I handle multi-version dependency compatibility?",
+    "assertions": [
+      {
+        "type": "content_contains",
+        "value": "adapter",
+        "description": "Recommends adapter pattern for multi-version deps"
+      },
+      {
+        "type": "content_contains",
+        "value": "Services.yaml",
+        "description": "Recommends DI-based adapter wiring"
+      }
+    ]
+  },
+  {
+    "name": "cache-anti-pattern-detection",
+    "prompt": "Check this extension for the cache has()+get() double-lookup anti-pattern",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Searches for cache has() calls followed by get()"
+      },
+      {
+        "type": "content_contains",
+        "value": "cache",
+        "description": "Reports on cache usage patterns"
+      }
+    ]
+  },
+  {
+    "name": "extbase-repository-query-check",
+    "prompt": "Check Extbase repository queries in this extension. Are they using model property names (camelCase) or database column names (snake_case)?",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Searches repository files for query patterns"
+      },
+      {
+        "type": "content_contains",
+        "value": "camelCase",
+        "description": "Identifies correct property name format"
+      }
+    ]
+  },
+  {
+    "name": "php84-implicit-nullable-check",
+    "prompt": "Check this extension for PHP 8.4 implicit nullable parameter deprecations. Find parameters with type hints that have =null default but no ? prefix.",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Searches for implicit nullable parameters in PHP files"
+      },
+      {
+        "type": "content_contains",
+        "value": "nullable",
+        "description": "Reports on nullable type findings"
+      },
+      {
+        "type": "content_contains",
+        "value": "PHP 8.4",
+        "description": "References PHP 8.4 deprecation"
+      }
+    ]
+  },
+  {
+    "name": "ext-emconf-strict-types-check",
+    "prompt": "Check if ext_emconf.php incorrectly has declare(strict_types=1). TYPO3 requires ext_emconf.php must NOT have strict_types.",
+    "assertions": [
+      {
+        "type": "tool_use",
+        "tool": "Grep",
+        "description": "Checks ext_emconf.php for strict_types declaration"
+      },
+      {
+        "type": "content_contains",
+        "value": "ext_emconf",
+        "description": "Specifically addresses ext_emconf.php"
+      },
+      {
+        "type": "content_contains",
+        "value": "strict_types",
+        "description": "Reports on the strict_types exclusion rule"
+      }
+    ]
+  },
+  {
+    "name": "cgl-phpstan-conflict-resolution",
+    "prompt": "PHPStan reports errors about static assertion methods in tests, but php-cs-fixer enforces self::assertEquals(). Which takes precedence?",
+    "assertions": [
+      {
+        "type": "content_contains",
+        "value": "CGL",
+        "description": "References CGL as authoritative for code style"
+      },
+      {
+        "type": "content_contains",
+        "value": "PHPStan",
+        "description": "Addresses PHPStan suppression"
+      },
+      {
+        "type": "content_contains",
+        "value": "reportUnmatched",
+        "description": "Recommends reportUnmatched: false pattern"
+      }
+    ]
+  },
+  {
+    "name": "quick-check-grep-patterns",
+    "prompt": "Give me quick grep commands to check this TYPO3 extension for the most common conformance issues",
+    "assertions": [
+      {
+        "type": "content_contains",
+        "value": "grep",
+        "description": "Provides grep command patterns"
+      },
+      {
+        "type": "content_contains",
+        "value": "strict_types",
+        "description": "Includes strict_types check pattern"
+      },
+      {
+        "type": "content_contains",
+        "value": "GLOBALS",
+        "description": "Includes $GLOBALS check pattern"
+      },
+      {
+        "type": "content_contains",
+        "value": "makeInstance",
+        "description": "Includes makeInstance check pattern"
+      }
+    ]
+  },
+  {
+    "name": "php85-compatibility-check",
+    "prompt": "Check this TYPO3 extension for PHP 8.5 compatibility. Are there any deprecated patterns that need fixing?",
+    "assertions": [
+      {
+        "type": "content_contains",
+        "value": "float",
+        "description": "Checks for implicit float-to-int conversions deprecated in PHP 8.5"
+      },
+      {
+        "type": "content_contains",
+        "value": "nullable",
+        "description": "Checks PHP 8.4 explicit nullable (still relevant)"
+      },
+      {
+        "type": "content_contains",
+        "value": "8.5",
+        "description": "Explicitly references PHP 8.5"
+      },
+      {
+        "type": "content_contains",
+        "value": "ext_emconf",
+        "description": "Recommends updating PHP version range in ext_emconf.php"
+      }
+    ]
+  },
+  {
+    "name": "typo3-v14-readiness",
+    "prompt": "Is this extension ready for TYPO3 v14? What needs to change?",
+    "assertions": [
+      {
+        "type": "content_contains",
+        "value": "v14",
+        "description": "Explicitly addresses TYPO3 v14"
+      },
+      {
+        "type": "content_contains",
+        "value": "PHP 8.3",
+        "description": "Notes PHP 8.3+ requirement for TYPO3 14"
+      },
+      {
+        "type": "content_contains",
+        "value": "TCA",
+        "description": "Checks for TcaSchemaFactory migration (replaces $GLOBALS TCA)"
+      },
+      {
+        "type": "content_contains",
+        "value": "deprecated",
+        "description": "Identifies v13-deprecated APIs that are removed in v14"
       }
     ]
   }
