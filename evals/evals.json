@@ -5,18 +5,18 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Glob",
-        "description": "Scans extension file structure for required files"
+        "description": "Scans extension file structure for required files",
+        "value": "Glob"
       },
       {
         "type": "tool_use",
-        "tool": "Read",
-        "description": "Reads ext_emconf.php and composer.json for metadata"
+        "description": "Reads ext_emconf.php and composer.json for metadata",
+        "value": "Read"
       },
       {
         "type": "tool_use",
-        "tool": "Grep",
-        "description": "Searches for prohibited patterns or missing declarations"
+        "description": "Searches for prohibited patterns or missing declarations",
+        "value": "Grep"
       },
       {
         "type": "content_contains",
@@ -36,8 +36,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Glob",
-        "description": "Scans directory structure for required directories"
+        "description": "Scans directory structure for required directories",
+        "value": "Glob"
       },
       {
         "type": "content_contains",
@@ -62,8 +62,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Grep",
-        "description": "Searches PHP files for strict_types declarations"
+        "description": "Searches PHP files for strict_types declarations",
+        "value": "Grep"
       },
       {
         "type": "content_contains",
@@ -83,8 +83,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Grep",
-        "description": "Searches for prohibited patterns in PHP files"
+        "description": "Searches for prohibited patterns in PHP files",
+        "value": "Grep"
       },
       {
         "type": "content_contains",
@@ -104,8 +104,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Read",
-        "description": "Reads Services.yaml configuration"
+        "description": "Reads Services.yaml configuration",
+        "value": "Read"
       },
       {
         "type": "content_contains",
@@ -141,8 +141,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Glob",
-        "description": "Searches for test directories and configuration"
+        "description": "Searches for test directories and configuration",
+        "value": "Glob"
       },
       {
         "type": "content_contains",
@@ -162,8 +162,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Read",
-        "description": "Reads ext_emconf.php for TER-required fields"
+        "description": "Reads ext_emconf.php for TER-required fields",
+        "value": "Read"
       },
       {
         "type": "content_contains",
@@ -188,8 +188,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Read",
-        "description": "Reads composer.json for validation"
+        "description": "Reads composer.json for validation",
+        "value": "Read"
       },
       {
         "type": "content_contains",
@@ -209,8 +209,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Read",
-        "description": "Reads extension files to assess v13 readiness"
+        "description": "Reads extension files to assess v13 readiness",
+        "value": "Read"
       },
       {
         "type": "content_contains",
@@ -230,8 +230,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Glob",
-        "description": "Finds PHPStan baseline file"
+        "description": "Finds PHPStan baseline file",
+        "value": "Glob"
       },
       {
         "type": "content_contains",
@@ -251,8 +251,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Read",
-        "description": "Reads TCA configuration files"
+        "description": "Reads TCA configuration files",
+        "value": "Read"
       },
       {
         "type": "content_contains",
@@ -272,8 +272,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Grep",
-        "description": "Searches for LLL: references across code and templates"
+        "description": "Searches for LLL: references across code and templates",
+        "value": "Grep"
       },
       {
         "type": "content_contains",
@@ -293,8 +293,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Grep",
-        "description": "Searches templates for Bootstrap 4 data attributes like data-toggle, data-dismiss"
+        "description": "Searches templates for Bootstrap 4 data attributes like data-toggle, data-dismiss",
+        "value": "Grep"
       },
       {
         "type": "content_contains",
@@ -314,8 +314,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Grep",
-        "description": "Searches for security-critical patterns"
+        "description": "Searches for security-critical patterns",
+        "value": "Grep"
       },
       {
         "type": "content_contains",
@@ -382,8 +382,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Glob",
-        "description": "Searches for CI/CD and tooling configuration files"
+        "description": "Searches for CI/CD and tooling configuration files",
+        "value": "Glob"
       },
       {
         "type": "content_contains",
@@ -403,8 +403,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Read",
-        "description": "Reads files before making changes"
+        "description": "Reads files before making changes",
+        "value": "Read"
       },
       {
         "type": "content_contains",
@@ -424,8 +424,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Grep",
-        "description": "Re-checks patterns after fixes"
+        "description": "Re-checks patterns after fixes",
+        "value": "Grep"
       },
       {
         "type": "content_contains",
@@ -445,8 +445,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Read",
-        "description": "Reads ext_emconf.php and composer.json for context"
+        "description": "Reads ext_emconf.php and composer.json for context",
+        "value": "Read"
       },
       {
         "type": "content_contains",
@@ -482,8 +482,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Grep",
-        "description": "Searches for cache has() calls followed by get()"
+        "description": "Searches for cache has() calls followed by get()",
+        "value": "Grep"
       },
       {
         "type": "content_contains",
@@ -498,8 +498,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Grep",
-        "description": "Searches repository files for query patterns"
+        "description": "Searches repository files for query patterns",
+        "value": "Grep"
       },
       {
         "type": "content_contains",
@@ -514,8 +514,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Grep",
-        "description": "Searches for implicit nullable parameters in PHP files"
+        "description": "Searches for implicit nullable parameters in PHP files",
+        "value": "Grep"
       },
       {
         "type": "content_contains",
@@ -535,8 +535,8 @@
     "assertions": [
       {
         "type": "tool_use",
-        "tool": "Grep",
-        "description": "Checks ext_emconf.php for strict_types declaration"
+        "description": "Checks ext_emconf.php for strict_types declaration",
+        "value": "Grep"
       },
       {
         "type": "content_contains",
