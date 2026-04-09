@@ -1716,7 +1716,7 @@ grep -A 2 'push:' .github/workflows/*.yml | grep -v 'branches:'
 
 TYPO3's `RedisBackend` stores cache entries using three key types:
 
-- `identData:{key}` — cache entry data, written with `SETEX` (has TTL from `defaultLifetime`)
+- `identData:{key}` — cache entry data, written with `SETEX` when `defaultLifetime > 0` (has TTL), or `SET` when lifetime is 0 (no TTL)
 - `identTags:{key}` — tag set for an entry, written with `SADD` (no TTL, **never expires**)
 - `tagIdents:{tag}` — reverse-index of entries per tag, written with `SADD` (no TTL, **never expires**)
 
@@ -1730,12 +1730,11 @@ This structural asymmetry means tag metadata accumulates indefinitely. On Redis 
 
 In the TYPO3 scheduler, add `Caching Framework: Garbage Collection` and run it regularly (e.g., nightly or hourly depending on cache write volume). This is the only built-in mechanism to clean orphaned `identTags:*` and `tagIdents:*` keys.
 
-Verify the task is configured:
+Verify the task is configured via the TYPO3 Scheduler backend module, or by querying the database:
 
 ```bash
-# Check scheduler task configuration in TYPO3 DB
-# (or use the Scheduler module in the backend)
-php typo3 scheduler:run --task CachingFrameworkGarbageCollectionTask --dry-run
+# Check if the GC task exists in the scheduler table
+php typo3 sql:query "SELECT uid, classname, frequency FROM tx_scheduler_task WHERE classname LIKE '%GarbageCollection%'"
 ```
 
 **2. Use `allkeys-lru` eviction policy**

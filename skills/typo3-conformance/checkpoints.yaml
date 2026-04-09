@@ -1258,12 +1258,16 @@ llm_reviews:
       1. Search config/, app/config/, typo3conf/, and AdditionalConfiguration.php for
          RedisBackend references (TYPO3\CMS\Core\Cache\Backend\RedisBackend or
          Redis\RedisBackend)
-      2. If RedisBackend is found, check whether CachingFrameworkGarbageCollectionTask
-         is referenced in scheduler configuration, console commands, cron entries, or
-         infrastructure-as-code files (e.g., Kubernetes CronJob, docker-compose, Ansible)
+      2. If RedisBackend is found, look for evidence that CachingFrameworkGarbageCollectionTask
+         is configured. Evidence includes:
+         - A record in tx_scheduler_task with classname containing 'GarbageCollection'
+         - References to the task class in configuration or setup scripts
+         - An external cron entry or IaC job (Kubernetes CronJob, docker-compose, Ansible)
+           that invokes 'typo3 scheduler:run' on a regular interval
       3. The task is registered under class
-         \TYPO3\CMS\Scheduler\Task\CachingFrameworkGarbageCollectionTask and appears in
-         the TYPO3 Scheduler backend module as "Caching Framework: Garbage Collection"
+         \TYPO3\CMS\Scheduler\Task\CachingFrameworkGarbageCollectionTask and is configured
+         through the TYPO3 Scheduler backend module as "Caching Framework: Garbage Collection"
+         (not via CLI flags — verify in DB or backend module)
       4. Flag the absence as CRITICAL: without this task, identTags:* and tagIdents:*
          keys in Redis accumulate indefinitely because SADD writes no TTL, causing
          Redis OOM errors under volatile-lru eviction policy
