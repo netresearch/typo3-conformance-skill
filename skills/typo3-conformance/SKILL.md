@@ -38,7 +38,7 @@ Read ext_emconf.php + composer.json to determine TYPO3/PHP version, extension ty
 7. **Testing** -- PHPUnit, Playwright E2E, coverage >70%
 8. **Practices** -- DDEV, runTests.sh, CI/CD, quality tools
 9. **TER** -- Publish workflow, upload comment format
-10. **Audit** -- PHPStan baseline, TCA searchFields/default_sortby, XLIFF completeness, cache has()+get() anti-pattern, Extbase query property names, multi-version adapters
+10. **Audit** -- PHPStan baseline, TCA searchFields/default_sortby, XLIFF completeness, cache has()+get() anti-pattern, Extbase query property names, multi-version adapters, Redis OOM prevention (CachingFrameworkGarbageCollectionTask, allkeys-lru, defaultLifetime)
 
 ### Step 11: Verify
 
@@ -93,6 +93,6 @@ grep -rn 'data-toggle\|data-dismiss\|data-ride' Resources/ --include='*.html'
 - `references/ter-publishing.md` -- TER workflow
 - `references/report-template.md` -- Report format
 - `references/excellence-indicators.md` -- Bonus scoring
-- `references/best-practices.md` -- Organizational patterns
+- `references/best-practices.md` -- Organizational patterns, Redis OOM prevention
 
 Asset templates in `assets/Build/`: PHPStan, PHP-CS-Fixer, Rector, ESLint, Stylelint, TypoScript lint.

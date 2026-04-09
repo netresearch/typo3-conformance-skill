@@ -1247,3 +1247,70 @@ llm_reviews:
     severity: warning
     desc: "Domain models with cryptographic fields should have a named constructor that validates field consistency"
     tags: [architecture, domain-model, validation, security, assessment]
+
+  # === REDIS CACHE CONFIGURATION (OOM PREVENTION) ===
+
+  - id: TC-180
+    name: redis-garbage-collection-task
+    domain: infrastructure
+    prompt: |
+      Check whether a Redis garbage collection task is configured when RedisBackend is used:
+      1. Search config/, app/config/, typo3conf/, and AdditionalConfiguration.php for
+         RedisBackend references (TYPO3\CMS\Core\Cache\Backend\RedisBackend or
+         Redis\RedisBackend)
+      2. If RedisBackend is found, check whether CachingFrameworkGarbageCollectionTask
+         is referenced in scheduler configuration, console commands, cron entries, or
+         infrastructure-as-code files (e.g., Kubernetes CronJob, docker-compose, Ansible)
+      3. The task is registered under class
+         \TYPO3\CMS\Scheduler\Task\CachingFrameworkGarbageCollectionTask and appears in
+         the TYPO3 Scheduler backend module as "Caching Framework: Garbage Collection"
+      4. Flag the absence as CRITICAL: without this task, identTags:* and tagIdents:*
+         keys in Redis accumulate indefinitely because SADD writes no TTL, causing
+         Redis OOM errors under volatile-lru eviction policy
+      5. If the task is found, verify it runs at least daily (preferably hourly for
+         high-write-volume installations)
+    severity: error
+    desc: "RedisBackend users must schedule CachingFrameworkGarbageCollectionTask — tag metadata (identTags/tagIdents) has no TTL and causes Redis OOM without regular garbage collection"
+    tags: [redis, cache, scheduler, oom, infrastructure, assessment]
+
+  - id: TC-181
+    name: redis-allkeys-lru-policy
+    domain: infrastructure
+    prompt: |
+      Check Redis eviction policy when RedisBackend is used:
+      1. Search config/, app/config/, typo3conf/, AdditionalConfiguration.php, and
+         infrastructure files (Terraform, Ansible, CloudFormation, Helm values,
+         docker-compose) for RedisBackend references
+      2. If RedisBackend is found, look for Redis/ElastiCache configuration that sets
+         maxmemory-policy (parameter groups, redis.conf, environment variables)
+      3. The recommended policy is allkeys-lru — this allows Redis to evict ALL keys
+         (including tag sets without TTL) when memory is full
+      4. Flag volatile-lru as a risk: tag sets (identTags:*, tagIdents:*) written by
+         SADD have no TTL and are therefore ineligible for eviction under volatile-lru,
+         causing OOM errors even when most data keys have already expired
+      5. Also flag noeviction as critical — it causes write errors immediately when
+         memory is full
+      6. If the eviction policy cannot be determined from the codebase, recommend
+         verifying it on the Redis instance and documenting it
+    severity: warning
+    desc: "Redis instances used with RedisBackend should use allkeys-lru eviction policy — volatile-lru cannot evict tag sets (identTags/tagIdents) which have no TTL, leading to OOM"
+    tags: [redis, cache, elasticache, eviction-policy, oom, infrastructure, assessment]
+
+  - id: TC-182
+    name: redis-default-lifetime
+    domain: infrastructure
+    prompt: |
+      Check that all RedisBackend cache configurations set a non-zero defaultLifetime:
+      1. Find every cache configuration that uses RedisBackend in config/,
+         app/config/, typo3conf/, and AdditionalConfiguration.php
+      2. For each cache, check its 'options' array for a 'defaultLifetime' key
+      3. Flag configurations where defaultLifetime is absent or set to 0 — a value
+         of 0 means cache entries never expire, so identData:* keys accumulate
+         alongside the tag metadata, compounding the OOM risk
+      4. Recommend a suitable defaultLifetime based on cache purpose:
+         - Page/content caches: 86400 (1 day) or higher
+         - Session/transient caches: 3600 (1 hour)
+         - Never use 0 (unlimited) on production Redis backends
+    severity: warning
+    desc: "All RedisBackend cache configurations must set a non-zero defaultLifetime — value 0 means identData keys never expire and accelerate Redis memory exhaustion"
+    tags: [redis, cache, defaultLifetime, oom, infrastructure, assessment]

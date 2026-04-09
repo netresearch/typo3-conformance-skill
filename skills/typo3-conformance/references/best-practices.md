@@ -1712,6 +1712,76 @@ grep -A 2 'push:' .github/workflows/*.yml | grep -v 'branches:'
 
 ---
 
+## Redis Cache Configuration (RedisBackend OOM Prevention)
+
+TYPO3's `RedisBackend` stores cache entries using three key types:
+
+- `identData:{key}` — cache entry data, written with `SETEX` (has TTL from `defaultLifetime`)
+- `identTags:{key}` — tag set for an entry, written with `SADD` (no TTL, **never expires**)
+- `tagIdents:{tag}` — reverse-index of entries per tag, written with `SADD` (no TTL, **never expires**)
+
+This structural asymmetry means tag metadata accumulates indefinitely. On Redis instances configured with the default `maxmemory-policy: volatile-lru`, only keys that have a TTL can be evicted. Tag sets have no TTL and therefore cannot be evicted, causing Redis to fill up with orphaned tag metadata until OOM errors occur on every write.
+
+**Root cause:** The built-in remedy is `CachingFrameworkGarbageCollectionTask`, a TYPO3 scheduler task that calls `RedisBackend::collectGarbage()`. This method walks all `identTags:*` keys, checks whether the corresponding `identData:*` key still exists, and removes orphaned tag sets. Without this scheduled task, tag metadata grows without bound.
+
+### Required Measures
+
+**1. Schedule `CachingFrameworkGarbageCollectionTask`**
+
+In the TYPO3 scheduler, add `Caching Framework: Garbage Collection` and run it regularly (e.g., nightly or hourly depending on cache write volume). This is the only built-in mechanism to clean orphaned `identTags:*` and `tagIdents:*` keys.
+
+Verify the task is configured:
+
+```bash
+# Check scheduler task configuration in TYPO3 DB
+# (or use the Scheduler module in the backend)
+php typo3 scheduler:run --task CachingFrameworkGarbageCollectionTask --dry-run
+```
+
+**2. Use `allkeys-lru` eviction policy**
+
+Switch from the default `volatile-lru` to `allkeys-lru` on any Redis instance used as a TYPO3 cache backend. With `allkeys-lru`, ALL keys (including tag sets without TTL) are eligible for LRU eviction when memory is full, providing a safety net against OOM.
+
+```
+# Redis / ElastiCache parameter group
+maxmemory-policy allkeys-lru
+```
+
+**3. Set `defaultLifetime` on all RedisBackend configurations**
+
+Every cache backend using `RedisBackend` must have a non-zero `defaultLifetime`. A lifetime of `0` (the default if unset) means data keys never expire, which makes even the `identData:*` keys permanent and compounds the OOM risk.
+
+```php
+// config/system/additional.php — correct
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['my_cache']['backend']
+    = \TYPO3\CMS\Core\Cache\Backend\RedisBackend::class;
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['my_cache']['options'] = [
+    'hostname' => 'redis',
+    'port'     => 6379,
+    'database' => 0,
+    'defaultLifetime' => 86400,  // ✅ Required — 0 means never expires
+];
+```
+
+### Detection
+
+```bash
+# Check TYPO3 cache configuration for RedisBackend usage
+grep -rn "RedisBackend" config/ app/config/ typo3conf/ 2>/dev/null
+
+# Check if GarbageCollectionTask is referenced anywhere
+grep -rn "CachingFrameworkGarbageCollectionTask\|GarbageCollection" config/ app/config/ 2>/dev/null
+
+# Check for defaultLifetime = 0 or missing defaultLifetime in Redis cache options
+grep -A 10 "RedisBackend" config/ app/config/ typo3conf/ 2>/dev/null | grep -E "defaultLifetime|database"
+```
+
+### Severity
+
+**🔴 Critical** for production systems using ElastiCache or any Redis with `volatile-lru`. The combination of missing garbage collection task + volatile-lru eviction policy will inevitably cause Redis OOM and cache write failures under sustained load.
+
+---
+
 ## Conformance Checklist
 
 - [ ] Complete directory structure following best practices
@@ -1748,3 +1818,6 @@ grep -A 2 'push:' .github/workflows/*.yml | grep -v 'branches:'
 - [ ] Bootstrap 5 classes used (not 3/4)
 - [ ] Proper table semantics (no role="grid" on data tables)
 - [ ] Accessibility attributes on forms, nav, and tables
+- [ ] If RedisBackend is used: `CachingFrameworkGarbageCollectionTask` scheduled (prevents tag metadata OOM)
+- [ ] If Redis/ElastiCache is used: `maxmemory-policy` set to `allkeys-lru` (not `volatile-lru`)
+- [ ] All RedisBackend cache configurations have a non-zero `defaultLifetime`
