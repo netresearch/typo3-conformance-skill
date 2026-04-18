@@ -24,7 +24,7 @@ Resources/Private/Language/
 └── ...
 ```
 
-Language codes use ISO 639-1 two-letter codes. For region-specific variants use `en-us`, `pt-br`, `zh-cn` (TYPO3 convention).
+Language codes follow the TYPO3 system-language convention (lowercase two-letter codes, e.g. `de.locallang.xlf`, `fr.locallang.xlf`). Region-specific variants should match what's declared in the TYPO3 site configuration (`config/sites/<identifier>/config.yaml`) — common forms are `pt_BR`/`zh_CN` (underscore + uppercase region) following the Locale format used in `languages[*].locale`. Check an extension's existing XLIFF filenames before adding new locales to keep naming consistent.
 
 ## Coverage Check Script
 
@@ -38,30 +38,53 @@ set -euo pipefail
 LANG_DIR="Resources/Private/Language"
 MIN_COVERAGE="${MIN_COVERAGE:-80}"  # override via env
 BASELINE="$LANG_DIR/locallang.xlf"
+XLIFF_NS="urn:oasis:names:tc:xliff:document:1.2"
 
 if [[ ! -f "$BASELINE" ]]; then
   echo "No baseline $BASELINE — skipping coverage check"
   exit 0
 fi
 
-SOURCE_KEYS=$(xmlstarlet sel -N x="urn:oasis:names:tc:xliff:document:1.2" \
+SOURCE_KEYS=$(xmlstarlet sel -N x="$XLIFF_NS" \
   -t -v 'count(//x:trans-unit)' "$BASELINE")
+
+if [[ -z "$SOURCE_KEYS" || "$SOURCE_KEYS" -eq 0 ]]; then
+  echo "Baseline $BASELINE has no trans-units — skipping" >&2
+  exit 0
+fi
 
 echo "Baseline keys: $SOURCE_KEYS"
 
+# Collect baseline IDs once for accurate orphan detection
+BASELINE_IDS=$(xmlstarlet sel -N x="$XLIFF_NS" \
+  -t -m '//x:trans-unit' -v '@id' -n "$BASELINE" | sort -u)
+
 FAIL=0
-for f in "$LANG_DIR"/*.locallang.xlf; do
+shopt -s nullglob
+LANG_FILES=("$LANG_DIR"/*.locallang.xlf)
+shopt -u nullglob
+
+if [[ ${#LANG_FILES[@]} -eq 0 ]]; then
+  echo "No localized files matching $LANG_DIR/*.locallang.xlf"
+  exit 0
+fi
+
+for f in "${LANG_FILES[@]}"; do
   [[ "$f" == "$BASELINE" ]] && continue
   LANG=$(basename "$f" | cut -d. -f1)
 
-  TRANSLATED=$(xmlstarlet sel -N x="urn:oasis:names:tc:xliff:document:1.2" \
-    -t -v 'count(//x:trans-unit[x:target and x:target/text()])' "$f")
-  EMPTY=$(xmlstarlet sel -N x="urn:oasis:names:tc:xliff:document:1.2" \
-    -t -v 'count(//x:trans-unit[x:target and not(x:target/text())])' "$f")
-  ORPHANED=$((TRANSLATED + EMPTY - SOURCE_KEYS))
+  TRANSLATED=$(xmlstarlet sel -N x="$XLIFF_NS" \
+    -t -v 'count(//x:trans-unit[x:target and normalize-space(x:target)!=""])' "$f")
+  EMPTY=$(xmlstarlet sel -N x="$XLIFF_NS" \
+    -t -v 'count(//x:trans-unit[x:target and normalize-space(x:target)=""])' "$f")
+
+  # Accurate orphan count: IDs present here but not in baseline
+  LANG_IDS=$(xmlstarlet sel -N x="$XLIFF_NS" \
+    -t -m '//x:trans-unit' -v '@id' -n "$f" | sort -u)
+  ORPHANED=$(comm -23 <(echo "$LANG_IDS") <(echo "$BASELINE_IDS") | wc -l)
 
   PCT=$((TRANSLATED * 100 / SOURCE_KEYS))
-  PRINTF "%-6s %4d/%4d (%d%%) translated, %d empty, %d orphaned\n" \
+  printf '%-6s %4d/%4d (%d%%) translated, %d empty, %d orphaned\n' \
     "$LANG" "$TRANSLATED" "$SOURCE_KEYS" "$PCT" "$EMPTY" "$ORPHANED"
 
   if (( PCT < MIN_COVERAGE )); then
@@ -118,7 +141,7 @@ TYPO3 backend modules and frontend forms should use Fluid ViewHelpers and TYPO3 
 
 - CSRF tokens are automatically injected by `<f:form>` / FormEngine; raw forms have none.
 - `<f:translate>` + XLIFF integrates with the localization pipeline above; raw `<label>Login</label>` is invisible to Crowdin.
-- Accessibility attributes (ARIA, labelledby, describedby) are handled consistently by ViewHelpers; raw markup varies per author.
+- Accessibility attributes (`aria-labelledby`, `aria-describedby`, `role`) are handled consistently by ViewHelpers; raw markup varies per author.
 - Backend styling (t3js-\*, typo3-backend-module-\* classes) is applied by FormEngine; raw forms look foreign.
 
 ### Detection pattern
@@ -126,9 +149,10 @@ TYPO3 backend modules and frontend forms should use Fluid ViewHelpers and TYPO3 
 Grep pattern for backend/frontend templates that should be upgraded:
 
 ```bash
-# Raw <input> / <form> / <button> in Fluid templates — should use ViewHelpers
+# Raw <input> / <form> / <button> in Fluid templates — should use ViewHelpers.
+# Matches anywhere on a line (not anchored to start), so inline markup is caught too.
 rg -t html --glob 'Resources/Private/**/*.html' \
-  '^\s*<(form|input|button|textarea|select)(\s|>)' \
+  '<(form|input|button|textarea|select)(\s|>)' \
   --line-number
 ```
 
