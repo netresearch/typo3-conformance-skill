@@ -94,5 +94,6 @@ grep -rn 'data-toggle\|data-dismiss\|data-ride' Resources/ --include='*.html'
 - `references/report-template.md` -- Report format
 - `references/excellence-indicators.md` -- Bonus scoring
 - `references/best-practices.md` -- Organizational patterns
+- `references/localization-coverage.md` -- XLIFF, raw HTML vs Fluid
 
 Asset templates in `assets/Build/`: PHPStan, PHP-CS-Fixer, Rector, ESLint, Stylelint, TypoScript lint.
