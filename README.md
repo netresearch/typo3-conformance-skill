@@ -48,12 +48,12 @@ This conformance checker acts as an **orchestrator** that delegates to specializ
 
 | Standard | Version/Specification |
 |----------|----------------------|
-| **TYPO3 Core** | 12.4 LTS / 13.x |
-| **PHP** | 8.1 / 8.2 / 8.3 / 8.4 |
+| **TYPO3 Core** | **14.3 LTS (default / gold standard)** / 13.4 LTS / 12.4 LTS |
+| **PHP** | 8.2 / 8.3 / 8.4 / 8.5 (v14 floor: 8.2; ceiling: 8.5.99) |
 | **Coding Style** | PSR-12 (Extended Coding Style) |
-| **Architecture** | Dependency Injection (PSR-11), PSR-14 Events, PSR-15 Middleware |
-| **Testing** | PHPUnit 10+, TYPO3 Testing Framework, Playwright E2E |
-| **Documentation** | reStructuredText (RST), TYPO3 Documentation Standards |
+| **Architecture** | Dependency Injection (PSR-11), PSR-14 Events, PSR-15 Middleware, Fluid 5 strict VHs, Extbase PHP attributes |
+| **Testing** | PHPUnit 11/12/13, TYPO3 Testing Framework 9.x, Playwright E2E |
+| **Documentation** | reStructuredText (RST), TYPO3 Documentation Standards, XLIFF 2.x (v14+) |
 
 ### Conformance Areas
 
