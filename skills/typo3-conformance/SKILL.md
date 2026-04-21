@@ -13,9 +13,9 @@ Evaluate TYPO3 extensions against TYPO3 coding standards, architecture patterns,
 
 ## When to Use
 
-- Assessing extension quality or TER readiness
-- Generating scored conformance reports
-- Planning modernization to v12/v13/v14 (**v14.3 LTS is the default/gold standard** as of 2026-04-21)
+- Extension quality / TER readiness
+- Scored conformance reports
+- Modernization to v12/v13/v14 (**v14.3 LTS is default/gold standard**)
 
 ## Delegation
 
@@ -25,7 +25,7 @@ Testing -> `typo3-testing` | Docs -> `typo3-docs` | OpenSSF -> `enterprise-readi
 
 ### Step 0: Context
 
-Read ext_emconf.php + composer.json to determine TYPO3/PHP version, extension type, scope.
+Read ext_emconf.php + composer.json for TYPO3/PHP version, type, scope.
 
 ### Steps 1-11: Checks
 
@@ -39,39 +39,25 @@ Read ext_emconf.php + composer.json to determine TYPO3/PHP version, extension ty
 8. **Practices** -- DDEV, runTests.sh, CI/CD, quality tools
 9. **TER** -- Publish workflow, upload comment format
 10. **Audit** -- PHPStan baseline, TCA searchFields/default_sortby, XLIFF completeness, cache has()+get() anti-pattern, Extbase query property names, multi-version adapters
-11. **v14 readiness** -- `ext_tables.php` present? (deprecated for v15); `ext_emconf.php` still primary metadata? (prefer `composer.json`); Fluid VHs strict-typed?; `HashService`/`GeneralUtility::hmac()` callers?; magic Extbase repo finders?; XLF 2-space indentation?
+11. **v14 readiness** -- no `ext_tables.php`/`HashService`/magic repo finders; Fluid VHs strict-typed; XLF 2-space. See `references/v14-deprecations.md`.
 
 ### Step 12: Verify
 
-Re-run after fixes. Document score delta (e.g., "58 -> 82").
+Re-run after fixes. Document score delta ("58 -> 82").
 
 ## Quick Grep Recipes
 
 ```bash
-# Missing strict_types
-grep -rL 'strict_types' Classes/ --include='*.php'
-# Prohibited $GLOBALS
-grep -rn '\$GLOBALS' Classes/ --include='*.php'
-# makeInstance for services
-grep -rn 'GeneralUtility::makeInstance' Classes/ --include='*.php'
-# PHP 8.4 implicit nullable (deprecated)
-grep -rPn '\(\s*[A-Za-z\\]+\s+\$\w+\s*=\s*null' Classes/ --include='*.php' | grep -v '?'
-# Cache has()+get() anti-pattern
-grep -rn '->has(' Classes/ --include='*.php'
-# ext_emconf must NOT have strict_types
-grep -l 'strict_types' ext_emconf.php
-# PHP 8.5 implicit float-to-int (deprecated)
-grep -rn '(int)\s*\$' Classes/ --include='*.php'
-# Bootstrap 4 data attributes in Fluid
-grep -rn 'data-toggle\|data-dismiss\|data-ride' Resources/ --include='*.html'
-# v14: HashService removed -> should not be used
-grep -rn 'HashService\|GeneralUtility::hmac(' Classes/ --include='*.php'
-# v14: magic Extbase repo finders removed
-grep -rn '->findBy[A-Z]\|->findOneBy[A-Z]\|->countBy[A-Z]' Classes/ --include='*.php'
-# v14: ext_tables.php deprecated (remove before v15)
-[ -f ext_tables.php ] && echo "WARN: ext_tables.php present - deprecated in v14.3 (#109438)"
-# v14: ext_emconf.php deprecated (prefer composer.json metadata)
-[ -f ext_emconf.php ] && ! grep -q '"name"' composer.json && echo "WARN: ext_emconf.php still primary - migrate metadata to composer.json (#108345)"
+grep -rL 'strict_types' Classes/ --include='*.php'                   # missing strict_types
+grep -rn '\$GLOBALS' Classes/ --include='*.php'                       # prohibited $GLOBALS
+grep -rn 'GeneralUtility::makeInstance' Classes/ --include='*.php'    # makeInstance for services
+grep -rPn '\(\s*[A-Za-z\\]+\s+\$\w+\s*=\s*null' Classes/ --include='*.php' | grep -v '?'  # PHP 8.4 implicit nullable
+grep -rn '->has(' Classes/ --include='*.php'                          # cache has()+get() anti-pattern
+grep -l 'strict_types' ext_emconf.php                                 # ext_emconf must NOT have strict_types
+grep -rn '(int)\s*\$' Classes/ --include='*.php'                      # PHP 8.5 implicit float-to-int
+grep -rn 'data-toggle\|data-dismiss\|data-ride' Resources/ --include='*.html'  # Bootstrap 4 in Fluid
+grep -rn 'HashService\|GeneralUtility::hmac(\|->findBy[A-Z]\|->findOneBy[A-Z]\|->countBy[A-Z]' Classes/ --include='*.php'  # v14 removals
+[ -f ext_tables.php ] && echo "WARN: ext_tables.php deprecated (#109438)"   # v14.3 deprecation
 ```
 
 ## Scoring
@@ -88,23 +74,11 @@ grep -rn '->findBy[A-Z]\|->findOneBy[A-Z]\|->countBy[A-Z]' Classes/ --include='*
 
 ## References
 
-- `references/extension-architecture.md` -- Structure, required files
-- `references/coding-guidelines.md` -- PSR-12, naming, PHPStan
-- `references/php-architecture.md` -- DI, events, middleware
-- `references/testing-standards.md` -- PHPUnit/Playwright
-- `references/composer-validation.md` -- composer.json rules
-- `references/ext-emconf-validation.md` -- TER fields
-- `references/version-requirements.md` -- TYPO3/PHP compat
-- `references/dual-version-compatibility.md` -- v12+v13
-- `references/v13-v14-dual-compatibility.md` -- v13+v14 (new)
-- `references/multi-version-dependency-compatibility.md` -- Adapter pattern
-- `references/v13-deprecations.md` -- v13 migration paths (removals mostly in v14.0)
-- `references/v14-deprecations.md` -- v14 removals (in 14.0) & deprecations (for v15) authoritative list
-- `references/backend-module-v13.md` -- ES6, Modal, a11y (v13-era; v14 additions noted inline)
-- `references/ter-publishing.md` -- TER workflow
-- `references/report-template.md` -- Report format
-- `references/excellence-indicators.md` -- Bonus scoring
-- `references/best-practices.md` -- Organizational patterns
-- `references/localization-coverage.md` -- XLIFF, raw HTML vs Fluid
+See `references/` for deep-dives:
+
+- **Architecture & code:** `extension-architecture.md`, `php-architecture.md`, `coding-guidelines.md`, `best-practices.md`
+- **Validation:** `composer-validation.md`, `ext-emconf-validation.md`, `version-requirements.md`, `testing-standards.md`
+- **Multi-version:** `dual-version-compatibility.md` (v12+v13), `v13-v14-dual-compatibility.md` (v13+v14), `multi-version-dependency-compatibility.md`, `v13-deprecations.md`, `v14-deprecations.md`
+- **Backend & publishing:** `backend-module-v13.md`, `ter-publishing.md`, `report-template.md`, `excellence-indicators.md`, `localization-coverage.md`
 
 Asset templates in `assets/Build/`: PHPStan, PHP-CS-Fixer, Rector, ESLint, Stylelint, TypoScript lint.
