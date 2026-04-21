@@ -86,7 +86,6 @@ my_extension/
 ├── .gitignore                      # Git ignore rules
 ├── .php-cs-fixer.dist.php          # PHP CS Fixer config
 ├── composer.json                   # Composer configuration
-├── composer.lock                   # Locked dependencies
 ├── ext_emconf.php                  # Extension metadata
 ├── ext_localconf.php               # Global configuration
 ├── LICENSE                         # License file
@@ -1450,7 +1449,7 @@ $errors = libxml_get_errors();
 
 ### TYPO3 Cache Configuration — No Hardcoded Backend
 
-When declaring a cache frontend in `ext_localconf.php`, **never specify a `backend:` key**. Only declare `frontend`, `options`, and `groups`. TYPO3 uses the instance's default backend.
+When declaring a cache frontend in `ext_localconf.php`, **never specify a `'backend'` array key**. Only declare `frontend`, `options`, and `groups`. TYPO3 uses the instance's default backend.
 
 **Bad — hardcodes backend, defeats admin's Redis/Valkey/Memcached setup:**
 

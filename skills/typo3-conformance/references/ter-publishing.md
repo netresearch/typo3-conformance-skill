@@ -471,7 +471,7 @@ Details: https://github.com/vendor/extension/releases/tag/v2.0.0
 | Special characters in XML feed | Unsupported chars in comment | Strip `#*+=~^|\\<>` from comments |
 | Version mismatch | Tag doesn't match ext_emconf | Use `tailor set-version` before publish |
 | Authentication failed | Invalid/expired API token | Regenerate token at extensions.typo3.org |
-| Published with wrong / outdated upload comment | Publish ran before the release body was finalized | Re-run `tailor ter:publish --comment "…" vX.Y.Z` on the same version — TER overwrites the upload comment on republish. The ZIP contents are unchanged (the version number doesn't let you ship different code under the same version), only the comment updates. Safe to re-trigger the publish workflow after editing the GitHub release body. |
+| Published with wrong / outdated upload comment | Publish ran before the release body was finalized | Re-run `tailor ter:publish --comment "..." vX.Y.Z` on the same version — TER overwrites the upload comment on republish. The ZIP contents are unchanged (the version number doesn't let you ship different code under the same version), only the comment updates. Safe to re-trigger the publish workflow after editing the GitHub release body. |
 
 ### Validation Script
 
