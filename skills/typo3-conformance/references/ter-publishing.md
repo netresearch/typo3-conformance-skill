@@ -55,7 +55,7 @@ Fixed critical bug in authentication module
 ```
 Bug fixes & improvements! See CHANGELOG.md for details...
 ```
-(The `&` will be escaped, `...` is not fully supported)
+(The `&` will be escaped in the XML feed. ASCII `...` is fine — the allow-regex on line 28 permits `.` — but the Unicode ellipsis `…` gets stripped since it's not in the allow-list.)
 
 ---
 
