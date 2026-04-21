@@ -312,11 +312,11 @@ Rector will automatically update your `ext_emconf.php` during the next run, ensu
 
 **PHPUnit Modernization**
 
-The PHPUnit set modernizes test code to current best practices:
+The PHPUnit set modernizes test code to current best practices. Note that TYPO3 v13 and v14.3 LTS ship with `typo3/testing-framework:^9.5`, which accepts PHPUnit `^11.2.5 || ^12.1.2 || ^13.0.2` — so this set delivers you from PHPUnit 9/10-era syntax into the 11/12/13-compatible space:
 
 ```php
 ->withSets([
-    PHPUnitSetList::PHPUNIT_100,  // PHPUnit 10+ syntax
+    PHPUnitSetList::PHPUNIT_100,  // PHPUnit 10+ syntax (forward-compatible with 11/12/13)
 ])
 ```
 

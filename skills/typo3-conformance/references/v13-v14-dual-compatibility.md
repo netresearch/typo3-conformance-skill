@@ -164,7 +164,35 @@ If you must support both v13 AND v12 (tri-compat), use the `Typo3Version` check 
 
 ## Security attributes (v14 excellence bonus)
 
-v14 introduces `#[Authorize]` and `#[RateLimit]` attributes. These do not exist in v13 — extensions supporting only v13+v14 can safely add them because v13 ignores unknown PHP attributes:
+v14 introduces `#[Authorize]` and `#[RateLimit]` attributes in `TYPO3\CMS\Extbase\Attribute`. These classes **do not exist in v13**. Naively adding `use` + the attribute to a dual-version extension will:
+
+- Not break at `use`-statement parse time (PHP `use` aliases are lazy; they don't autoload).
+- Break the first time v13 **reflects** the attributes on the method (e.g., `ReflectionMethod::getAttributes()` with `newInstance()` triggers autoload of the missing class → fatal `Class not found`).
+
+**If v13 never reflects these attributes on your controllers, you can add them without guard** — v13 will simply ignore them at dispatch time because v13's dispatcher doesn't know to read them. Verify for your specific code path.
+
+**Safer: ship a polyfill stub for v13.** In a file conditionally loaded in `ext_localconf.php`:
+
+```php
+// Classes/Compat/AttributeStubs.php (loaded only on v13)
+if (!class_exists(\TYPO3\CMS\Extbase\Attribute\Authorize::class)) {
+    #[\Attribute(\Attribute::TARGET_METHOD | \Attribute::TARGET_CLASS)]
+    final class Authorize { public function __construct(bool $requireLogin = true, array $requireGroups = []) {} }
+}
+if (!class_exists(\TYPO3\CMS\Extbase\Attribute\RateLimit::class)) {
+    #[\Attribute(\Attribute::TARGET_METHOD)]
+    final class RateLimit { public function __construct(int $limit, string $interval) {} }
+}
+```
+
+```php
+// ext_localconf.php
+if ((new \TYPO3\CMS\Core\Information\Typo3Version())->getMajorVersion() < 14) {
+    require __DIR__ . '/../Classes/Compat/AttributeStubs.php';
+}
+```
+
+Then in your controller — works on both versions:
 
 ```php
 use TYPO3\CMS\Extbase\Attribute\Authorize;
@@ -178,16 +206,9 @@ final class LoginController
 }
 ```
 
-The attribute classes exist only in v14, so `use` statements must be guarded:
+Treat this as **progressive enhancement**: v14 users get real rate-limiting; v13 users get no-op stubs (the attributes are present but v13's dispatcher ignores them). v15 will remove the stub loader when v13 support is dropped.
 
-```php
-if (class_exists(\TYPO3\CMS\Extbase\Attribute\RateLimit::class)) {
-    // v14 runtime will honor the attributes
-    // v13 runtime ignores unknown attributes — no error, no rate limiting
-}
-```
-
-For dual-version extensions, treat these as **progressive enhancement**: v14 users get the security; v13 users get the original behavior.
+> **Why not `class_exists()` at runtime?** PHP attributes are declarative syntax attached to methods/classes at parse time. You can't wrap an attribute in a runtime conditional. The only valid alternatives are: (a) ship the stub classes, (b) branch the whole class definition (two controller files selected via service factory), (c) forgo the attribute on v13.
 
 ---
 

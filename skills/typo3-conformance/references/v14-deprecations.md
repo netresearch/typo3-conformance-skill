@@ -25,7 +25,7 @@ Break the code. Conformance: if found, flag as **critical issue** for any extens
 **Detection:**
 ```bash
 grep -rn 'StandaloneView\|AbstractTemplateView\|renderStatic' Classes/ --include='*.php'
-grep -rn 'class.*ViewHelper' Classes/ViewHelpers/ --include='*.php' | grep -v 'function render(.*):'
+grep -rn 'class.*ViewHelper' Classes/ViewHelpers/ --include='*.php' | grep -vE 'function render\(.*\):'
 grep -rEn '\{_[a-zA-Z]' Resources/Private --include='*.html'
 ```
 
@@ -118,7 +118,7 @@ grep -rn "GLOBALS\['TSFE'\]\|TypoScriptFrontendController\|getAttribute('fronten
 | value picker `prepend`/`append` modes (#107677) | — |
 | `interface` settings for list view (#106412) | — |
 | `pages.url` field (#17406) | typolink page type |
-| `tt_content.list_type` + `tt_content.list` (#105538, #105377) | CType-only plugins; drop 2nd/3rd args of `addPlugin()` |
+| `tt_content.list_type` + `tt_content.list` (#105538, #105377) | Register plugins as CTypes instead — use `ExtensionUtility::registerPlugin()` (v13+) or direct TCA overrides; remove `addPItoST43()` and `addPlugin()` with a plugin-type argument (both removed in v14). |
 | flex pointer field functionality (#107047) | — |
 | duplicate doktype restriction config (#106949) | — |
 | Scheduler frequency options (moved to TCA #107488) | native TCA table (#106739) |
@@ -342,7 +342,7 @@ grep -rn 'HashService\|GeneralUtility::hmac(' Classes/ --include='*.php'
 grep -rn '->findBy[A-Z]\|->findOneBy[A-Z]\|->countBy[A-Z]' Classes/ --include='*.php'
 grep -rn "GLOBALS\['TSFE'\]\|TypoScriptFrontendController" Classes/ --include='*.php'
 grep -rn 'StandaloneView\|AbstractTemplateView\|renderStatic' Classes/ --include='*.php'
-grep -rn '@Extbase\\\\Annotation' Classes/ --include='*.php'
+grep -rn '@Extbase\\Annotation' Classes/ --include='*.php'
 grep -rn 'subtype_value_field\|subtypes_addlist\|control.searchFields\|eval.*year\|list_type' Configuration/TCA/ --include='*.php'
 
 # Deprecations (fix before v15)
