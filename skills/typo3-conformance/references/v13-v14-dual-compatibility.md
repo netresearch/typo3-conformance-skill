@@ -70,7 +70,7 @@ vendor/bin/rector process --only=Ssch\\TYPO3Rector\\Rules\\v14\\v0\\MigrateRemov
 | Site | `$request->getAttribute('site')` | — |
 | Language | `$request->getAttribute('language')` | — |
 | Password hashing | `PasswordHashFactory` + `BackendPasswordHasher` / `FrontendPasswordHasher` | — |
-| HMAC / signing | `HashService` from `TYPO3\\CMS\\Extbase\\Security\\Cryptography\\HashService` in v13 **only** — class is **removed in v14** | use `Core\\Security\\HashInterface` in v14 |
+| HMAC / signing | `HashService` from `TYPO3\\CMS\\Extbase\\Security\\Cryptography\\HashService` in v13 **only** — class is **removed in v14** | use `TYPO3\\CMS\\Core\\Crypto\\HashService` in v14 |
 | Magic repo finders (`findByX()`) | **avoid** — removed in v14; use `createQuery()` | |
 | Fluid view rendering | `Core\\View\\ViewFactoryInterface` (available v13+, preferred); `StandaloneView` only if v13-only | `StandaloneView` removed in v14 |
 | TCA search | use explicit search TCA (#106972 pattern); `control.searchFields` still works in v13, removed in v14 | `control.searchFields` |

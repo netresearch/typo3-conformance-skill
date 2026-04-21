@@ -175,16 +175,16 @@ All **removed** in v14.0:
 
 ---
 
-### 1.10 Security / crypto
+### 1.10 Security / crypto changes
 
-**Changed:**
-- HMAC algorithm: SHA1 → SHA256 family (#106307)
+**Changed behavior:**
+- HMAC algorithm strengthened: SHA1 → SHA256 family (#106307). Persisted HMACs minted on v13 may need regeneration.
 
 **Removed:**
 - `AuthenticationService` static function parameter (#106869)
 - `AfterMailerInitializationEvent` (#105809)
 - `MailMessage->send()` (#108097)
-- `Extbase HashService` — replaced by built-in symmetric cipher service (#108002)
+- `Extbase HashService` — replaced by `TYPO3\CMS\Core\Crypto\HashService` + built-in symmetric cipher service (#108002)
 
 ---
 
