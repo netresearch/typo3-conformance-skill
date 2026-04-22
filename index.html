@@ -1,0 +1,1843 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TYPO3 v14.3 LTS — Netresearch Skill Update Plan</title>
+<meta name="description" content="Comprehensive reference of TYPO3 v13 → v14.3 LTS changes and the Netresearch skill update plan. Released 2026-04-21.">
+<meta name="theme-color" content="#2F99A4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700&family=Open+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --nr-turquoise:#2F99A4; --nr-turquoise-dark:#257880; --nr-turquoise-light:rgba(47,153,164,.08);
+  --nr-orange:#FF4D00; --nr-orange-light:rgba(255,77,0,.08);
+  --nr-anthracite:#585961; --nr-light:#F5F5F5; --nr-border:#E5E5E5; --nr-border-strong:#CCCDCC;
+  --nr-text:#3a3b42; --nr-muted:#6b6c75;
+  --radius:8px; --radius-sm:4px;
+  --f-sans:"Open Sans",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  --f-display:"Raleway",var(--f-sans);
+  --f-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --shadow-sm:0 1px 2px rgba(47,153,164,.05);
+  --shadow:0 4px 16px rgba(88,89,97,.07);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{margin:0;font-family:var(--f-sans);font-size:16px;line-height:1.65;color:var(--nr-text);background:#fff;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:var(--nr-turquoise);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .15s}
+a:hover{border-bottom-color:var(--nr-turquoise)}
+.nr-header{background:linear-gradient(135deg,var(--nr-turquoise) 0%,var(--nr-turquoise-dark) 100%);color:#fff;padding:28px 0;border-bottom:4px solid var(--nr-orange);position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.nr-header-inner{max-width:1200px;margin:0 auto;padding:0 32px;display:flex;align-items:center;gap:24px}
+.nr-logo{width:44px;height:44px;flex-shrink:0;background:#fff;border-radius:var(--radius-sm);padding:6px;display:flex;align-items:center;justify-content:center}
+.nr-logo svg{width:100%;height:100%}
+.nr-brand{font-family:var(--f-display);font-weight:700;font-size:1.05rem;letter-spacing:.02em;line-height:1.2}
+.nr-brand small{display:block;font-weight:400;font-size:.8rem;opacity:.85;letter-spacing:.04em;margin-top:2px}
+.nr-header-meta{margin-left:auto;font-size:.85rem;opacity:.9;text-align:right;line-height:1.4}
+.nr-header-meta strong{color:#fff;font-weight:600}
+.hero{background:var(--nr-turquoise-light);border-bottom:1px solid var(--nr-border);padding:48px 0 40px}
+.hero-inner{max-width:1200px;margin:0 auto;padding:0 32px}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--nr-orange);color:#fff;font-weight:600;font-size:.78rem;padding:4px 10px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase}
+.hero h1{font-family:var(--f-display);font-weight:700;font-size:2.4rem;line-height:1.2;margin:16px 0 8px;color:var(--nr-anthracite)}
+.hero .lead{font-size:1.15rem;color:var(--nr-muted);max-width:760px;margin:0}
+.hero-meta{display:flex;gap:32px;margin-top:24px;flex-wrap:wrap;font-size:.9rem}
+.hero-meta div strong{color:var(--nr-anthracite);font-weight:600;display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.hero-meta div span{color:var(--nr-muted)}
+.layout{display:grid;grid-template-columns:260px 1fr;gap:48px;padding:40px 32px;max-width:1200px;margin:0 auto}
+@media (max-width:900px){.layout{grid-template-columns:1fr;padding:24px 20px;gap:24px}}
+.toc-wrap{position:sticky;top:120px;align-self:start;max-height:calc(100vh - 140px);overflow-y:auto;padding-right:8px}
+.toc-wrap::-webkit-scrollbar{width:4px}
+.toc-wrap::-webkit-scrollbar-thumb{background:var(--nr-border-strong);border-radius:2px}
+#TOC{font-size:.85rem}
+#TOC .toc-header{font-family:var(--f-display);font-weight:700;color:var(--nr-anthracite);font-size:.78rem;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--nr-turquoise)}
+#TOC ul{list-style:none;padding:0;margin:0}
+#TOC > ul > li{margin:0}
+#TOC > ul > li > a{display:block;padding:7px 10px;border-left:2px solid transparent;color:var(--nr-anthracite);font-weight:600;border-bottom:0}
+#TOC > ul > li > a:hover{background:var(--nr-turquoise-light);border-left-color:var(--nr-turquoise);color:var(--nr-turquoise-dark)}
+#TOC ul ul{padding-left:12px;margin:2px 0 8px}
+#TOC ul ul a{display:block;padding:4px 10px;font-size:.8rem;color:var(--nr-muted);border-left:2px solid transparent;border-bottom:0}
+#TOC ul ul a:hover{color:var(--nr-turquoise);border-left-color:var(--nr-border-strong)}
+@media (max-width:900px){.toc-wrap{position:static;max-height:none;border:1px solid var(--nr-border);border-radius:var(--radius);padding:16px;background:#fff}}
+.content{min-width:0}
+.content h1{font-family:var(--f-display);font-weight:700;color:var(--nr-anthracite);font-size:2rem;margin:0 0 16px;line-height:1.25;display:none}
+.content h2{font-family:var(--f-display);font-weight:700;color:var(--nr-anthracite);font-size:1.55rem;margin:48px 0 16px;line-height:1.3;padding-bottom:8px;border-bottom:3px solid var(--nr-turquoise)}
+.content h2::before{content:"";display:inline-block;width:4px;height:1.1em;background:var(--nr-orange);margin-right:12px;vertical-align:-2px;border-radius:2px}
+.content h3{font-family:var(--f-display);font-weight:600;color:var(--nr-turquoise-dark);font-size:1.25rem;margin:32px 0 12px;line-height:1.3}
+.content h4{font-family:var(--f-display);font-weight:600;color:var(--nr-anthracite);font-size:1.05rem;margin:24px 0 10px}
+.content h5{font-weight:700;color:var(--nr-anthracite);font-size:.95rem;margin:20px 0 8px;text-transform:uppercase;letter-spacing:.04em}
+.content p{margin:0 0 16px}
+.content ul,.content ol{margin:0 0 16px;padding-left:24px}
+.content li{margin-bottom:6px}
+.content li > ul, .content li > ol{margin:6px 0 0}
+.content blockquote{margin:16px 0 24px;padding:14px 20px;background:var(--nr-orange-light);border-left:4px solid var(--nr-orange);border-radius:0 var(--radius) var(--radius) 0;color:var(--nr-anthracite)}
+.content blockquote p{margin:0;font-weight:600}
+.content hr{border:0;height:1px;background:var(--nr-border);margin:40px 0}
+.content code{font-family:var(--f-mono);font-size:.87em;background:var(--nr-light);color:var(--nr-turquoise-dark);padding:1px 6px;border-radius:var(--radius-sm);border:1px solid var(--nr-border)}
+.content pre{font-family:var(--f-mono);background:#1e2128;color:#e6e6e6;padding:16px 20px;border-radius:var(--radius);overflow-x:auto;font-size:.84rem;line-height:1.55;margin:16px 0;box-shadow:var(--shadow-sm)}
+.content pre code{background:none;color:inherit;border:0;padding:0;font-size:inherit}
+.content table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:.9rem;box-shadow:var(--shadow-sm);border-radius:var(--radius);overflow:hidden;border:1px solid var(--nr-border)}
+.content thead{background:var(--nr-turquoise);color:#fff}
+.content th{padding:10px 14px;text-align:left;font-family:var(--f-display);font-weight:600;font-size:.85rem;letter-spacing:.02em}
+.content td{padding:10px 14px;border-top:1px solid var(--nr-border);vertical-align:top}
+.content tbody tr:nth-child(even){background:var(--nr-light)}
+.content tbody tr:hover{background:var(--nr-turquoise-light)}
+.content td code{font-size:.85em}
+.content details{margin:16px 0;background:var(--nr-light);border:1px solid var(--nr-border);border-radius:var(--radius);padding:12px 16px}
+.content details summary{cursor:pointer;font-weight:600;color:var(--nr-turquoise-dark);padding:4px 0}
+.content details[open] summary{border-bottom:1px solid var(--nr-border);padding-bottom:8px;margin-bottom:12px}
+.priority-p1,.priority-p2,.priority-p3{display:inline-block;padding:1px 8px;border-radius:10px;font-size:.75rem;font-weight:700;letter-spacing:.03em}
+.priority-p1{background:var(--nr-orange);color:#fff}
+.priority-p2{background:#FFC107;color:#000}
+.priority-p3{background:#CCCDCC;color:var(--nr-anthracite)}
+.nr-footer{background:var(--nr-anthracite);color:rgba(255,255,255,.85);padding:32px 0;margin-top:64px;font-size:.88rem}
+.nr-footer-inner{max-width:1200px;margin:0 auto;padding:0 32px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.nr-footer a{color:#fff;border-bottom-color:rgba(255,255,255,.4)}
+.nr-footer a:hover{border-bottom-color:#fff}
+.nr-footer strong{color:#fff}
+@media print{.nr-header,.nr-footer,.toc-wrap{display:none}.layout{grid-template-columns:1fr;padding:0}body{font-size:11pt}.content pre{border:1px solid #ccc}}
+</style>
+</head>
+<body>
+<header class="nr-header">
+  <div class="nr-header-inner">
+    <div class="nr-logo"><svg
+   viewBox="-75 -75 440 440"
+   zoomAndPan="disable"
+   version="1.2"
+   baseProfile="tiny-ps"
+   xmlns="http://www.w3.org/2000/svg">
+  <title>Netresearch DTT GmbH</title>
+  <g>
+    <path
+       fill="#2999a4"
+       d="M209.6,0V31.62h32.77a26.38,26.38,0,0,1,26.44,26.43V242a26.38,26.38,0,0,1-26.44,26.44H209.6V300h47.93a42.77,42.77,0,0,0,42.86-42.86V42.89A42.76,42.76,0,0,0,257.53,0ZM43.25,0A42.76,42.76,0,0,0,.39,42.89V257.18A42.76,42.76,0,0,0,43.25,300H91.18V268.46H58.4A26.38,26.38,0,0,1,32,242v-184A26.37,26.37,0,0,1,58.4,31.62H91.18V0Z"
+       transform="translate(-0.39 -0.04)" />
+    <path
+       fill="#595a62"
+       d="M221.44,120.41c0-34.48-13.94-57.82-48.93-57.82-26.62,0-48.54,7.74-64.17,26.56l-.7-22.06-28.31.06V232.94h31.59V124.69c7.14-18.38,32.14-34.8,53-34.5,27.38.4,25.2,26.24,26,45.81v96.94h31.58"
+       transform="translate(-0.39 -0.04)" />
+  </g>
+</svg></div>
+    <div class="nr-brand">Netresearch<small>TYPO3 Skill Update Plan</small></div>
+    <div class="nr-header-meta"><strong>TYPO3 v14.3 LTS</strong><br>released &amp; analysed 2026-04-21</div>
+  </div>
+</header>
+<section class="hero">
+  <div class="hero-inner">
+    <span class="hero-badge">Gold standard · today</span>
+    <h1>TYPO3 v14.3 LTS is live — here's how we update every Netresearch skill</h1>
+    <p class="lead">A comprehensive v13 → v14 change reference, an inventory of 15 Netresearch skills with concrete per-file gaps, and a 3-week execution plan to make v14.3 the new default.</p>
+    <div class="hero-meta">
+      <div><strong>Released</strong><span>2026-04-21 · TYPO3 v14.3 LTS</span></div>
+      <div><strong>Free support</strong><span>bugfix 2027-12-31 · security 2029-06-30</span></div>
+      <div><strong>Scope</strong><span>15 skills across github.com/netresearch</span></div>
+      <div><strong>Breaking changes</strong><span>98 in v14.0 · 0 since</span></div>
+    </div>
+  </div>
+</section>
+<div class="layout">
+  <aside class="toc-wrap"><nav id="TOC" role="doc-toc"><div class="toc-header">On this page</div>
+<ul>
+<li><a href="#typo3-v143-lts--netresearch-skill-update-plan"
+id="toc-typo3-v143-lts--netresearch-skill-update-plan">TYPO3 v14.3 LTS —
+Netresearch Skill Update Plan</a>
+<ul>
+<li><a href="#-rollout-status--2026-04-21"
+id="toc--rollout-status--2026-04-21">🚢 Rollout status — 2026-04-21</a>
+<ul>
+<li><a href="#github-15-repos--all-merged-into-main"
+id="toc-github-15-repos--all-merged-into-main">GitHub (15 repos — all
+merged into <code>main</code>)</a></li>
+<li><a href="#gitlab-6-repos--all-merged-into-main"
+id="toc-gitlab-6-repos--all-merged-into-main">GitLab (6 repos — all
+merged into <code>main</code>)</a></li>
+<li><a href="#review-findings-applied"
+id="toc-review-findings-applied">Review findings applied</a></li>
+</ul></li>
+<li><a href="#part-a--v13--v14-reference-what-actually-changed"
+id="toc-part-a--v13--v14-reference-what-actually-changed">Part A — v13 →
+v14 reference (what actually changed)</a>
+<ul>
+<li><a href="#1-platform-requirements-v143"
+id="toc-1-platform-requirements-v143">1. Platform requirements
+(v14.3)</a></li>
+<li><a href="#2-dependency-bumps-v13--v14"
+id="toc-2-dependency-bumps-v13--v14">2. Dependency bumps (v13 →
+v14)</a></li>
+<li><a href="#3-breaking-change-map-v140-only--lts-freeze-after-that"
+id="toc-3-breaking-change-map-v140-only--lts-freeze-after-that">3.
+Breaking change map (v14.0 only — LTS freeze after that)</a></li>
+<li><a href="#4-v140--v143-per-release-headlines"
+id="toc-4-v140--v143-per-release-headlines">4. v14.0 → v14.3 per-release
+headlines</a></li>
+<li><a href="#5-v15-preparation--whats-deprecated-in-v143"
+id="toc-5-v15-preparation--whats-deprecated-in-v143">5. v15 preparation
+— what's deprecated in v14.3</a></li>
+<li><a href="#6-lts-support-windows-from-release-announcement"
+id="toc-6-lts-support-windows-from-release-announcement">6. LTS support
+windows (from release announcement)</a></li>
+<li><a href="#7-migration-tooling-v13--v14"
+id="toc-7-migration-tooling-v13--v14">7. Migration tooling (v13 →
+v14)</a></li>
+<li><a href="#8-content-blocks-status"
+id="toc-8-content-blocks-status">8. Content Blocks status</a></li>
+</ul></li>
+<li><a href="#part-b--skill-inventory--v143-gap-assessment"
+id="toc-part-b--skill-inventory--v143-gap-assessment">Part B — Skill
+inventory &amp; v14.3 gap assessment</a>
+<ul>
+<li><a href="#b1-priority-matrix" id="toc-b1-priority-matrix">B.1
+Priority matrix</a></li>
+<li><a href="#b2-per-skill-gaps-what-needs-editing"
+id="toc-b2-per-skill-gaps-what-needs-editing">B.2 Per-skill gaps (what
+needs editing)</a></li>
+<li><a href="#b3-shared-cross-cutting-updates-apply-to-all-typo3-skills"
+id="toc-b3-shared-cross-cutting-updates-apply-to-all-typo3-skills">B.3
+Shared cross-cutting updates (apply to all TYPO3 skills)</a></li>
+</ul></li>
+<li><a href="#part-c--recommended-execution-order"
+id="toc-part-c--recommended-execution-order">Part C — Recommended
+execution order</a></li>
+<li><a href="#part-d--verified-specifications"
+id="toc-part-d--verified-specifications">Part D — Verified
+specifications</a>
+<ul>
+<li><a href="#d1-nodejs--24140-2500-npm-1190"
+id="toc-d1-nodejs--24140-2500-npm-1190">D.1 Node.js —
+<code>&gt;=24.14.0 &lt;25.0.0</code>, npm
+<code>&gt;=11.9.0</code></a></li>
+<li><a
+href="#d2-bootstrap--532-runtime-js-css-banner-still-513-stale-artifact"
+id="toc-d2-bootstrap--532-runtime-js-css-banner-still-513-stale-artifact">D.2
+Bootstrap — <strong>5.3.2</strong> (runtime JS), CSS banner still 5.1.3
+(stale artifact)</a></li>
+<li><a href="#d3-phpunit--1125--1212--1302-via-testing-framework-950"
+id="toc-d3-phpunit--1125--1212--1302-via-testing-framework-950">D.3
+PHPUnit — <code>^11.2.5 || ^12.1.2 || ^13.0.2</code> via
+testing-framework <code>9.5.0</code></a></li>
+<li><a href="#d4-v14-elts-end-date--not-yet-officially-published"
+id="toc-d4-v14-elts-end-date--not-yet-officially-published">D.4 v14 ELTS
+end date — <strong>not yet officially published</strong></a></li>
+<li><a
+href="#d5-typo3-rector-v14-rules--47-rules-46-in-typo314v0--1-in-v2"
+id="toc-d5-typo3-rector-v14-rules--47-rules-46-in-typo314v0--1-in-v2">D.5
+TYPO3 Rector v14 rules — <strong>47 rules</strong> (46 in
+<code>TYPO314/v0/</code> + 1 in <code>v2/</code>)</a></li>
+</ul></li>
+<li><a href="#source-index" id="toc-source-index">Source index</a></li>
+</ul></li>
+</ul>
+</nav></aside>
+  <main class="content">
+
+
+<section id="typo3-v143-lts--netresearch-skill-update-plan"
+class="level1">
+<h1>TYPO3 v14.3 LTS — Netresearch Skill Update Plan</h1>
+<p><strong>Release day:</strong> 2026-04-21 · <strong>Compiled &amp;
+shipped:</strong> 2026-04-21 · <strong>Scope:</strong> all Netresearch
+skills touching TYPO3</p>
+<blockquote>
+<p>Goal: make TYPO3 v14.3 LTS the new <strong>default and gold
+standard</strong> across every skill, without dropping multi-version
+support (v11 ELTS / v12 ELTS-soon / v13 LTS / v14 LTS-current).</p>
+</blockquote>
+<hr />
+<section id="-rollout-status--2026-04-21" class="level2">
+<h2>🚢 Rollout status — 2026-04-21</h2>
+<p><strong>21/21 PRs/MRs MERGED. Main CI green across every
+repo.</strong></p>
+<section id="github-15-repos--all-merged-into-main" class="level3">
+<h3>GitHub (15 repos — all merged into <code>main</code>)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Skill</th>
+<th>PR</th>
+<th>Main CI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><a
+href="https://github.com/netresearch/typo3-conformance-skill">typo3-conformance-skill</a></td>
+<td><a
+href="https://github.com/netresearch/typo3-conformance-skill/pull/48">#48</a>
+✅ merged</td>
+<td>✅</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><a
+href="https://github.com/netresearch/typo3-extension-upgrade-skill">typo3-extension-upgrade-skill</a></td>
+<td><a
+href="https://github.com/netresearch/typo3-extension-upgrade-skill/pull/20">#20</a>
+✅ merged</td>
+<td>✅</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td><a
+href="https://github.com/netresearch/typo3-ddev-skill">typo3-ddev-skill</a></td>
+<td><a
+href="https://github.com/netresearch/typo3-ddev-skill/pull/26">#26</a>
+✅ merged</td>
+<td>✅</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td><a
+href="https://github.com/netresearch/typo3-testing-skill">typo3-testing-skill</a></td>
+<td><a
+href="https://github.com/netresearch/typo3-testing-skill/pull/56">#56</a>
+✅ merged</td>
+<td>✅</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td><a
+href="https://github.com/netresearch/typo3-project-upgrade-skill">typo3-project-upgrade-skill</a></td>
+<td><a
+href="https://github.com/netresearch/typo3-project-upgrade-skill/pull/6">#6</a>
+✅ merged</td>
+<td>✅</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td><a
+href="https://github.com/netresearch/typo3-docs-skill">typo3-docs-skill</a></td>
+<td><a
+href="https://github.com/netresearch/typo3-docs-skill/pull/41">#41</a>
+✅ merged</td>
+<td>✅</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td><a
+href="https://github.com/netresearch/typo3-typoscript-ref-skill">typo3-typoscript-ref-skill</a></td>
+<td><a
+href="https://github.com/netresearch/typo3-typoscript-ref-skill/pull/6">#6</a>
+✅ merged</td>
+<td>✅</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td><a
+href="https://github.com/netresearch/typo3-ckeditor5-skill">typo3-ckeditor5-skill</a></td>
+<td><a
+href="https://github.com/netresearch/typo3-ckeditor5-skill/pull/18">#18</a>
+✅ merged</td>
+<td>✅</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td><a
+href="https://github.com/netresearch/security-audit-skill">security-audit-skill</a></td>
+<td><a
+href="https://github.com/netresearch/security-audit-skill/pull/57">#57</a>
+✅ merged</td>
+<td>✅</td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td><a
+href="https://github.com/netresearch/typo3-core-contributions-skill">typo3-core-contributions-skill</a></td>
+<td><a
+href="https://github.com/netresearch/typo3-core-contributions-skill/pull/17">#17</a>
+✅ merged</td>
+<td>✅</td>
+</tr>
+<tr class="odd">
+<td>11</td>
+<td><a
+href="https://github.com/netresearch/enterprise-readiness-skill">enterprise-readiness-skill</a></td>
+<td><a
+href="https://github.com/netresearch/enterprise-readiness-skill/pull/52">#52</a>
+✅ merged</td>
+<td>✅</td>
+</tr>
+<tr class="even">
+<td>12</td>
+<td><a
+href="https://github.com/netresearch/php-modernization-skill">php-modernization-skill</a></td>
+<td><a
+href="https://github.com/netresearch/php-modernization-skill/pull/32">#32</a>
+✅ merged</td>
+<td>✅</td>
+</tr>
+<tr class="odd">
+<td>13</td>
+<td><a
+href="https://github.com/netresearch/typo3-vite-skill">typo3-vite-skill</a></td>
+<td><a
+href="https://github.com/netresearch/typo3-vite-skill/pull/2">#2</a> ✅
+merged</td>
+<td>n/a (no CI wired yet)</td>
+</tr>
+<tr class="even">
+<td>14</td>
+<td><a
+href="https://github.com/netresearch/typo3-a11y-skill">typo3-a11y-skill</a></td>
+<td><a
+href="https://github.com/netresearch/typo3-a11y-skill/pull/2">#2</a> ✅
+merged</td>
+<td>n/a</td>
+</tr>
+<tr class="odd">
+<td>15</td>
+<td><a
+href="https://github.com/netresearch/typo3-frontend-patterns-skill">typo3-frontend-patterns-skill</a></td>
+<td><a
+href="https://github.com/netresearch/typo3-frontend-patterns-skill/pull/2">#2</a>
+✅ merged</td>
+<td>n/a</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="gitlab-6-repos--all-merged-into-main" class="level3">
+<h3>GitLab (6 repos — all merged into <code>main</code>)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Skill / tool</th>
+<th>MR</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><a
+href="https://git.netresearch.de/coding-ai/dxp-frontend-skill">coding-ai/dxp-frontend-skill</a></td>
+<td><a
+href="https://git.netresearch.de/coding-ai/dxp-frontend-skill/-/merge_requests/1">!1</a>
+✅ merged</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><a
+href="https://git.netresearch.de/coding-ai/typo3-extension-upgrade-skill">coding-ai/typo3-extension-upgrade-skill</a>
+<em>(internal)</em></td>
+<td><a
+href="https://git.netresearch.de/coding-ai/typo3-extension-upgrade-skill/-/merge_requests/1">!1</a>
+✅ merged</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td><a
+href="https://git.netresearch.de/coding-ai/typo3-project-evaluator-skill">coding-ai/typo3-project-evaluator-skill</a></td>
+<td><a
+href="https://git.netresearch.de/coding-ai/typo3-project-evaluator-skill/-/merge_requests/3">!3</a>
+✅ merged</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td><a
+href="https://git.netresearch.de/coding-ai/typo3-update-issues-skill">coding-ai/typo3-update-issues-skill</a></td>
+<td><a
+href="https://git.netresearch.de/coding-ai/typo3-update-issues-skill/-/merge_requests/1">!1</a>
+✅ merged</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td><a
+href="https://git.netresearch.de/coding-ai/typo3-upgrade-estimator-skill">coding-ai/typo3-upgrade-estimator-skill</a></td>
+<td><a
+href="https://git.netresearch.de/coding-ai/typo3-upgrade-estimator-skill/-/merge_requests/3">!3</a>
+✅ merged</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td><a
+href="https://git.netresearch.de/typo3/typo3-version-tracker">typo3/typo3-version-tracker</a></td>
+<td><a
+href="https://git.netresearch.de/typo3/typo3-version-tracker/-/merge_requests/4">!4</a>
+✅ merged — new <code>recompute</code> CLI command</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Production DB refreshed</strong>
+(<code>version-tracker recompute</code>, 2026-04-22):</p>
+<table>
+<thead>
+<tr class="header">
+<th>Change</th>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>support/typo3-14/app</code> on v14.0.1</td>
+<td><code>sprint</code> / <code>x.0</code> / support_end 2027-12-31</td>
+<td><strong><code>eol</code></strong> (14.0 is a discontinued sprint
+release)</td>
+</tr>
+<tr class="even">
+<td>26 other projects</td>
+<td>unchanged</td>
+<td>unchanged</td>
+</tr>
+</tbody>
+</table>
+<p>Upcoming automatic flip on 2026-04-30: 8 v12.4 projects will
+transition <code>lts</code> → <code>elts</code> when free maintenance
+ends. Re-run <code>recompute</code> to pick it up (no rescan
+needed).</p>
+</section>
+<section id="review-findings-applied" class="level3">
+<h3>Review findings applied</h3>
+<p>All bot-review findings (Gemini + Copilot) triaged and either fixed
+or skipped with rationale. Highlights:</p>
+<ul>
+<li><strong><code>typo3-ddev-skill</code></strong>: fixed real
+integration bug — <code>config.yaml</code> and
+<code>docker-compose.web.yaml</code> were missing
+<code>v14.{sitename}</code> hostname and
+<code>v14-data:/var/www/html/v14</code> volume. The
+<code>install-v14</code> command would have succeeded but produced an
+unreachable + ephemeral installation.</li>
+<li><strong>Cross-PR: dual v13+v14 PHP-attribute compatibility</strong>
+— the initial guidance (guard <code>use</code> statements with
+<code>class_exists()</code>) was technically wrong; attributes are
+declarative. Canonical polyfill-stub pattern now documented in
+<code>typo3-conformance-skill/references/v13-v14-dual-compatibility.md</code>
+and cross-referenced from <code>typo3-extension-upgrade-skill</code> and
+<code>security-audit-skill</code>.</li>
+<li><strong><code>typo3-project-upgrade-skill</code></strong>:
+<code>addUserSetting()</code> belongs in <code>ext_localconf.php</code>
+(Setup-module API), not in
+<code>Configuration/TCA/Overrides/be_users.php</code>; fixed.</li>
+<li><strong><code>typo3-conformance-skill</code></strong>:
+<code>HashService</code> replacement class canonicalized to
+<code>TYPO3\CMS\Core\Crypto\HashService</code> everywhere;
+<code>addPlugin()</code> + <code>list_type</code> → CType guidance
+corrected; grep regex escaping fixed.</li>
+<li><strong>~23 reviewer comments skipped as factually wrong</strong> —
+bots repeatedly claimed v14.3 cannot be the LTS (must be v14.4) and that
+PHP 8.5 / PHPUnit 12/13 don't exist. TYPO3 v14.3 LTS released 2026-04-21
+per the <a
+href="https://news.typo3.com/article/typo3-v14-lts-the-next-generation">official
+announcement</a>; PHP 8.5 is shipped; PHPUnit 11.5.x / 12.3.x / 13.0.x
+all exist.</li>
+</ul>
+<hr />
+</section>
+</section>
+<section id="part-a--v13--v14-reference-what-actually-changed"
+class="level2">
+<h2>Part A — v13 → v14 reference (what actually changed)</h2>
+<section id="1-platform-requirements-v143" class="level3">
+<h3>1. Platform requirements (v14.3)</h3>
+<p>Source: <a
+href="https://get.typo3.org/version/14">get.typo3.org/version/14</a>.</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>v14.3</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PHP</td>
+<td><code>&gt;= 8.2.0</code> and <code>&lt;= 8.5.99</code> (8.2 / 8.3 /
+8.4 / 8.5) — same floor as v12/v13, ceiling raised</td>
+</tr>
+<tr class="even">
+<td>Composer</td>
+<td><code>&gt;= 2.1</code></td>
+</tr>
+<tr class="odd">
+<td>MariaDB</td>
+<td><code>&gt;= 10.4.3</code>, <code>&lt;= 10.99.99</code></td>
+</tr>
+<tr class="even">
+<td>MySQL</td>
+<td><code>&gt;= 8.0.17</code>, <code>&lt;= 8.99.99</code></td>
+</tr>
+<tr class="odd">
+<td>PostgreSQL</td>
+<td><code>&gt;= 10.0</code></td>
+</tr>
+<tr class="even">
+<td>SQLite</td>
+<td><code>&gt;= 3.8.3</code></td>
+</tr>
+<tr class="odd">
+<td>Web server</td>
+<td>Apache httpd · Nginx · IIS · Caddy</td>
+</tr>
+<tr class="even">
+<td>RAM</td>
+<td><code>&gt;= 256 MB</code></td>
+</tr>
+<tr class="odd">
+<td>Browsers (backend)</td>
+<td>Chrome / Edge / Firefox / Safari (latest each)</td>
+</tr>
+<tr class="even">
+<td>Node.js (build)</td>
+<td><code>&gt;=24.14.0 &lt;25.0.0</code>, npm <code>&gt;=11.9.0</code>
+(<a
+href="https://raw.githubusercontent.com/TYPO3/typo3/main/Build/package.json">core
+Build/package.json</a>)</td>
+</tr>
+</tbody>
+</table>
+<p>DDEV is the canonical dev setup. Official quickstart:</p>
+<pre class="bash"><code>ddev config --project-type=typo3 --docroot=public --webserver-type &#39;apache-fpm&#39;
+ddev composer create --no-install &quot;typo3/cms-base-distribution:^14&quot;
+ddev composer install
+ddev typo3 setup --server-type=apache --driver=mysqli --host=db --port=3306 --dbname=db --username=db --password=db</code></pre>
+</section>
+<section id="2-dependency-bumps-v13--v14" class="level3">
+<h3>2. Dependency bumps (v13 → v14)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Component</th>
+<th>v13</th>
+<th>v14</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Symfony</td>
+<td><code>^7.1/^7.2</code></td>
+<td><strong><code>^7.3</code></strong></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>Doctrine DBAL</td>
+<td><code>~3.x</code></td>
+<td><strong><code>~4.3.3</code></strong></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Fluid Standalone (<code>typo3fluid/fluid</code>)</td>
+<td><code>^4.x</code></td>
+<td><strong><code>^5.0.2</code></strong></td>
+<td>Fluid 5 is a breaking major (strict VH args); 5.0 → 5.3 during v14
+cycle</td>
+</tr>
+<tr class="even">
+<td>CKEditor 5</td>
+<td><code>~41/42.x</code></td>
+<td><strong><code>47.0.0</code></strong></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Icon set</td>
+<td><code>4.4.1</code> (RTL/LTR)</td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>alwan color picker</td>
+<td><code>2.2.0</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>PHPStan (dev)</td>
+<td><code>2.1.32</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="even">
+<td>php-cs-fixer (dev)</td>
+<td><code>3.88.2</code></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="odd">
+<td>Testing Framework</td>
+<td><code>9.5.0</code> (supports both v13 and v14 — same branch); pulls
+PHPUnit `^11.2.5</td>
+<td></td>
+<td>^12.1.2</td>
+</tr>
+<tr class="even">
+<td>Bootstrap (backend)</td>
+<td><strong>5.3.2</strong> runtime JS, jQuery tab events deprecated
+(#109171), Modal migrated to native <code>&lt;dialog&gt;</code>
+(Breaking #107443)</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="3-breaking-change-map-v140-only--lts-freeze-after-that"
+class="level3">
+<h3>3. Breaking change map (v14.0 only — LTS freeze after that)</h3>
+<p>v14.0 has <strong>98 breaking, 31 deprecation, 105 feature, 16
+important</strong> changelog entries. v14.1, v14.2, v14.3 introduce
+<strong>zero</strong> breaking changes — only features + v15-preparation
+deprecations. That's the LTS promise in action.</p>
+<p>The top categories to watch when upgrading an extension v13 →
+v14:</p>
+<p><strong>Frontend / TSFE collapse</strong></p>
+<ul>
+<li><code>TypoScriptFrontendController</code> class
+<strong>removed</strong> (#107831). <code>$GLOBALS['TSFE']</code>,
+<code>$request-&gt;getAttribute('frontend.controller')</code>,
+<code>$contentObjectRenderer-&gt;getTypoScriptFrontendController()</code>
+all gone. → Replace with
+<code>$request-&gt;getAttribute('frontend.page.information')</code> and
+<code>PageRenderer::addHeaderData()/addFooterData()</code>.</li>
+<li><code>AfterCachedPageIsPersistedEvent</code> no longer receives TSFE
+(#107831).</li>
+<li><code>_GET</code>/<code>_POST</code> not reset to current request
+anymore (#108113).</li>
+<li>Global FE content link prefixing removed (#108114).</li>
+<li>CSS/JS concatenation + compression + comment stripping
+<strong>removed</strong> (#108055, #107944).</li>
+<li>HTTP response compression removed (#107943).</li>
+<li><code>AssetRenderer</code> "external" property removed
+(#107927).</li>
+</ul>
+<p><strong>Fluid 5</strong> (Breaking #108148)</p>
+<ul>
+<li>CDATA sections no longer stripped automatically.</li>
+<li>Variable names with leading <code>_</code> forbidden.</li>
+<li><strong>ViewHelpers must be strict-typed</strong> (typed args +
+return type).</li>
+<li><code>renderStatic()</code> removed from
+<code>AbstractViewHelper</code>.</li>
+<li>Classes removed: <code>Fluid\View\StandaloneView</code>,
+<code>TemplateView</code>, <code>AbstractTemplateView</code>. → Use
+<code>Core\View</code> factories.</li>
+<li>Standalone <code>overrideArgument</code> +
+<code>ViewHelperResolver</code> helpers removed (#104223, #104463).</li>
+</ul>
+<p><strong>Extbase</strong></p>
+<ul>
+<li>Docblock annotations namespace removed (#107229). PHP attributes
+only.</li>
+<li>Magic repository methods <code>findByX/findOneByX/countByX</code>
+<strong>removed</strong> (#105377). Use <code>createQuery()</code>.</li>
+<li>Shorthand <code>TYPO3.CMS.Extbase</code> namespace removed.</li>
+<li><code>ValidatorInterface</code> now requires
+<code>setRequest()/getRequest()</code> (#106056).</li>
+<li><code>PropertyMappingConfigurationInterface</code> strong-typed
+(#101292).</li>
+<li><code>Argument</code> uses strict types (#107777).</li>
+<li><code>config.tx_extbase.persistence.updateReferenceIndex</code>
+toggle removed (#106041).</li>
+<li>Backend modules not in page context use only global TypoScript
+(#105728).</li>
+</ul>
+<p><strong>FAL / File handling</strong> (#106427, #107403, #107735)</p>
+<ul>
+<li><code>AbstractFile::getIdentifier()/setIdentifier()</code>
+removed.</li>
+<li><code>rename()/copyTo()/moveTo()</code> moved from
+<code>AbstractFile</code> to <code>File</code>.</li>
+<li><code>FolderInterface</code> requires
+<code>getSubFolder/getReadablePath/getFiles/searchFiles</code>.</li>
+<li><code>FileNameValidator</code> no longer accepts custom regex in
+<code>__construct()</code> (#105733).</li>
+<li><code>Folder-&gt;getSubFolder()</code> throws
+<code>FolderDoesNotExistException</code> (#105920).</li>
+<li>Metadata extractor registration via
+<code>registerExtractionService()</code> removed (#107783). Implement
+<code>MetadataExtractorInterface</code>.</li>
+<li>Backend avatar provider registration via <code>$GLOBALS</code>
+removed (#107871). Use autoconfigure tag.</li>
+<li><code>LocalPreviewHelper</code> +
+<code>LocalCropScaleMaskHelper</code> classes removed (#107403).</li>
+<li><code>sys_file_metadata</code> field removal (#106503).</li>
+</ul>
+<p><strong>Cache</strong> (#107315)</p>
+<ul>
+<li><code>BackendInterface</code>,
+<code>PhpCapableBackendInterface</code>,
+<code>TransientBackendInterface</code>, <code>FrontendInterface</code>
+strongly typed.</li>
+<li><code>AbstractBackend::__construct(array $options = [])</code>
+(context parameter removed).</li>
+<li><code>FreezableBackendInterface</code> removed (#107310).</li>
+</ul>
+<p><strong>TCA</strong></p>
+<ul>
+<li>Plugin subtypes gone: <code>subtype_value_field</code>,
+<code>subtypes_addlist</code>, <code>subtypes_excludelist</code>
+(#105377).</li>
+<li><code>control.searchFields</code> removed (#106972) — use
+configurable search TCA.</li>
+<li><code>control.is_static</code> removed (#106863).</li>
+<li><code>eval=year</code> removed (#98070).</li>
+<li>Value picker <code>prepend</code>/<code>append</code> modes removed
+(#107677).</li>
+<li><code>interface</code> settings for list view removed
+(#106412).</li>
+<li><code>pages.url</code> field removed (#17406) — use typolink page
+type.</li>
+<li><code>tt_content.list_type</code> + <code>tt_content.list</code>
+gone — CType-only plugins (#105538).</li>
+<li><code>tt_content.imagewidth/imageheight</code> now nullable
+(#68303).</li>
+<li><code>type=uuid</code> uses Doctrine GUID type (#103141).</li>
+<li>Duplicate doktype restriction config removed (#106949).</li>
+<li><code>showitem</code> strings use short-form references;
+<code>core.form.tabs</code> consolidated (#107789).</li>
+<li>Scheduler frequency moved to TCA (#107488) + DB storage format
+changed (#106532) + scheduler tasks become native TCA (#106739).</li>
+</ul>
+<p><strong>Backend / UI</strong></p>
+<ul>
+<li>Modal migrated from Bootstrap to native <code>&lt;dialog&gt;</code>
+(#107443).</li>
+<li>"Database Relations" module removed (#97151).</li>
+<li>Reports interfaces removed; new native submodule overview
+(#107791).</li>
+<li>Button API reworked (#107884, #107823).</li>
+<li>DocHeader MetaInformation API deprecated (#107813).</li>
+<li>Backend layout data provider <code>$GLOBALS</code> registration
+removed (#107784).</li>
+<li><code>LoginProviderInterface::render()</code> removed → implement
+<code>modifyView()</code>.</li>
+<li>JS modules removed:
+<code>@typo3/backend/document-save-actions.js</code>,
+<code>@typo3/backend/wizard.js</code>,
+<code>@typo3/t3editor/*</code>.</li>
+<li>Workspace "Freeze Editing" removed (#107323).</li>
+</ul>
+<p><strong>DataHandler</strong></p>
+<ul>
+<li><code>userid</code> and <code>admin</code> properties removed
+(#107848).</li>
+<li><code>copyWhichTables</code>, <code>neverHideAtCopy</code>,
+<code>copyTree</code> removed (#107856) — read from
+<code>$BE_USER-&gt;uc</code>.</li>
+<li><code>storeLogMessages</code> removed (#106118).</li>
+<li>ISO 8601 date handling reworked (#105549).</li>
+</ul>
+<p><strong>EXT:form</strong> — 10 hooks removed (use PSR-14 events):
+<code>afterBuildingFinished</code>, <code>beforeFormCreate</code>,
+<code>beforeFormDuplicate</code>, <code>beforeFormDelete</code>,
+<code>beforeFormSave</code>, <code>initializeFormElement</code>,
+<code>beforeRemoveFromParentRenderable</code>,
+<code>afterInitializeCurrentPage</code>, <code>afterSubmit</code>,
+<code>beforeRendering</code>. Legacy form templates removed
+(#106596).</p>
+<p><strong>EXT:felogin</strong></p>
+<ul>
+<li>Logout handling changed (#103910); redirect in
+<code>logoutAction</code> removed (#103913).</li>
+<li><code>exposeNonexistentUserInForgotPasswordDialog</code> setting
+removed (#105863).</li>
+</ul>
+<p><strong>TypoLink / URLs</strong></p>
+<ul>
+<li><code>TypolinkBuilder</code> signature changed (#106405); new
+<code>TypolinkBuilderInterface</code>.</li>
+<li><code>AbstractTypolinkBuilder-&gt;build()</code> deprecated.</li>
+<li>Sitemap GET parameters moved to namespace (#104422).</li>
+<li>doktype=shortcut random subpage option removed (#107654).</li>
+</ul>
+<p><strong>Install Tool / bootstrap</strong></p>
+<ul>
+<li><code>typo3/install.php</code> removed — integrated into backend
+routing (#107536, BC preserved).</li>
+<li><code>typo3/index.php</code> legacy entry + composer.json setting
+removed.</li>
+<li><code>Environment::getComposerRootPath</code> removed
+(#107482).</li>
+<li><strong><code>composer.json</code> required in classic mode</strong>
+(#108310) — installs without one stop detecting extensions.</li>
+<li>Extension title auto-populated from <code>composer.json</code>
+(#108304).</li>
+<li>Reference index check moved to Install Tool (#107629).</li>
+</ul>
+<p><strong>Security / crypto</strong></p>
+<ul>
+<li>HMAC algorithm: SHA1 → SHA256 family (#106307).</li>
+<li><code>Extbase\Security\Cryptography\HashService</code>
+<strong>removed</strong> (part of #105377). New symmetric cipher service
+(#108002).</li>
+<li><code>AuthenticationService</code> static function parameter removed
+(#106869).</li>
+<li><code>AfterMailerInitializationEvent</code> removed (#105809).</li>
+<li><code>MailMessage-&gt;send()</code> removed (#108097).</li>
+</ul>
+<p><strong>The #105377 umbrella</strong> (the "deprecated functionality
+removed" sweep):</p>
+<ul>
+<li>Classes removed: <code>HashService</code>,
+<code>StandaloneView</code>, <code>TemplateView</code>,
+<code>AbstractTemplateView</code>, <code>GenericViewResolver</code>,
+<code>SlugEnricher</code>, <code>DuplicationBehavior</code> (now enum),
+<code>InformationStatus</code>, <code>Enumeration</code>,
+<code>IconState</code>, <code>EnumType</code>,
+<code>FluidViewAdapter/Factory</code>.</li>
+<li>Interfaces removed: <code>PageRepositoryInitHook/GetPageHook</code>,
+<code>ViewResolverInterface</code>,
+<code>ContentObjectGetData/GetImageResource/OneSourceCollection/PostInit/StdWrap</code>
+hooks.</li>
+<li>Static utilities gone:
+<code>BackendUtility::getTcaFieldConfiguration/thumbCode</code>,
+<code>GeneralUtility::hmac</code>,
+<code>ExtensionManagementUtility::addPItoST43/addPageTSConfig/addUserTSConfig/getExtensionIcon</code>,
+<code>MathUtility::convertToPositiveInteger</code>.</li>
+<li>TypoScript: <code>&lt;INCLUDE_TYPOSCRIPT:&gt;</code> removed → use
+<code>@import</code>.</li>
+<li>TSconfig: <code>options.pageTree.backgroundColor</code>
+removed.</li>
+<li>Class constants: <code>Icon::SIZE_*</code>,
+<code>AbstractFile::FILETYPE_*</code>,
+<code>ExtensionUtility::PLUGIN_TYPE_PLUGIN</code>.</li>
+<li><code>$GLOBALS['TYPO3_CONF_VARS']['BE']['defaultPageTSconfig']</code>,
+<code>defaultUserTSconfig</code> removed.</li>
+</ul>
+</section>
+<section id="4-v140--v143-per-release-headlines" class="level3">
+<h3>4. v14.0 → v14.3 per-release headlines</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Release</th>
+<th>Date</th>
+<th>Headlines</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>14.0</strong></td>
+<td>2025-11-25</td>
+<td>All 98 breaking changes land here. Fluid 5, System Resource API,
+Symfony Translation + XLIFF 2.x, redesigned DocHeader, Scheduler-as-TCA,
+Fresh theme, CKEditor 5 47, Extbase attribute support, install.php
+removal, symmetric encryption</td>
+</tr>
+<tr class="even">
+<td><strong>14.1</strong></td>
+<td>2026-01-20</td>
+<td><strong>Camino</strong> default theme (#108539), QR Code module
+(#107756), route enhancers in Site Sets (#107837), content-element
+colPos restrictions (#108623), Fluid Components (#108508), configurable
+global Fluid namespaces (#108524), XLF 2-space indentation (#107971).
+Zero breaking</td>
+</tr>
+<tr class="odd">
+<td><strong>14.2</strong></td>
+<td>2026-03-31</td>
+<td>Page Creation Wizard (#108915), Short URL module (#108826), Content
+Type Usage Report (#107940), bookmark manager (#108796), DB storage for
+EXT:form (#108653), RTE in EXT:form (#108966), ICU plural forms
+(#104546), <code>f:render.contentArea/record/text</code>,
+<code>fluid:analyze</code> CLI (#108763),
+<strong><code>#[Authorize]</code> + <code>#[RateLimit]</code> Extbase
+attrs</strong> (#107826, #108982, #109080), site cfg in import/export
+(#109340), module access gates (#109365). Zero breaking</td>
+</tr>
+<tr class="even">
+<td><strong>14.3 LTS</strong></td>
+<td>2026-04-21</td>
+<td>Stabilization release. <strong><code>ext_tables.php</code>
+deprecated for v15 removal</strong> (#109438). EXT:setup merged into
+backend. <strong>Security wizard for <code>be_users</code> serialized
+passwords (Important #109585)</strong> — must run on any site that ever
+served v14.2. Cache action JSON endpoints (#109107). Bugfixes only</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="5-v15-preparation--whats-deprecated-in-v143"
+class="level3">
+<h3>5. v15 preparation — what's deprecated in v14.3</h3>
+<p>Direction is clear: v15 drives out superglobals in favor of injected
+PSR-7 request.</p>
+<ul>
+<li><code>ext_tables.php</code> removal (#109438). Move to
+<code>Configuration/Backend/Modules.php</code>,
+<code>Configuration/Backend/Routes.php</code>,
+<code>Configuration/TCA/Overrides/be_users.php</code>
+(<code>addUserSetting()</code>),
+<code>Configuration/TCA/Overrides/pages.php</code>
+(<code>allowedRecordTypes</code>).</li>
+<li><code>ext_emconf.php</code> deprecated (#108345) — all metadata in
+<code>composer.json</code>.</li>
+<li><code>GeneralUtility::getIndpEnv()</code>,
+<code>locationHeaderUrl()</code>, <code>sanitizeLocalUrl()</code>,
+<code>isOnCurrentHost()</code> require PSR-7 request going forward.</li>
+<li>Various <code>ContentObjectRenderer</code> properties/methods
+(#109575).</li>
+<li>Bootstrap tab events (#109171).</li>
+<li>Form <code>DatePicker</code> element (#109152).</li>
+<li>Form file-based (YAML) storage (#108653) — DB is default.</li>
+</ul>
+</section>
+<section id="6-lts-support-windows-from-release-announcement"
+class="level3">
+<h3>6. LTS support windows (from release announcement)</h3>
+<table>
+<thead>
+<tr class="header">
+<th>Version</th>
+<th>Status</th>
+<th>Free maintenance ends</th>
+<th>ELTS ends (officially published)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>v14.3 LTS</strong></td>
+<td>Current — <strong>gold standard from today</strong></td>
+<td>bugfix 2027-12-31 / security 2029-06-30</td>
+<td>not yet published on typo3.com; <a
+href="https://endoflife.date/typo3">endoflife.date</a> lists
+2032-06-30</td>
+</tr>
+<tr class="even">
+<td>v13 LTS</td>
+<td>Active LTS</td>
+<td>~2027-10-31</td>
+<td>not yet published on typo3.com</td>
+</tr>
+<tr class="odd">
+<td>v12 LTS</td>
+<td><strong>EOL imminent</strong></td>
+<td><strong>2026-04-30</strong></td>
+<td><strong>2030-04-30</strong> (<a
+href="https://typo3.com/products-services/extended-support-elts">typo3.com
+ELTS</a>)</td>
+</tr>
+<tr class="even">
+<td>v11.5</td>
+<td>Free maintenance ended 2024-10</td>
+<td>—</td>
+<td><strong>2028-10-31</strong></td>
+</tr>
+<tr class="odd">
+<td>v10.4</td>
+<td>Free maintenance ended</td>
+<td>—</td>
+<td><strong>2027-04-30</strong></td>
+</tr>
+<tr class="even">
+<td>v14.0 / v14.1 / v14.2</td>
+<td>Sprint — <strong>unsupported since 14.3 release today</strong></td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="7-migration-tooling-v13--v14" class="level3">
+<h3>7. Migration tooling (v13 → v14)</h3>
+<ul>
+<li><strong>Extension Scanner</strong> (core): matchers updated for
+Fluid 5 strictness, FAL strong-typing, cache interface strict-typing,
+and the full #105377 umbrella.</li>
+<li><strong>TYPO3 Rector</strong>: 11 new v14 rules + 42 v13
+carry-forwards. New CLI: <code>--no-progress-bar</code>,
+<code>--only &lt;rule&gt;</code>.</li>
+<li><strong>TYPO3 Fractor</strong> (<code>a9f/typo3-fractor</code>):
+handles TypoScript, FlexForm XML, <code>composer.json</code>,
+<code>.htaccess</code>, ext_emconf → composer migration, ext_tables.php
+split-off helpers.</li>
+<li><strong>PHPStan</strong>: <code>saschaegerer/phpstan-typo3</code>
+and Rector bundle cover strict-types expectations across Cache/FAL.</li>
+</ul>
+<p><strong>Critical operational note:</strong> on any site that ran
+<strong>v14.2</strong>, the Important #109585 upgrade wizard
+<strong>must</strong> be executed after upgrade to v14.3 — password
+fields may be persisted serialized in
+<code>be_users.uc</code>/<code>user_settings</code>.</p>
+</section>
+<section id="8-content-blocks-status" class="level3">
+<h3>8. Content Blocks status</h3>
+<p>Content Blocks 2.x targets v14 as an <strong>external FriendsOfTYPO3
+package</strong> — not yet in core. Planned core inclusion: <strong>v15
+LTS</strong>. v14 ships supporting features:
+<code>allowedRecordTypes</code> per colPos (#108623), TCA
+<code>type=country</code> (#99911), record-type specific
+configuration.</p>
+<hr />
+</section>
+</section>
+<section id="part-b--skill-inventory--v143-gap-assessment"
+class="level2">
+<h2>Part B — Skill inventory &amp; v14.3 gap assessment</h2>
+<p>Repos under <code>/home/sme/p/</code> with <code>main/</code>
+worktree. All are published under
+<code>github.com/netresearch</code>.</p>
+<section id="b1-priority-matrix" class="level3">
+<h3>B.1 Priority matrix</h3>
+<table>
+<thead>
+<tr class="header">
+<th>#</th>
+<th>Skill</th>
+<th>Priority</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td><strong>typo3-extension-upgrade-skill</strong></td>
+<td><span class="priority-p1">P1</span></td>
+<td>This <em>is</em> the v13→v14 upgrade skill — it must ship
+authoritative v14 guidance before any team can rely on it. Current
+content sparse on v14</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td><strong>typo3-conformance-skill</strong></td>
+<td><span class="priority-p1">P1</span></td>
+<td>Currently-invoked skill. v14 is now "gold standard" — the scorecard
+must grade against v14 defaults (Fluid 5, attribute Extbase, ext_tables
+split)</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td><strong>typo3-ddev-skill</strong></td>
+<td><span class="priority-p1">P1</span></td>
+<td>Install matrix must include v14. v14 template exists but isn't wired
+into Makefile/envrc</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td><strong>typo3-testing-skill</strong></td>
+<td><span class="priority-p2">P2</span></td>
+<td>Testing Framework 9 supports v13+v14 same branch, but CI matrix
+examples and final-classes doc need v14 entries</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td><strong>typo3-project-upgrade-skill</strong></td>
+<td><span class="priority-p2">P2</span></td>
+<td>Minimal content today; needs v13→v14 project-level migration guide
+(docker image bumps, site sets, Camino option)</td>
+</tr>
+<tr class="even">
+<td>6</td>
+<td><strong>typo3-docs-skill</strong></td>
+<td><span class="priority-p2">P2</span></td>
+<td>Extraction patterns stop at 13.5.99; XLF 2-space indentation norm
+new in v14</td>
+</tr>
+<tr class="odd">
+<td>7</td>
+<td><strong>typo3-typoscript-ref-skill</strong></td>
+<td><span class="priority-p2">P2</span></td>
+<td>Has v13→v14 migration stub; needs completeness +
+<code>&lt;INCLUDE_TYPOSCRIPT&gt;</code> / userFunc opt-in /
+<code>site.locale</code> expression</td>
+</tr>
+<tr class="even">
+<td>8</td>
+<td><strong>typo3-ckeditor5-skill</strong></td>
+<td><span class="priority-p3">P3</span></td>
+<td>CKE5 bumped 41/42 → 47. Verify RTE schema + dark/light mode
+default-on (#106964)</td>
+</tr>
+<tr class="odd">
+<td>9</td>
+<td><strong>typo3-core-contributions-skill</strong></td>
+<td><span class="priority-p3">P3</span></td>
+<td>Core main branch is v15-in-progress; ddev setup references current
+PHP — light updates</td>
+</tr>
+<tr class="even">
+<td>10</td>
+<td><strong>support-typo3-14-app</strong> /
+<strong>support-typo3-14-t3re</strong></td>
+<td><span class="priority-p2">P2</span></td>
+<td>Infrastructure for v14 deployments — verify base images line up with
+v14.3 composer/php floors</td>
+</tr>
+<tr class="odd">
+<td>11</td>
+<td><strong>php-modernization-skill</strong></td>
+<td><span class="priority-p3">P3</span></td>
+<td>Language-agnostic. Optional: add PHP 8.5 examples since v14 accepts
+8.5</td>
+</tr>
+<tr class="even">
+<td>12</td>
+<td><strong>security-audit-skill</strong></td>
+<td><span class="priority-p3">P3</span></td>
+<td>Add #109585 (serialized credential) as an auditable finding and the
+SHA256 HMAC shift</td>
+</tr>
+<tr class="odd">
+<td>13</td>
+<td><strong>enterprise-readiness-skill</strong></td>
+<td><span class="priority-p3">P3</span></td>
+<td>Test-matrix examples could add v14 row</td>
+</tr>
+<tr class="even">
+<td>14</td>
+<td><strong>typo3-version-tracker</strong></td>
+<td><span class="priority-p2">P2</span></td>
+<td>Must start tracking 14.1/14.2/14.3 per-release, LTS schedule
+update</td>
+</tr>
+<tr class="odd">
+<td>15</td>
+<td><strong>agent-rules-skill / skill-repo-skill /
+automated-assessment-skill</strong></td>
+<td><span class="priority-p3">P3</span></td>
+<td>Incidentally touch TYPO3 in examples/templates — keep in sync but
+not blocking</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="b2-per-skill-gaps-what-needs-editing" class="level3">
+<h3>B.2 Per-skill gaps (what needs editing)</h3>
+<p>Each entry below is scoped to concrete files to edit. Absolute paths
+assume <code>/home/sme/p/&lt;repo&gt;/main/</code>.</p>
+<hr />
+<section id="1-typo3-extension-upgrade-skill-p1" class="level4">
+<h4>1. typo3-extension-upgrade-skill (P1)</h4>
+<p><strong>Purpose:</strong> v11→v12, v12→v13, v13→v14 extension upgrade
+playbooks.</p>
+<p><strong>Gaps:</strong></p>
+<ul>
+<li><code>references/upgrade-v13-to-v14.md</code> — needs full rewrite
+reflecting the 98 breaking changes. Must cover: TSFE removal, Fluid 5
+strict typing, FAL strong-typing, Cache interfaces, Extbase attributes +
+<code>HashService</code> removal, TCA
+subtype/searchFields/is_static/eval=year, ext_tables.php deprecation,
+composer.json classic-mode requirement, Symfony 7.3, Doctrine DBAL 4,
+CKE 5 47.</li>
+<li><code>references/api-changes.md</code> — enumerate the top 20
+most-hit removals with before/after code snippets.</li>
+<li><code>references/third-party-dependency-upgrades.md</code> — Symfony
+<code>^7.3</code>, Doctrine <code>~4.3</code>, Fluid
+<code>^5.0.1</code>, CKE <code>47.0.0</code>, testing-framework
+<code>^9</code>.</li>
+<li><code>references/pre-upgrade.md</code> — add Extension Scanner +
+Rector (new rules + <code>--only</code> flag) + Fractor (TypoScript +
+FlexForm + ext_emconf → composer) steps.</li>
+<li><code>SKILL.md</code> — update description trigger to list v14
+explicitly, not "planning".</li>
+<li><strong>New file:</strong>
+<code>references/v14-migration-tooling.md</code> —
+Rector/Fractor/PHPStan cookbook for v14.</li>
+<li><strong>New file:</strong>
+<code>references/v14-postupgrade-security.md</code> — the #109585 wizard
++ HMAC rotation + Extbase HashService replacement recipe.</li>
+</ul>
+<p><strong>Test:</strong> a real extension (e.g.
+<code>t3x-nr-textdb</code> or <code>t3x-rte_ckeditor_image</code>)
+should be upgradable v13 → v14 using only this skill's guidance.</p>
+<hr />
+</section>
+<section id="2-typo3-conformance-skill-p1--this-repo" class="level4">
+<h4>2. typo3-conformance-skill (P1 — this repo)</h4>
+<p><strong>Purpose:</strong> Extension quality / conformance scorecard,
+modernization to v12/v13/v14.</p>
+<p><strong>Gaps:</strong></p>
+<ul>
+<li><code>SKILL.md</code> — make v14 the default assumption, not "also
+v14". v13 becomes "also supported LTS".</li>
+<li><code>references/v13-deprecations.md</code> — confirm every listed
+item is actually removed in v14.0 (per #105377 umbrella + discrete
+tickets). Rename to <code>references/v13-to-v14-removals.md</code> or
+similar.</li>
+<li><strong>New file:</strong>
+<code>references/v14-deprecations.md</code> — v14.0/14.1/14.2/14.3
+deprecations list for v15 prep. Use the ticket numbers in Part A
+§5.</li>
+<li><code>references/backend-module-v13.md</code> — add v14 companion
+(Context Panel, DocHeader rewrite, Buttons API v2,
+<code>&lt;dialog&gt;</code> modal).</li>
+<li><code>references/dual-version-compatibility.md</code> — new matrix
+row for v14, and mark supported combos. Note Testing Framework 9
+supports both v13 and v14.</li>
+<li><code>references/coding-guidelines.md</code> — align examples with
+Fluid 5 strict ViewHelpers, Extbase PHP attributes,
+<code>#[Authorize]</code>/<code>#[RateLimit]</code>.</li>
+<li><code>references/viewhelper-security.md</code> (if present) — add
+strict-types reminder, variables-starting-with-underscore ban,
+<code>useNonce</code> deprecation.</li>
+<li>Existing CSP / Bootstrap-5 / XLIFF-hygiene refs — add XLF 2-space
+indentation rule (#107971) and CSP-hash-over-nonce preference
+(#100887).</li>
+<li><strong>New file:</strong>
+<code>references/checkpoints-v14.md</code> — checkpoint YAML snippets
+scoring an extension against v14 gold-standard (composer.json metadata,
+no ext_tables.php, no HashService, no magic repo finders, strict-typed
+VHs, XLF 2-space, <code>#[Authorize]</code> on sensitive actions).</li>
+<li>README + scorecard — update version matrix.</li>
+</ul>
+<p><strong>Anchor:</strong> v14.3 = default. v12/v13 still pass, but
+surface a "v14-ready?" score.</p>
+<hr />
+</section>
+<section id="3-typo3-ddev-skill-p1" class="level4">
+<h4>3. typo3-ddev-skill (P1)</h4>
+<p><strong>Purpose:</strong> DDEV setup for TYPO3 extension dev across
+multiple versions.</p>
+<p><strong>Gaps:</strong></p>
+<ul>
+<li><code>assets/templates/apache/v14.conf</code> — template exists but
+<strong>not wired</strong> into the install flow.</li>
+<li><code>assets/templates/Makefile.template</code> — add
+<code>install-v14</code> target mirroring <code>install-v13</code>.</li>
+<li><code>assets/templates/.envrc</code> — add <code>install-v14</code>
+help text.</li>
+<li><code>assets/templates/ddev/config.v14.yaml</code> — if this mirrors
+v13, confirm PHP 8.2/8.3/8.4/8.5 variants and
+<code>typo3/cms-base-distribution:^14</code> constraint.</li>
+<li><code>README.md</code> — version badge <code>11 | 12 | 13</code> →
+<code>11 | 12 | 13 | 14</code> and replace default install-version
+references with v14.</li>
+<li><code>docs/ARCHITECTURE.md</code> — add v14 directory in the layout
+diagram.</li>
+<li><strong>Verify:</strong>
+<code>ddev config --webserver-type 'apache-fpm'</code> is what the
+official TYPO3 installation tutorial recommends — and that our template
+matches.</li>
+<li><strong>Add:</strong> mention Caddy Server is now a supported web
+server (v14 adds it) in case we ever ship a Caddy profile.</li>
+</ul>
+<hr />
+</section>
+<section id="4-typo3-testing-skill-p2" class="level4">
+<h4>4. typo3-testing-skill (P2)</h4>
+<p><strong>Purpose:</strong> Test infrastructure (unit / functional /
+E2E), PHPUnit, CI matrix.</p>
+<p><strong>Gaps:</strong></p>
+<ul>
+<li><code>references/typo3-v14-final-classes.md</code> — verify against
+current v14.3 source. Extend with Cache / FAL interface strict-typing
+impact on test doubles (many test mocks break without signature
+alignment).</li>
+<li><code>checkpoints.yaml</code> — CI matrix example should show PHP
+8.2/8.3/8.4/8.5 × TYPO3 12.4/13.4/14.4 permutations; prune PHP 8.1 where
+extension dropped v11.</li>
+<li><code>references/ci-debugging.md</code> —
+<code>reportUnmatched</code> guidance referenced v12.4; add v14.3
+Testing Framework 9 pinning.</li>
+<li><strong>New file:</strong>
+<code>references/v14-testing-framework-notes.md</code> — strict-typing
+migration tips for <code>GeneralUtilityFixture</code>,
+<code>FunctionalTestCase</code> changes, PHPUnit deprecations.</li>
+<li>E2E (Playwright/Cypress): backend changed significantly (DocHeader,
+Context Panel, <code>&lt;dialog&gt;</code> modal, bookmark mgr) —
+selectors in reference E2E tests will break. Add a "v14 backend selector
+map".</li>
+</ul>
+<hr />
+</section>
+<section id="5-typo3-project-upgrade-skill-p2" class="level4">
+<h4>5. typo3-project-upgrade-skill (P2)</h4>
+<p><strong>Purpose:</strong> Deployed-instance upgrade (site config,
+TypoScript, templates, Docker).</p>
+<p><strong>Gaps:</strong></p>
+<ul>
+<li><code>SKILL.md</code> — promote beyond one-file skill. Needs phases:
+pre-upgrade audit → composer update → DB migration → site config
+migration → <strong>post-upgrade security wizard (#109585)</strong> →
+smoke tests.</li>
+<li><strong>New file:</strong>
+<code>references/v13-to-v14-project-upgrade.md</code> — site config
+evolution, site sets as canonical config, Camino theme opt-in, Docker
+base-image bump, composer.json normalization, deletion of
+<code>typo3/install.php</code> entry point, composer.json requirement
+for classic mode, re-point CI matrix.</li>
+<li><strong>New file:</strong>
+<code>references/docker-images-v14.md</code> — bump from the t3re image
+(confirm <code>support-typo3-14-t3re</code> outputs matches v14.3 PHP
+requirements).</li>
+<li><strong>New file:</strong>
+<code>references/post-upgrade-security-wizard.md</code> — the #109585
+wizard walkthrough (only needed if the site transited through v14.2 at
+any point).</li>
+</ul>
+<hr />
+</section>
+<section id="6-typo3-docs-skill-p2" class="level4">
+<h4>6. typo3-docs-skill (P2)</h4>
+<p><strong>Purpose:</strong> Extension documentation authoring (RST,
+guides.xml).</p>
+<p><strong>Gaps:</strong></p>
+<ul>
+<li><code>references/coding-guidelines.md</code> — note v14.0 removal
+cutoff (some older "Since X.Y" lines now redundant).</li>
+<li><code>references/content-directives.md</code> — verify mentions of
+v14.0/v15.0 removal targets still accurate.</li>
+<li><code>references/extraction-patterns.md</code> — extend version
+range from <code>12.4.0–13.5.99</code> to
+<code>12.4.0–14.3.99</code>.</li>
+<li><strong>Add:</strong> XLF 2-space indentation rule (#107971) as a
+doc hygiene rule.</li>
+<li><strong>Add:</strong> note that <code>ext_emconf.php</code> →
+<code>composer.json</code> metadata consolidation also affects docs'
+"extension metadata" section.</li>
+</ul>
+<hr />
+</section>
+<section id="7-typo3-typoscript-ref-skill-p2" class="level4">
+<h4>7. typo3-typoscript-ref-skill (P2)</h4>
+<p><strong>Purpose:</strong> TypoScript / TSconfig / Fluid template
+authoring &amp; review.</p>
+<p><strong>Gaps:</strong></p>
+<ul>
+<li><code>references/review/migration-v13-to-v14.md</code> —
+completeness check. Must include:
+<ul>
+<li><code>&lt;INCLUDE_TYPOSCRIPT:&gt;</code> removal (#105377) →
+<code>@import</code></li>
+<li>Explicit opt-in for TypoScript/TSconfig callables (#108054)</li>
+<li><code>site.locale</code> expression (#107105)</li>
+<li><code>limitToPages</code> expression language in routing
+(#109263)</li>
+<li><code>config.tx_extbase.persistence.updateReferenceIndex</code>
+removed (#106041)</li>
+<li>TSconfig <code>options.pageTree.backgroundColor</code> removed</li>
+<li>TSconfig <code>auth.BE.redirectToURL</code> deprecated
+(#106969)</li>
+<li><code>doktypesToShowInNewPageDragArea</code> deprecated
+(#109196)</li>
+<li>Typolink: <code>TypolinkBuilder</code> sig change (#106405)</li>
+<li>TypoScript condition <code>getTSFE()</code> removed (#107473)</li>
+</ul></li>
+<li><strong>New:</strong> Fluid 5 quick-reference (strict types,
+underscore-variable ban, CDATA preservation,
+<code>.fluid.html</code>/<code>.fluid.txt</code> extensions, union
+types).</li>
+<li>Lookup cache needs v14 reference data refreshed.</li>
+</ul>
+<hr />
+</section>
+<section id="8-typo3-ckeditor5-skill-p3" class="level4">
+<h4>8. typo3-ckeditor5-skill (P3)</h4>
+<p><strong>Purpose:</strong> CKEditor 5 plugin &amp; preset
+authoring.</p>
+<p><strong>Gaps:</strong></p>
+<ul>
+<li>Bump supported CKE version to 47 (was 41/42 under v13).</li>
+<li><code>references/migration-guide.md</code> — note backend
+context-awareness (dark/light) is on by default (#106964).</li>
+<li><code>SKILL.md</code> — replace "v12+" with "v12–v14" or "TYPO3
+12.4+" explicit list.</li>
+<li><strong>Verify:</strong> the RTE YAML schema didn't add/remove keys
+in v14.</li>
+</ul>
+<hr />
+</section>
+<section id="9-typo3-core-contributions-skill-p3" class="level4">
+<h4>9. typo3-core-contributions-skill (P3)</h4>
+<p><strong>Purpose:</strong> TYPO3 Core contributions via
+Forge/Gerrit.</p>
+<p><strong>Gaps:</strong></p>
+<ul>
+<li><code>references/ddev-setup-workflow.md</code> — PHP version
+defaults. Current main branch of TYPO3 is v15-in-progress, so
+development on PHP 8.4/8.5.</li>
+<li>Note new CLI helper: <code>install:password:set</code> is useful for
+Gerrit-patch testing.</li>
+</ul>
+<hr />
+</section>
+<section id="10-support-typo3-14-app--support-typo3-14-t3re-p2"
+class="level4">
+<h4>10. support-typo3-14-app / support-typo3-14-t3re (P2)</h4>
+<p><strong>Purpose:</strong> Docker infrastructure for
+Netresearch-hosted v14 sites.</p>
+<p><strong>Gaps (infra, not skill docs):</strong></p>
+<ul>
+<li>Confirm PHP version(s) shipped in the container match v14.3 floor
+(8.2) — ideally include 8.4 as the default runtime to match v14.3
+recommendations.</li>
+<li>Confirm Composer ≥ 2.1 in the image.</li>
+<li><code>docker-compose.yml</code> — baseline
+<code>typo3/cms-base-distribution:^14</code>.</li>
+<li>Image ARGs / Dockerfile base tags may need a refresh since v14.3
+shipped today.</li>
+</ul>
+<hr />
+</section>
+<section id="11-php-modernization-skill-p3" class="level4">
+<h4>11. php-modernization-skill (P3)</h4>
+<p><strong>Gaps:</strong></p>
+<ul>
+<li>Optional: add a PHP 8.5 compat note since v14 now accepts it. Not
+urgent.</li>
+</ul>
+<hr />
+</section>
+<section id="12-security-audit-skill-p3" class="level4">
+<h4>12. security-audit-skill (P3)</h4>
+<p><strong>Gaps:</strong></p>
+<ul>
+<li>Add an audit rule for Important #109585 (serialized credential data
+in <code>be_users</code> — run the upgrade wizard if v14.2 was ever in
+use).</li>
+<li>Add HMAC audit: flag any <code>GeneralUtility::hmac()</code> callers
+(removed) or lingering SHA1 use.</li>
+<li>Add <code>Extbase\Security\Cryptography\HashService</code> callers
+as "broken on v14" findings with symmetric cipher service
+replacement.</li>
+<li>Add <code>#[RateLimit]</code> and <code>#[Authorize]</code> as
+recommended controls on login / password-reset / import endpoints.</li>
+</ul>
+<hr />
+</section>
+<section id="13-enterprise-readiness-skill-p3" class="level4">
+<h4>13. enterprise-readiness-skill (P3)</h4>
+<p><strong>Gaps:</strong></p>
+<ul>
+<li><code>references/</code> test-matrix example: add v14.3 row.</li>
+<li>No functional changes.</li>
+</ul>
+<hr />
+</section>
+<section id="14-typo3-version-tracker-p2" class="level4">
+<h4>14. typo3-version-tracker (P2)</h4>
+<p><strong>Purpose:</strong> Tracks TYPO3 version usage across
+Netresearch projects.</p>
+<p><strong>Gaps:</strong></p>
+<ul>
+<li><code>data/projects.db</code> currently tracks v14.0 with
+state=sprint. Update:
+<ul>
+<li>v14.0 / v14.1 / v14.2 → <code>sprint_ended</code> (unsupported since
+2026-04-21)</li>
+<li>v14.3 → <code>active_lts</code> (bugfix-end 2027-12-31, security-end
+2029-06-30)</li>
+<li>v13.x → <code>active_lts</code> with the correct end dates</li>
+<li>v12.x → <code>eol_imminent</code> (2026-04-30)</li>
+</ul></li>
+<li>Seed reports (<code>reports/typo3_versions.html</code>) regenerate
+post-update.</li>
+<li>If the scraper pulls from <code>get.typo3.org</code>, kick a fresh
+crawl.</li>
+</ul>
+<hr />
+</section>
+<section
+id="15-agent-rules-skill--skill-repo-skill--automated-assessment-skill-p3"
+class="level4">
+<h4>15. agent-rules-skill / skill-repo-skill /
+automated-assessment-skill (P3)</h4>
+<p><strong>Gaps:</strong> Example snippets referencing TYPO3 should be
+spot-checked for v14 compat. No blocking work.</p>
+<hr />
+</section>
+</section>
+<section id="b3-shared-cross-cutting-updates-apply-to-all-typo3-skills"
+class="level3">
+<h3>B.3 Shared cross-cutting updates (apply to all TYPO3 skills)</h3>
+<ol type="1">
+<li><strong>Version matrices</strong> — replace "12, 13" with "12, 13,
+14" everywhere. Default/recommended = <strong>v14.3 LTS</strong>
+(today's release; bugfix releases will be 14.3.1, 14.3.2, …).</li>
+<li><strong>PHP matrices</strong> — extend ceiling to 8.5 in examples;
+keep floor at 8.2 (unchanged).</li>
+<li><strong>Composer</strong> — ensure all examples honor
+<code>typo3/cms-base-distribution:^14</code> as default.</li>
+<li><strong>Deprecation-of-deprecations</strong> — if a skill still
+references now-removed APIs as "deprecated", upgrade the phrasing to
+"removed in v14".</li>
+<li><strong>CSP / SRI</strong> — surface <code>integrity</code>+auto-SRI
+(#109187) and CSP-hash-over-nonce (#100887) as the new default in
+security refs.</li>
+<li><strong>Site Sets first</strong> — where skills discuss site config,
+lead with Site Sets (v13+, now canonical) and route enhancers in sets
+(#107837).</li>
+<li><strong>CKEditor 5</strong> — v14's CKE is 47.x.</li>
+<li><strong>Testing Framework</strong> — branch <code>9.x</code>
+supports both v13 and v14 — same branch, no matrix split needed.</li>
+<li><strong>XLF hygiene</strong> — 2-space indentation is the new norm
+(#107971).</li>
+<li><strong>ext_emconf/ext_tables</strong> — docs and checkpoints should
+flag both as "remove before v15" and provide the
+<code>Configuration/Backend/*.php</code> +
+<code>composer.json</code>-metadata replacements.</li>
+</ol>
+<hr />
+</section>
+</section>
+<section id="part-c--recommended-execution-order" class="level2">
+<h2>Part C — Recommended execution order</h2>
+<p><strong>Week 1 (P1 — unblock everything else)</strong></p>
+<ol type="1">
+<li>typo3-conformance-skill — bake v14 into the scorecard (this repo,
+highest leverage; it grades the others).</li>
+<li>typo3-extension-upgrade-skill — ship an authoritative v13→v14
+playbook (needed by every extension repo on the Netresearch radar).</li>
+<li>typo3-ddev-skill — wire v14 into Makefile/envrc so developers can
+actually spin up v14 environments.</li>
+</ol>
+<p><strong>Week 2 (P2 — operational)</strong> 4.
+typo3-project-upgrade-skill — add project-level v13→v14 migration guide.
+5. typo3-testing-skill — update CI matrix + v14 test-double guidance. 6.
+typo3-typoscript-ref-skill — complete v13→v14 migration doc. 7.
+typo3-docs-skill — extend extraction patterns, add XLF 2-space rule. 8.
+typo3-version-tracker — reconcile version states. 9.
+support-typo3-14-{app,t3re} — verify container images meet v14.3
+floors.</p>
+<p><strong>Week 3 (P3 — polish)</strong> 10. typo3-ckeditor5-skill — CKE
+47 + dark-mode-default note. 11. typo3-core-contributions-skill —
+ddev/PHP alignment. 12. security-audit-skill — #109585, HMAC,
+HashService audits. 13. enterprise-readiness-skill — version matrix. 14.
+php-modernization-skill — PHP 8.5 examples. 15. agent-rules / skill-repo
+/ automated-assessment — example spot-check.</p>
+<hr />
+</section>
+<section id="part-d--verified-specifications" class="level2">
+<h2>Part D — Verified specifications</h2>
+<p>All items below were pending verification in the first pass; resolved
+2026-04-21 against authoritative sources.</p>
+<section id="d1-nodejs--24140-2500-npm-1190" class="level3">
+<h3>D.1 Node.js — <code>&gt;=24.14.0 &lt;25.0.0</code>, npm
+<code>&gt;=11.9.0</code></h3>
+<p>Source: <a
+href="https://raw.githubusercontent.com/TYPO3/typo3/main/Build/package.json"><code>TYPO3/typo3</code>
+core <code>Build/package.json</code> on main</a> — <code>engines</code>
+block declares:</p>
+<pre class="json"><code>&quot;engines&quot;: {
+  &quot;node&quot;: &quot;&gt;=24.14.0 &lt;25.0.0&quot;,
+  &quot;npm&quot;: &quot;&gt;=11.9.0&quot;
+}</code></pre>
+<p>Note: Composer-installed <code>typo3/cms-core</code> strips the
+<code>Build/</code> directory, so this file is not in the vendor tree —
+only in the source repo on GitHub.</p>
+</section>
+<section
+id="d2-bootstrap--532-runtime-js-css-banner-still-513-stale-artifact"
+class="level3">
+<h3>D.2 Bootstrap — <strong>5.3.2</strong> (runtime JS), CSS banner
+still 5.1.3 (stale artifact)</h3>
+<p>Sources:</p>
+<ul>
+<li>Runtime JS banner at
+<code>vendor/typo3/cms-core/Resources/Public/JavaScript/Contrib/bootstrap.js:6</code>
+→ <code>Bootstrap v5.3.2</code></li>
+<li><a
+href="https://raw.githubusercontent.com/TYPO3/typo3/main/Build/package.json">Build/package.json
+on main</a> → <code>"bootstrap": "^5.3.2"</code>,
+<code>"@types/bootstrap": "^5.2.6"</code></li>
+</ul>
+<p>Caveat:
+<code>vendor/typo3/cms-backend/Resources/Public/Css/backend.css:16</code>
+still carries <code>Bootstrap v5.1.3</code> — compiled CSS banner that
+wasn't refreshed. Authoritative runtime version is
+<strong>5.3.2</strong>.</p>
+</section>
+<section id="d3-phpunit--1125--1212--1302-via-testing-framework-950"
+class="level3">
+<h3>D.3 PHPUnit — <code>^11.2.5 || ^12.1.2 || ^13.0.2</code> via
+testing-framework <code>9.5.0</code></h3>
+<p>Source: <a
+href="https://packagist.org/packages/typo3/testing-framework.json">packagist.org/packages/typo3/testing-framework.json</a>
+— <code>9.5.0</code> (latest 9.x) requires:</p>
+<pre class="json"><code>&quot;phpunit/phpunit&quot;: &quot;^11.2.5 || ^12.1.2 || ^13.0.2&quot;</code></pre>
+<p>Testing framework 9.x release chain: 9.0.0 → 9.0.1 → 9.0.2 → 9.0.3 →
+9.1.0 → 9.1.1 → 9.1.2 → 9.2.0 → 9.2.1 → 9.3.0 → 9.4.0 →
+<strong>9.5.0</strong>. Branch supports TYPO3 v13 and v14 from the same
+codebase.</p>
+</section>
+<section id="d4-v14-elts-end-date--not-yet-officially-published"
+class="level3">
+<h3>D.4 v14 ELTS end date — <strong>not yet officially
+published</strong></h3>
+<ul>
+<li><a
+href="https://typo3.com/products-services/extended-support-elts">typo3.com/products-services/extended-support-elts</a>
+lists ELTS end dates for v10.4 (2027-04-30), v11.5 (2028-10-31), v12.4
+(2030-04-30). It does <strong>not</strong> list v13 or v14 ELTS end
+dates.</li>
+<li><code>typo3.com/services/extended-support/elts-for-v14</code> →
+404.</li>
+<li>Community-maintained: <a
+href="https://endoflife.date/typo3">endoflife.date/typo3</a> publishes
+v14 ELTS end as <strong>2032-06-30</strong> (not officially
+confirmed).</li>
+</ul>
+<p><strong>Action:</strong> treat v14 ELTS as "announced 3 years after
+free-security end (2029-06-30)"; watch typo3.com for the official
+listing.</p>
+</section>
+<section
+id="d5-typo3-rector-v14-rules--47-rules-46-in-typo314v0--1-in-v2"
+class="level3">
+<h3>D.5 TYPO3 Rector v14 rules — <strong>47 rules</strong> (46 in
+<code>TYPO314/v0/</code> + 1 in <code>v2/</code>)</h3>
+<p>Source: <a
+href="https://github.com/sabbelasichon/typo3-rector/tree/main/rules/TYPO314">github.com/sabbelasichon/typo3-rector/tree/main/rules/TYPO314</a>
+(via GitHub Contents API, 2026-04-21).</p>
+<details>
+<summary><strong>Full rule list</strong></summary>
+
+<p><strong><code>rules/TYPO314/v0/</code> (46 rules):</strong></p>
+<ol type="1">
+<li><code>AddNewMethodHasSubmoduleOverviewInModuleInterfaceRector</code></li>
+<li><code>ChangeLocalizationSystemArchitectureRector</code></li>
+<li><code>DropFifthParameterForExtensionUtilityConfigurePluginRector</code></li>
+<li><code>ExtendExtbaseValidatorsFromAbstractValidatorRector</code></li>
+<li><code>IntroduceStrictTypingForCacheBeAndFeRector</code></li>
+<li><code>MigrateAdminPanelDataProviderInterfaceRector</code></li>
+<li><code>MigrateBooleanSortDirectionInFileListRector</code></li>
+<li><code>MigrateButtonBarMenuAndMenuRegistryMakeMethodsToComponentFactoryRector</code></li>
+<li><code>MigrateCopyRelatedDataHandlerPropertiesRector</code></li>
+<li><code>MigrateCoreTcaAndUserSettingsShowitemStringsToShortFormReferencesRector</code></li>
+<li><code>MigrateDataHandlerPropertiesUserIdAndAdminRector</code></li>
+<li><code>MigrateEnvironmentGetComposerRootPathRector</code></li>
+<li><code>MigrateFileCollectionRegistryAddTypeToTCARector</code></li>
+<li><code>MigrateGeneralUtilityCreateVersionNumberedFilenameRector</code></li>
+<li><code>MigrateIpAnonymizationTaskRector</code></li>
+<li><code>MigrateLabelReferenceToDomainSyntaxRector</code></li>
+<li><code>MigrateManualShortcutButtonCreationRector</code></li>
+<li><code>MigrateObsoleteCharsetInSanitizeFileNameRector</code></li>
+<li><code>MigratePassingAnArrayOfConfigurationValuesToExtbaseAttributesRector</code></li>
+<li><code>MigratePathUtilityGetPublicResourceWebPathRector</code></li>
+<li><code>MigrateRemovedMailMessageSendRector</code></li>
+<li><code>MigrateSingleDataStructureConfigurationRector</code></li>
+<li><code>MigrateSysRedirectDefaultTypeRector</code></li>
+<li><code>MigrateTableGarbageCollectionTaskConfigurationViaGlobalsRector</code></li>
+<li><code>MigrateUsageOfArrayInPasswordForAuthenticationInRedisCacheBackendRector</code></li>
+<li><code>MoveSchedulerFrequencyOptionsToTCARector</code></li>
+<li><code>MoveUpgradeWizardRelatedInterfacesAndAttributesToCoreRector</code></li>
+<li><code>RemoveConcatenateAndCompressHandlerRector</code></li>
+<li><code>RemoveEvalYearFlagRector</code></li>
+<li><code>RemoveExternalOptionFromAssetRendererRector</code></li>
+<li><code>RemoveFieldSearchConfigOptionsRector</code></li>
+<li><code>RemoveHttpResponseCompressionRector</code></li>
+<li><code>RemoveIsStaticControlOptionRector</code></li>
+<li><code>RemoveMaxDBListItemsRector</code></li>
+<li><code>RemovePageRendererMethodsRector</code></li>
+<li><code>RemoveParameterInAuthenticationServiceRector</code></li>
+<li><code>RemoveRandomSubpageOptionRector</code></li>
+<li><code>RemoveRegistrationOfMetadataExtractorsRector</code></li>
+<li><code>RemoveTcaControlOptionSearchFieldsRector</code></li>
+<li><code>ReplaceLocalizationParsersWithLoaders</code></li>
+<li><code>RequireComposerJsonInClassicModeRector</code></li>
+<li><code>UsageOfValidationAttributesAtMethodLevelRector</code></li>
+<li><code>UseRecordApiInListModuleRector</code></li>
+<li><code>UseStrictTypesInExtbaseArgumentRector</code></li>
+<li><code>UseStrictTypesInFluidViewHelpersRector</code></li>
+<li><code>UseStrongerCryptographicAlgorithmForHMACRector</code></li>
+</ol>
+<p><strong><code>rules/TYPO314/v2/</code> (1 rule):</strong> 47.
+<code>MigrateTcaOptionAllowedRecordTypesForPageTypesRector</code></p>
+</details>
+
+<p>Invocation:
+<code>vendor/bin/rector process --config rector.php</code> after
+registering the <code>TYPO314</code> set; individual rules can be
+targeted with <code>--only ClassName</code> (new in the v14 Rector
+release, see Community Budget Report).</p>
+<hr />
+</section>
+</section>
+<section id="source-index" class="level2">
+<h2>Source index</h2>
+<p><strong>Primary:</strong></p>
+<ul>
+<li><a
+href="https://news.typo3.com/article/typo3-v14-lts-the-next-generation">TYPO3
+v14 LTS — The Next Generation (announcement)</a></li>
+<li><a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog-14.html">Changelog
+14 index</a></li>
+<li><a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.0/Index.html">14.0</a>
+· <a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.1/Index.html">14.1</a>
+· <a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.2/Index.html">14.2</a>
+· <a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.3/Index.html">14.3</a></li>
+<li><a
+href="https://get.typo3.org/version/14">get.typo3.org/version/14</a> ·
+<a href="https://get.typo3.org/release-notes/14.0.0">14.0.0 release
+notes</a></li>
+<li><a
+href="https://docs.typo3.org/m/typo3/tutorial-getting-started/main/en-us/Installation/Index.html">Installation
+tutorial</a></li>
+<li><a
+href="https://typo3.com/typo3-cms/development-roadmap/maintenance-releases">Maintenance
+release schedule</a></li>
+</ul>
+<p><strong>Key tickets:</strong></p>
+<ul>
+<li><a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.0/Breaking-105377-DeprecatedFunctionalityRemoved.html">#105377
+— Deprecated functionality removed (umbrella)</a></li>
+<li><a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.0/Breaking-108148-Fluid50.html">#108148
+— Fluid 5</a></li>
+<li><a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.0/Breaking-107831-RemovedTypoScriptFrontendController.html">#107831
+— TypoScriptFrontendController removed</a></li>
+<li><a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.0/Breaking-107315-CacheBackendAndFrontendRelatedChanges.html">#107315
+— Cache interfaces</a></li>
+<li><a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.0/Breaking-106427-FileAbstractionLayerRelatedChanges.html">#106427
+— FAL changes</a></li>
+<li><a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.0/Feature-107537-SystemResourceAPIForSystemFileAccessAndPublicUriGeneration.html">#107537
+— System Resource API</a></li>
+<li><a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.0/Feature-107436-SymfonyTranslationIntegration.html">#107436
+— Symfony Translation</a></li>
+<li><a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.0/Feature-107710-SupportForXLIFF20TranslationFiles.html">#107710
+— XLIFF 2.x</a></li>
+<li><a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.3/Deprecation-109438-ExtTablesPhpInExtensions.html">#109438
+— ext_tables.php deprecated</a></li>
+<li><a
+href="https://docs.typo3.org/c/typo3/cms-core/main/en-us/Changelog/14.3/Important-109585-SerializedCredentialDataInBeUsersDatabaseTable.html">#109585
+— Serialized credential data security fix</a></li>
+</ul>
+<p><strong>Third-party / ecosystem:</strong></p>
+<ul>
+<li><a href="https://www.typo3-rector.com/">TYPO3 Rector</a> · <a
+href="https://news.typo3.com/article/community-budget-report-rector-and-fractor-updates-for-typo3-v14">Community
+Budget Report v14</a></li>
+<li><a
+href="https://docs.typo3.org/p/friendsoftypo3/content-blocks/main/en-us/">FriendsOfTYPO3
+Content Blocks</a></li>
+<li><a
+href="https://packagist.org/packages/typo3/testing-framework">Testing
+Framework</a></li>
+<li><a
+href="https://f7.de/en/blog/site-sets-the-evolution-of-typo3-configuration">Site
+Sets (f7)</a></li>
+<li><a
+href="https://wwagner.net/en/blog/a/typo3-v14-three-fluid-5-breaking-changes-for-integrators">Fluid
+5 breaking changes (wwagner)</a></li>
+<li><a
+href="https://www.ppw.de/leistungen/typo3-cms-ihre-digitalagentur-ppw/typo3-14-3/">PPW
+v14.3 overview</a></li>
+</ul>
+<p><strong>Local references available:</strong></p>
+<ul>
+<li>TYPO3 Core source:
+<code>/home/sme/p/TYPO3CMS-Reference-CoreApi/.Build/vendor/typo3/cms-core/</code>
+(contains full <code>Documentation/Changelog/14.0/</code> with 250
+entries)</li>
+<li>Support infra: <code>/home/sme/p/support-typo3-14-app/</code>,
+<code>/home/sme/p/support-typo3-14-t3re/</code></li>
+<li>Version tracker:
+<code>/home/sme/p/typo3-version-tracker/</code></li>
+</ul>
+</section>
+</section>
+</main>
+</div>
+<footer class="nr-footer">
+  <div class="nr-footer-inner">
+    <div><strong>Netresearch DTT GmbH</strong> · <a href="https://www.netresearch.de/">netresearch.de</a><br>TYPO3 v14.3 LTS skill update plan · compiled 2026-04-21</div>
+    <div>Source: <a href="https://github.com/netresearch/typo3-conformance-skill">github.com/netresearch/typo3-conformance-skill</a></div>
+  </div>
+</footer>
+</body>
+</html>
