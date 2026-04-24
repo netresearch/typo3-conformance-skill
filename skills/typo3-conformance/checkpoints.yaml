@@ -225,15 +225,19 @@ mechanical:
     severity: info
     desc: "ext_localconf.php should exist for frontend/backend registration"
 
+  # ext_tables.php is OPTIONAL in TYPO3 v13+ — backend modules / AJAX routes
+  # are registered via Configuration/Backend/{Modules,AjaxRoutes,Routes}.php.
+  # Accept any of the registration entry-points (or pure-service extensions
+  # with no backend surface at all).
   - id: TC-51
     type: file_exists
-    target: ext_tables.php
+    target: "{ext_tables.php,Configuration/Backend/Modules.php,Configuration/Backend/AjaxRoutes.php,Configuration/Backend/Routes.php}"
     severity: info
-    desc: "ext_tables.php is optional; in TYPO3 v13+ backend modules are registered via Configuration/Backend/Modules.php"
+    desc: "Backend modules / AJAX routes registered via either ext_tables.php (legacy) or Configuration/Backend/*.php (TYPO3 v13+ recommended). Pure-service extensions may have neither."
 
   # === STRICT TYPES DECLARATION ===
   - id: TC-07
-    type: not_regex
+    type: regex_not
     target: ext_emconf.php
     pattern: '^[[:space:]]*(<\?php[[:space:]]+)?declare[[:space:]]*\([[:space:]]*strict_types'
     severity: error
@@ -340,11 +344,15 @@ mechanical:
     scope: backend
     desc: "Configuration/Icons.php should exist for icon registration (v12+)"
 
+  # Configuration/Sets/ is required only for site-package extensions that ship
+  # TYPO3 v13 Site Sets. Pure provider/service/library extensions don't need
+  # it. Severity stays info — useful pointer when missing on a sitepackage,
+  # noise on everything else.
   - id: TC-54
     type: file_exists
-    target: Configuration/Sets/
+    target: "{Configuration/Sets/,Configuration/Sets}"
     severity: info
-    desc: "Configuration/Sets/ directory should exist for TYPO3 13 Site Sets"
+    desc: "Configuration/Sets/ for TYPO3 v13+ Site Sets — required for sitepackage extensions, optional for service/provider extensions"
 
   # === CI TOOLING CENTRALIZATION ===
   - id: TC-90
@@ -369,28 +377,28 @@ mechanical:
 
   - id: TC-93
     type: regex
-    target: "{Build/phpstan.neon,phpstan.neon}"
+    target: "{phpstan.neon,Build/phpstan.neon,Build/phpstan/phpstan.neon,phpstan.neon.dist}"
     pattern: 'typo3-ci-workflows'
     severity: info
     desc: "PHPStan config should include shared config from typo3-ci-workflows"
 
   # === TCA v13 PATTERN CHECKS ===
   - id: TC-100
-    type: not_regex
+    type: regex_not
     target: Configuration/TCA/**/*.php
     pattern: "eval.*trim"
     severity: warning
     desc: "TCA files should not contain eval=trim; use trim option in fieldControl instead (v13+)"
 
   - id: TC-101
-    type: not_regex
+    type: regex_not
     target: Configuration/TCA/**/*.php
     pattern: "l10n_parent.*type.*group"
     severity: error
     desc: "TCA translation l10n_parent must not use type=group; use type=select with renderType=selectSingle"
 
   - id: TC-102
-    type: not_regex
+    type: regex_not
     target: Configuration/TCA/**/*.php
     pattern: "(prependAtCopy|hideAtCopy)"
     severity: warning
@@ -420,7 +428,7 @@ mechanical:
     desc: "Classes/ should use dependency injection instead of GeneralUtility::makeInstance for services (excludes Scheduler tasks, ConnectionPool, QueryBuilder, FlashMessage)"
 
   - id: TC-111
-    type: not_regex
+    type: regex_not
     target: Classes/**/*.php
     pattern: "PersistenceManager[^I]"
     severity: warning
@@ -454,14 +462,14 @@ mechanical:
     desc: "Must not use md5(uniqid()); use random_bytes() or GeneralUtility::makeInstance(Random::class) — md5(uniqid()) is cryptographically weak and a security vulnerability"
 
   - id: TC-122
-    type: not_regex
+    type: regex_not
     target: Classes/**/*.php
     pattern: "\\bserialize\\s*\\("
     severity: error
     desc: "Must not use serialize(); prefer json_encode/json_decode — serialize() enables object injection attacks"
 
   - id: TC-122b
-    type: not_regex
+    type: regex_not
     target: Classes/**/*.php
     pattern: "\\bunserialize\\s*\\("
     severity: error
@@ -475,7 +483,7 @@ mechanical:
 
   # === TEMPLATE / BOOTSTRAP 5 CHECKS ===
   - id: TC-130
-    type: not_regex
+    type: regex_not
     target: Resources/Private/**/*.html
     pattern: "(form-inline|form-row|btn-default|form-group)"
     severity: warning
@@ -599,14 +607,14 @@ mechanical:
 
   # === BOOTSTRAP 5 MIGRATION CHECKS ===
   - id: TC-65
-    type: regex
+    type: regex_not
     target: "Resources/Private/**/*.html"
     pattern: 'data-dismiss=|data-toggle="(collapse|modal|tab|dropdown|tooltip|popover)"|data-target=|data-ride=|data-slide='
     severity: warning
     desc: "Legacy Bootstrap 4 data attributes detected. Migrate to Bootstrap 5: data-dismiss→data-bs-dismiss, data-toggle→data-bs-toggle, data-target→data-bs-target, data-ride→data-bs-ride, data-slide→data-bs-slide"
 
   - id: TC-66
-    type: regex
+    type: regex_not
     target: "Resources/Private/**/*.html"
     pattern: '\bclass="[^"]*\b(btn-default|ml-(\d+|auto)|mr-(\d+|auto)|pl-(\d+|auto)|pr-(\d+|auto)|float-left|float-right|font-weight-bold|font-weight-normal|font-italic)\b'
     severity: warning
@@ -614,14 +622,14 @@ mechanical:
 
   # === TEMPLATE QUALITY CHECKS ===
   - id: TC-67
-    type: regex
+    type: regex_not
     target: "Resources/Private/**/*.html"
     pattern: 'includeJavaScriptFiles|includeCssFiles'
     severity: error
     desc: "Wrong f:be.pageRenderer attribute name. Use includeJsFiles (NOT includeJavaScriptFiles) and includeCssLibs (NOT includeCssFiles). Wrong names silently fail to load assets"
 
   - id: TC-68
-    type: regex
+    type: regex_not
     target: "Resources/Private/**/*.html"
     pattern: '<script(?![^>]*\bsrc=)[^>]*>'
     severity: error
@@ -645,7 +653,7 @@ mechanical:
 
   # === PHPSTAN EMPTY BASELINE (ASPIRATIONAL) ===
   - id: TC-177
-    type: not_regex
+    type: regex_not
     target: "{Build/phpstan-baseline.neon,phpstan-baseline.neon}"
     pattern: '^\s+-\s*$\n\s+message:'
     severity: info
