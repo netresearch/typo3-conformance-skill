@@ -225,11 +225,15 @@ mechanical:
     severity: info
     desc: "ext_localconf.php should exist for frontend/backend registration"
 
+  # ext_tables.php is OPTIONAL in TYPO3 v13+ — backend modules / AJAX routes
+  # are registered via Configuration/Backend/{Modules,AjaxRoutes,Routes}.php.
+  # Accept any of the registration entry-points (or pure-service extensions
+  # with no backend surface at all).
   - id: TC-51
     type: file_exists
-    target: ext_tables.php
+    target: "{ext_tables.php,Configuration/Backend/Modules.php,Configuration/Backend/AjaxRoutes.php,Configuration/Backend/Routes.php}"
     severity: info
-    desc: "ext_tables.php is optional; in TYPO3 v13+ backend modules are registered via Configuration/Backend/Modules.php"
+    desc: "Backend modules / AJAX routes registered via either ext_tables.php (legacy) or Configuration/Backend/*.php (TYPO3 v13+ recommended). Pure-service extensions may have neither."
 
   # === STRICT TYPES DECLARATION ===
   - id: TC-07
@@ -340,11 +344,15 @@ mechanical:
     scope: backend
     desc: "Configuration/Icons.php should exist for icon registration (v12+)"
 
+  # Configuration/Sets/ is required only for site-package extensions that ship
+  # TYPO3 v13 Site Sets. Pure provider/service/library extensions don't need
+  # it. Severity stays info — useful pointer when missing on a sitepackage,
+  # noise on everything else.
   - id: TC-54
     type: file_exists
-    target: Configuration/Sets/
+    target: "{Configuration/Sets/,Configuration/Sets}"
     severity: info
-    desc: "Configuration/Sets/ directory should exist for TYPO3 13 Site Sets"
+    desc: "Configuration/Sets/ for TYPO3 v13+ Site Sets — required for sitepackage extensions, optional for service/provider extensions"
 
   # === CI TOOLING CENTRALIZATION ===
   - id: TC-90
@@ -369,7 +377,7 @@ mechanical:
 
   - id: TC-93
     type: regex
-    target: "{Build/phpstan.neon,phpstan.neon}"
+    target: "{phpstan.neon,Build/phpstan.neon,Build/phpstan/phpstan.neon,phpstan.neon.dist}"
     pattern: 'typo3-ci-workflows'
     severity: info
     desc: "PHPStan config should include shared config from typo3-ci-workflows"
@@ -599,14 +607,14 @@ mechanical:
 
   # === BOOTSTRAP 5 MIGRATION CHECKS ===
   - id: TC-65
-    type: regex
+    type: regex_not
     target: "Resources/Private/**/*.html"
     pattern: 'data-dismiss=|data-toggle="(collapse|modal|tab|dropdown|tooltip|popover)"|data-target=|data-ride=|data-slide='
     severity: warning
     desc: "Legacy Bootstrap 4 data attributes detected. Migrate to Bootstrap 5: data-dismiss→data-bs-dismiss, data-toggle→data-bs-toggle, data-target→data-bs-target, data-ride→data-bs-ride, data-slide→data-bs-slide"
 
   - id: TC-66
-    type: regex
+    type: regex_not
     target: "Resources/Private/**/*.html"
     pattern: '\bclass="[^"]*\b(btn-default|ml-(\d+|auto)|mr-(\d+|auto)|pl-(\d+|auto)|pr-(\d+|auto)|float-left|float-right|font-weight-bold|font-weight-normal|font-italic)\b'
     severity: warning
@@ -614,14 +622,14 @@ mechanical:
 
   # === TEMPLATE QUALITY CHECKS ===
   - id: TC-67
-    type: regex
+    type: regex_not
     target: "Resources/Private/**/*.html"
     pattern: 'includeJavaScriptFiles|includeCssFiles'
     severity: error
     desc: "Wrong f:be.pageRenderer attribute name. Use includeJsFiles (NOT includeJavaScriptFiles) and includeCssLibs (NOT includeCssFiles). Wrong names silently fail to load assets"
 
   - id: TC-68
-    type: regex
+    type: regex_not
     target: "Resources/Private/**/*.html"
     pattern: '<script(?![^>]*\bsrc=)[^>]*>'
     severity: error
