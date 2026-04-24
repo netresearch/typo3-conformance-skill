@@ -329,7 +329,7 @@ mechanical:
   # === BACKEND MODULE MODERNIZATION (v13+) ===
   - id: TC-52
     type: command
-    pattern: "! grep -rq '<script' Resources/Private/Templates/ 2>/dev/null"
+    pattern: "! test -d Resources/Private/Templates/ || ! grep -rq '<script' Resources/Private/Templates/ 2>/dev/null"
     severity: warning
     desc: "Templates should not contain inline <script> tags; use ES6 modules"
 
@@ -530,16 +530,20 @@ mechanical:
   # === CACHE DOUBLE-LOOKUP ANTI-PATTERN ===
   - id: TC-154
     type: command
-    pattern: "set -o pipefail; ! grep -rnP '->has\\(' Classes/ 2>/dev/null | grep -iq cache"
+    pattern: "[ -d Classes/ ] || exit 0; set -o pipefail; ! grep -rnP '->has\\(' Classes/ 2>/dev/null | sed -E 's/^[^:]+:[0-9]+://' | grep -iq cache"
     severity: warning
-    desc: "Cache get should not be preceded by has() -- use get() directly and check for false"
+    desc: "Cache get should not be preceded by has() -- use get() directly and check for false (path-prefix stripped to avoid false-positives from Cache/ directory names)"
 
   # === REPOSITORY QUERY PROPERTY NAME CHECK ===
+  # Test PHP source under Classes/Domain/Repository/ for snake_case names
+  # passed to ->equals() / ->like() / ->contains(). Filenames are stripped
+  # before the snake_case check (sed) so directory names like Cache_Foo/
+  # don't generate false positives.
   - id: TC-155
     type: command
-    pattern: "set -o pipefail; ! grep -rnP '->equals\\(' Classes/Domain/Repository/ 2>/dev/null | grep -Pq '_[a-z]'"
+    pattern: "[ -d Classes/Domain/Repository/ ] || exit 0; set -o pipefail; ! grep -rn '\\->equals(' Classes/Domain/Repository/ 2>/dev/null | sed -E 's/^[^:]+:[0-9]+://' | grep -Eq '_[a-z]'"
     severity: error
-    desc: "Extbase repository queries must use model property names (camelCase), not database column names (snake_case)"
+    desc: "Extbase repository queries should use model property names (camelCase), not database column names (snake_case)"
 
   # === XLIFF COMPLETENESS CHECK ===
   - id: TC-156
@@ -549,11 +553,14 @@ mechanical:
     desc: "All LLL: references in TCA, classes, and templates must have corresponding XLIFF trans-unit entries"
 
   # === DEPRECATED CONSTANTS WITH ENUM REPLACEMENTS ===
+  # Walk PHP files: detect @deprecated docblocks followed by a `const`
+  # declaration (typical pattern — @deprecated lives in the docblock above
+  # the const, not on the same line). Single-line greps would miss this.
   - id: TC-157
     type: command
-    pattern: "set -o pipefail; if (grep -rnP '@deprecated' Classes/ 2>/dev/null | grep -iq 'const ') && grep -rlqP '\\benum\\b' Classes/ 2>/dev/null; then exit 1; else exit 0; fi"
+    pattern: "[ -d Classes/ ] || exit 0; set -o pipefail; if find Classes/ -type f -name '*.php' 2>/dev/null | xargs awk 'BEGIN{in_doc=0; doc_deprecated=0; pending_deprecated=0} /^[[:space:]]*\\/\\*\\*/{in_doc=1; doc_deprecated=0} {if (in_doc && /@deprecated/) doc_deprecated=1} in_doc && /\\*\\//{in_doc=0; if (doc_deprecated) pending_deprecated=1; next} pending_deprecated && /^[[:space:]]*(public|protected|private)?[[:space:]]*const[[:space:]]+/ {found=1; exit} pending_deprecated && /^[[:space:]]*(\\/\\*\\*|#|\\/\\/|$)/ {next} pending_deprecated {pending_deprecated=0} END{exit found ? 0 : 1}' 2>/dev/null && grep -rlqP '\\benum\\b' Classes/ 2>/dev/null; then exit 1; else exit 0; fi"
     severity: warning
-    desc: "Deprecated string constants should not coexist with enum replacements in active code paths"
+    desc: "Deprecated string constants (in @deprecated docblock) should not coexist with enum replacements in active code paths"
 
   # === EXCELLENCE INDICATORS (bonus) ===
   - id: TC-58
