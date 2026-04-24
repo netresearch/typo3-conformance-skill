@@ -329,7 +329,7 @@ mechanical:
   # === BACKEND MODULE MODERNIZATION (v13+) ===
   - id: TC-52
     type: command
-    pattern: "grep -rn '<script' Resources/Private/Templates/ 2>/dev/null | head -1 && exit 1 || exit 0"
+    pattern: "! grep -rq '<script' Resources/Private/Templates/ 2>/dev/null"
     severity: warning
     desc: "Templates should not contain inline <script> tags; use ES6 modules"
 
@@ -415,7 +415,7 @@ mechanical:
   # === DI / ARCHITECTURE CHECKS ===
   - id: TC-110
     type: command
-    pattern: "grep -rn 'GeneralUtility::makeInstance' Classes/ 2>/dev/null | grep -v 'Classes/Task/' | grep -v 'Classes/Scheduler/' | grep -v 'Typo3QuerySettings' | grep -v 'ConnectionPool' | grep -v 'QueryBuilder' | grep -v 'FlashMessage' | head -5 && echo 'WARN: Use DI instead of GeneralUtility::makeInstance for services' && exit 1 || exit 0"
+    pattern: "set -o pipefail; ! grep -rn 'GeneralUtility::makeInstance' Classes/ 2>/dev/null | grep -v 'Classes/Task/' | grep -v 'Classes/Scheduler/' | grep -v 'Typo3QuerySettings' | grep -v 'ConnectionPool' | grep -v 'QueryBuilder' | grep -v 'FlashMessage' | grep -q ."
     severity: warning
     desc: "Classes/ should use dependency injection instead of GeneralUtility::makeInstance for services (excludes Scheduler tasks, ConnectionPool, QueryBuilder, FlashMessage)"
 
@@ -530,14 +530,14 @@ mechanical:
   # === CACHE DOUBLE-LOOKUP ANTI-PATTERN ===
   - id: TC-154
     type: command
-    pattern: "grep -rnP '->has\\(' Classes/ 2>/dev/null | grep -i cache | head -3 && echo 'WARN: Cache has() followed by get() is a double-lookup anti-pattern; use get() directly and check for false' && exit 1 || exit 0"
+    pattern: "set -o pipefail; ! grep -rnP '->has\\(' Classes/ 2>/dev/null | grep -iq cache"
     severity: warning
     desc: "Cache get should not be preceded by has() -- use get() directly and check for false"
 
   # === REPOSITORY QUERY PROPERTY NAME CHECK ===
   - id: TC-155
     type: command
-    pattern: "grep -rnP '->equals\\(' Classes/Domain/Repository/ 2>/dev/null | grep -P '_[a-z]' | head -3 && echo 'WARN: Extbase repository queries should use model property names (camelCase), not database column names (snake_case)' && exit 1 || exit 0"
+    pattern: "set -o pipefail; ! grep -rnP '->equals\\(' Classes/Domain/Repository/ 2>/dev/null | grep -Pq '_[a-z]'"
     severity: error
     desc: "Extbase repository queries must use model property names (camelCase), not database column names (snake_case)"
 
@@ -551,7 +551,7 @@ mechanical:
   # === DEPRECATED CONSTANTS WITH ENUM REPLACEMENTS ===
   - id: TC-157
     type: command
-    pattern: "grep -rnP '@deprecated' Classes/ 2>/dev/null | grep -i 'const ' | head -3 && grep -rlP '\\benum\\b' Classes/ 2>/dev/null | head -1 && echo 'WARN: Deprecated constants coexist with enum replacements -- verify deprecated constants are not still referenced in active code paths' && exit 1 || exit 0"
+    pattern: "set -o pipefail; if (grep -rnP '@deprecated' Classes/ 2>/dev/null | grep -iq 'const ') && grep -rlqP '\\benum\\b' Classes/ 2>/dev/null; then exit 1; else exit 0; fi"
     severity: warning
     desc: "Deprecated string constants should not coexist with enum replacements in active code paths"
 
