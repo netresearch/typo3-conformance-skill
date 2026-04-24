@@ -344,15 +344,16 @@ mechanical:
     scope: backend
     desc: "Configuration/Icons.php should exist for icon registration (v12+)"
 
-  # Configuration/Sets/ is required only for site-package extensions that ship
-  # TYPO3 v13 Site Sets. Pure provider/service/library extensions don't need
-  # it. Severity stays info — useful pointer when missing on a sitepackage,
-  # noise on everything else.
+  # Configuration/Sets/ is REQUIRED for sitepackage extensions in TYPO3 v13+
+  # (Site Sets) but is N/A for service/provider/library extensions. Detect
+  # sitepackage by the presence of typical sitepackage markers (page
+  # templates, page.tsconfig, Yaml/Site/). If none of those exist → skip;
+  # otherwise require Configuration/Sets/.
   - id: TC-54
-    type: file_exists
-    target: "{Configuration/Sets/,Configuration/Sets}"
+    type: command
+    pattern: 'is_sitepackage=0; for marker in Configuration/page.tsconfig Configuration/Yaml/Site Resources/Private/Templates/Page Resources/Private/Layouts/Page; do [ -e "$marker" ] && is_sitepackage=1 && break; done; if [ "$is_sitepackage" = "0" ]; then exit 0; fi; [ -d Configuration/Sets ]'
     severity: info
-    desc: "Configuration/Sets/ for TYPO3 v13+ Site Sets — required for sitepackage extensions, optional for service/provider extensions"
+    desc: "Configuration/Sets/ required for sitepackage extensions in TYPO3 v13+ (detected via page templates / page.tsconfig / Yaml/Site/). Skipped for service/provider extensions."
 
   # === CI TOOLING CENTRALIZATION ===
   - id: TC-90
