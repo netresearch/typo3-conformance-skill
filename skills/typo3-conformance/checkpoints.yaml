@@ -351,7 +351,7 @@ mechanical:
   # otherwise require Configuration/Sets/.
   - id: TC-54
     type: command
-    pattern: 'is_sitepackage=0; for marker in Configuration/page.tsconfig Configuration/Yaml/Site Resources/Private/Templates/Page Resources/Private/Layouts/Page; do [ -e "$marker" ] && is_sitepackage=1 && break; done; if [ "$is_sitepackage" = "0" ]; then exit 0; fi; [ -d Configuration/Sets ]'
+    pattern: 'if [ -e Configuration/page.tsconfig ] || [ -d Configuration/Yaml/Site ] || [ -d Resources/Private/Templates/Page ] || [ -d Resources/Private/Layouts/Page ]; then [ -d Configuration/Sets ]; else exit 0; fi'
     severity: info
     desc: "Configuration/Sets/ required for sitepackage extensions in TYPO3 v13+ (detected via page templates / page.tsconfig / Yaml/Site/). Skipped for service/provider extensions."
 
