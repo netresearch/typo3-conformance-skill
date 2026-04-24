@@ -237,7 +237,7 @@ mechanical:
 
   # === STRICT TYPES DECLARATION ===
   - id: TC-07
-    type: not_regex
+    type: regex_not
     target: ext_emconf.php
     pattern: '^[[:space:]]*(<\?php[[:space:]]+)?declare[[:space:]]*\([[:space:]]*strict_types'
     severity: error
@@ -384,21 +384,21 @@ mechanical:
 
   # === TCA v13 PATTERN CHECKS ===
   - id: TC-100
-    type: not_regex
+    type: regex_not
     target: Configuration/TCA/**/*.php
     pattern: "eval.*trim"
     severity: warning
     desc: "TCA files should not contain eval=trim; use trim option in fieldControl instead (v13+)"
 
   - id: TC-101
-    type: not_regex
+    type: regex_not
     target: Configuration/TCA/**/*.php
     pattern: "l10n_parent.*type.*group"
     severity: error
     desc: "TCA translation l10n_parent must not use type=group; use type=select with renderType=selectSingle"
 
   - id: TC-102
-    type: not_regex
+    type: regex_not
     target: Configuration/TCA/**/*.php
     pattern: "(prependAtCopy|hideAtCopy)"
     severity: warning
@@ -428,7 +428,7 @@ mechanical:
     desc: "Classes/ should use dependency injection instead of GeneralUtility::makeInstance for services (excludes Scheduler tasks, ConnectionPool, QueryBuilder, FlashMessage)"
 
   - id: TC-111
-    type: not_regex
+    type: regex_not
     target: Classes/**/*.php
     pattern: "PersistenceManager[^I]"
     severity: warning
@@ -462,14 +462,14 @@ mechanical:
     desc: "Must not use md5(uniqid()); use random_bytes() or GeneralUtility::makeInstance(Random::class) — md5(uniqid()) is cryptographically weak and a security vulnerability"
 
   - id: TC-122
-    type: not_regex
+    type: regex_not
     target: Classes/**/*.php
     pattern: "\\bserialize\\s*\\("
     severity: error
     desc: "Must not use serialize(); prefer json_encode/json_decode — serialize() enables object injection attacks"
 
   - id: TC-122b
-    type: not_regex
+    type: regex_not
     target: Classes/**/*.php
     pattern: "\\bunserialize\\s*\\("
     severity: error
@@ -483,7 +483,7 @@ mechanical:
 
   # === TEMPLATE / BOOTSTRAP 5 CHECKS ===
   - id: TC-130
-    type: not_regex
+    type: regex_not
     target: Resources/Private/**/*.html
     pattern: "(form-inline|form-row|btn-default|form-group)"
     severity: warning
@@ -653,7 +653,7 @@ mechanical:
 
   # === PHPSTAN EMPTY BASELINE (ASPIRATIONAL) ===
   - id: TC-177
-    type: not_regex
+    type: regex_not
     target: "{Build/phpstan-baseline.neon,phpstan-baseline.neon}"
     pattern: '^\s+-\s*$\n\s+message:'
     severity: info
