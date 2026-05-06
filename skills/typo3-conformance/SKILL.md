@@ -33,7 +33,7 @@ Read ext_emconf.php + composer.json for version, type, scope.
 2. **Structure** -- composer.json, ext_emconf.php, Classes/, Configuration/, Resources/
 3. **Coding** -- strict_types, PSR-12, PHP 8.4 explicit nullable, PHP 8.5 float-to-int
 4. **Prohibited** -- no `$GLOBALS`, no `GeneralUtility::makeInstance()` for services
-5. **Architecture** -- constructor DI, Services.yaml, PSR-14 events
+5. **Architecture** -- constructor DI, Services.yaml, PSR-14 events (try/catch), PSR-3 logging (LoggerAware+NullLogger), factory fallback
 6. **Backend** -- ES6, Modal API, CSRF, CSP (v13+)
 7. **Testing** -- PHPUnit, Playwright E2E, coverage >70%
 8. **Practices** -- DDEV, runTests.sh, CI/CD
@@ -74,7 +74,7 @@ grep -rn 'HashService\|GeneralUtility::hmac(\|->findBy[A-Z]\|->findOneBy[A-Z]\|-
 
 ## References
 
-See `references/` for deep-dives:
+See `references/`:
 
 - **Architecture & code:** `extension-architecture.md`, `directory-structure.md`, `php-architecture.md`, `coding-guidelines.md`, `best-practices.md`, `hooks-and-events.md`
 - **Validation:** `composer-validation.md`, `ext-emconf-validation.md`, `ext-files-validation.md`, `runtests-validation.md`, `version-requirements.md`, `testing-standards.md`
