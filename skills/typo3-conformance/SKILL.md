@@ -25,25 +25,25 @@ Testing -> `typo3-testing` | Docs -> `typo3-docs` | OpenSSF -> `enterprise-readi
 
 ### Step 0: Context
 
-Read ext_emconf.php + composer.json for TYPO3/PHP version, type, scope.
+Read ext_emconf.php + composer.json for version, type, scope.
 
 ### Steps 1-11: Checks
 
-1. **Metadata** -- Extension key, TYPO3 version, type
+1. **Metadata** -- key, TYPO3 version, type
 2. **Structure** -- composer.json, ext_emconf.php, Classes/, Configuration/, Resources/
 3. **Coding** -- strict_types, PSR-12, PHP 8.4 explicit nullable, PHP 8.5 float-to-int
-4. **Prohibited** -- No `$GLOBALS`, no `GeneralUtility::makeInstance()` for services
-5. **Architecture** -- Constructor DI, Services.yaml, PSR-14 events
-6. **Backend** -- ES6 modules, Modal API, CSRF, CSP (v13+)
+4. **Prohibited** -- no `$GLOBALS`, no `GeneralUtility::makeInstance()` for services
+5. **Architecture** -- constructor DI, Services.yaml, PSR-14 events
+6. **Backend** -- ES6, Modal API, CSRF, CSP (v13+)
 7. **Testing** -- PHPUnit, Playwright E2E, coverage >70%
-8. **Practices** -- DDEV, runTests.sh, CI/CD, quality tools
-9. **TER** -- Publish workflow, upload comment format
-10. **Audit** -- PHPStan baseline, TCA searchFields/default_sortby, XLIFF completeness, cache has()+get() anti-pattern, Extbase query property names, multi-version adapters
-11. **v14 readiness** -- no `ext_tables.php`/`HashService`/magic repo finders; Fluid VHs strict-typed; XLF 2-space. See `references/v14-deprecations.md`.
+8. **Practices** -- DDEV, runTests.sh, CI/CD
+9. **TER** -- publish workflow, upload comment
+10. **Audit** -- PHPStan baseline, TCA searchFields, XLIFF, cache has()+get(), query properties, multi-version adapters
+11. **v14 readiness** -- no `ext_tables.php`/`HashService`/magic finders; Fluid VHs strict; XLF 2-space. See `references/v14-deprecations.md`.
 
 ### Step 12: Verify
 
-Re-run after fixes. Document score delta ("58 -> 82").
+Re-run after fixes. Document score delta.
 
 ## Quick Grep Recipes
 
