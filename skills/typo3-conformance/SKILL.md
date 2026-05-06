@@ -79,7 +79,7 @@ See `references/` for deep-dives:
 - **Architecture & code:** `extension-architecture.md`, `directory-structure.md`, `php-architecture.md`, `coding-guidelines.md`, `best-practices.md`, `hooks-and-events.md`
 - **Validation:** `composer-validation.md`, `ext-emconf-validation.md`, `ext-files-validation.md`, `runtests-validation.md`, `version-requirements.md`, `testing-standards.md`
 - **Multi-version:** `dual-version-compatibility.md` (v12+v13), `v13-v14-dual-compatibility.md` (v13+v14), `multi-version-dependency-compatibility.md`, `v13-deprecations.md`, `v14-deprecations.md`
-- **Practices & environment:** `development-environment.md` (DDEV / runTests.sh)
+- **Practices & environment:** `development-environment.md` (DDEV)
 - **Backend & publishing:** `backend-module-v13.md`, `ter-publishing.md`, `report-template.md`, `excellence-indicators.md`, `localization-coverage.md`, `crowdin-integration.md`
 
 Asset templates in `assets/Build/`: PHPStan, PHP-CS-Fixer, Rector, ESLint, Stylelint, TypoScript lint.
