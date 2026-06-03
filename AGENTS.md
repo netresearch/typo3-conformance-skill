@@ -48,6 +48,7 @@ No Makefile or build scripts defined. Key operations:
 - FlexForms in `Configuration/FlexForms/`
 - Fluid templates in `Resources/Private/Templates/`
 - Delegates testing analysis to typo3-testing-skill and docs to typo3-docs-skill
+- **Gold standard is TYPO3 v14.3 LTS** (released 2026-04-21): grade extensions against v14, default version examples to v14.3 (use `^14.3` in composer, `…-14.3.99` in `ext_emconf.php`). v12/v13 stay in the matrix as "also supported". PHP floor 8.2, ceiling 8.5; Composer ≥ 2.1. Umbrella ticket for removed functionality is #105377
 
 ## References
 
