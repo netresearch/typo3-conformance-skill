@@ -1774,3 +1774,24 @@ grep -A 2 'push:' .github/workflows/*.yml | grep -v 'branches:'
 - [ ] Bootstrap 5 classes used (not 3/4)
 - [ ] Proper table semantics (no role="grid" on data tables)
 - [ ] Accessibility attributes on forms, nav, and tables
+
+## Bootstrap & error-handling gotchas
+
+### Custom exception handlers belong in `additional.php`, not `ext_localconf.php`
+
+TYPO3 reads `$GLOBALS['TYPO3_CONF_VARS']['SYS']['debugExceptionHandler']` and
+`['productionExceptionHandler']` during EARLY bootstrap (`Bootstrap::initializeErrorHandling()`),
+which runs BEFORE any extension's `ext_localconf.php` is loaded. Registering a custom exception
+handler in `ext_localconf.php` is therefore **silently ignored** — the override never takes effect.
+
+Register it in the project's `config/system/additional.php` instead:
+
+```php
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['debugExceptionHandler']
+    = \Vendor\Ext\Error\MyExceptionHandler::class;
+```
+
+This only manifests at runtime in a booted instance — a static scan or `php -l` will not catch it.
+
+**Audit:** if an extension ships an exception-handler subclass, verify its registration is documented
+for `additional.php`, not (ineffectively) placed in `ext_localconf.php`.
