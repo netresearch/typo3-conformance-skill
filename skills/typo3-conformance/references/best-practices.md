@@ -351,7 +351,8 @@ services:
 When an extension integrates with an optional system extension (`dashboard`,
 `reports`, …), guard the registration so installs without that extension do not
 fail container compilation on unresolvable class references. Two non-obvious
-rules make this work — both are silent failures otherwise:
+rules make this work — and each fails differently if you get it wrong (rule #1
+*silently* skips registration, rule #2 throws a hard container-compile error):
 
 1. **Guard interfaces with `interface_exists()`, not `class_exists()`.** PHP's
    `class_exists()` returns `false` for interfaces and traits, so a guard like
@@ -391,9 +392,9 @@ return static function (ContainerConfigurator $containerConfigurator): void {
     $services = $containerConfigurator->services();
     $services->defaults()->autowire()->autoconfigure()->private();
 
-    $services->set(Vendor\MyExtension\Widgets\DataProvider\CostDataProvider::class);
+    $services->set(\Vendor\MyExtension\Widgets\DataProvider\CostDataProvider::class);
     $services->set('dashboard.widget.myext.cost', NumberWithIconWidget::class)
-        ->arg('$dataProvider', service(Vendor\MyExtension\Widgets\DataProvider\CostDataProvider::class))
+        ->arg('$dataProvider', service(\Vendor\MyExtension\Widgets\DataProvider\CostDataProvider::class))
         ->tag('dashboard.widget', ['identifier' => 'myext-cost', 'groupNames' => 'general']);
 };
 ```
