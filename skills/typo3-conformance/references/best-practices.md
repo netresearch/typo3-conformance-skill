@@ -346,6 +346,64 @@ services:
         description: 'Import data from external source'
 ```
 
+**Conditional DI for optional system extensions (e.g. dashboard widgets):**
+
+When an extension integrates with an optional system extension (`dashboard`,
+`reports`, …), guard the registration so installs without that extension do not
+fail container compilation on unresolvable class references. Two non-obvious
+rules make this work — both are silent failures otherwise:
+
+1. **Guard interfaces with `interface_exists()`, not `class_exists()`.** PHP's
+   `class_exists()` returns `false` for interfaces and traits, so a guard like
+   `class_exists(WidgetInterface::class)` is *always false* — the body never
+   runs and the feature silently never registers. Use `interface_exists()` for
+   interfaces and `trait_exists()` for traits. (PHPStan ≥ 2.2.2 reports the dead
+   `class_exists()` guard as `function.impossibleType`.)
+
+2. **Import a `.php` config from `Services.php`, never a `.yaml`.** TYPO3 loads
+   `Configuration/Services.php` with a standalone Symfony `PhpFileLoader` whose
+   resolver has no YAML loader, so `$containerConfigurator->import('Foo.yaml')`
+   throws `Cannot load resource "Foo.yaml"`. Convert the optional service
+   definitions to a PHP config file and import it with an absolute path.
+
+```php
+// Configuration/Services.php
+use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use TYPO3\CMS\Dashboard\Widgets\WidgetInterface;
+
+return static function (ContainerConfigurator $containerConfigurator): void {
+    // interface_exists(): class_exists() is always false for an interface.
+    if (interface_exists(WidgetInterface::class)) {
+        // .php, not .yaml: the PhpFileLoader has no YAML loader in its resolver.
+        $containerConfigurator->import(__DIR__ . '/Services.Dashboard.php');
+    }
+};
+```
+
+```php
+// Configuration/Services.Dashboard.php
+use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use TYPO3\CMS\Dashboard\Widgets\NumberWithIconWidget;
+
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+
+return static function (ContainerConfigurator $containerConfigurator): void {
+    $services = $containerConfigurator->services();
+    $services->defaults()->autowire()->autoconfigure()->private();
+
+    $services->set(Vendor\MyExtension\Widgets\DataProvider\CostDataProvider::class);
+    $services->set('dashboard.widget.myext.cost', NumberWithIconWidget::class)
+        ->arg('$dataProvider', service(Vendor\MyExtension\Widgets\DataProvider\CostDataProvider::class))
+        ->tag('dashboard.widget', ['identifier' => 'myext-cost', 'groupNames' => 'general']);
+};
+```
+
+Add a functional test that loads the optional system extension
+(`$coreExtensionsToLoad[] = 'dashboard';`) and asserts the services register
+(e.g. `WidgetRegistry::getAllWidgets()` contains your identifiers) — extend
+`FunctionalTestCase` directly so a container-compile failure surfaces as a test
+failure rather than being swallowed into a skip.
+
 ### 4. Backend Module Configuration
 
 **Configuration/Backend/Modules.php:**
