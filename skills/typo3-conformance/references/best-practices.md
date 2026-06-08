@@ -432,6 +432,19 @@ return [
 ];
 ```
 
+**Backend SVG icons** (`Resources/Public/Icons/*.svg`, registered in `Configuration/Icons.php`):
+
+- Author with SVG **presentation attributes** — `fill="currentColor"`, `fill-rule="evenodd"`, `<g opacity="...">` — **never inline `style="..."`**. TYPO3 inlines icon SVGs into the backend DOM, so a `style=` attribute depends on `style-src-attr 'unsafe-inline'` and breaks under a hardened CSP. Core icons use presentation attributes exclusively (Illustrator/Figma exports often emit `style=` — strip it).
+- Use `fill="currentColor"` so the icon adapts to the v14 light/dark backend. For a second tone use `var(--icon-color-accent)` (the themeable accent) or a fixed brand hex.
+- The backend **module** icon should differ from the **extension** icon (`Extension.svg`): the extension icon identifies the package, the module icon identifies the feature.
+- When the colored v12/v13 variant and the flat v14 variant differ, version-split the source in `Configuration/Icons.php` via `Typo3Version`:
+
+```php
+$source = (new \TYPO3\CMS\Core\Information\Typo3Version())->getMajorVersion() >= 14
+    ? 'EXT:my_ext/Resources/Public/Icons/Module.svg'        // flat, currentColor
+    : 'EXT:my_ext/Resources/Public/Icons/Module.legacy.svg'; // colored tile
+```
+
 ### 5. Testing Infrastructure
 
 **Build/Scripts/runTests.sh:**
