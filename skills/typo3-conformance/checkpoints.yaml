@@ -160,6 +160,14 @@ mechanical:
     severity: info
     desc: "Configuration/TCA/ should exist if extension defines database tables"
 
+  - id: TC-36
+    type: regex_not
+    target: "ext_tables.sql"
+    pattern: "KEY\\s+\\w+\\s*\\([^)]*\\w\\(\\d"
+    severity: error
+    desc: "ext_tables.sql KEY definitions must not use column prefix lengths (e.g. fieldname(12)) — TYPO3 Database Schema Analyzer rejects this syntax and the index is silently not created"
+    tags: [database, schema, ext_tables, index]
+
   # === DEPRECATED API PATTERNS ===
   - id: TC-40
     type: not_contains
