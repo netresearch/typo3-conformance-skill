@@ -674,7 +674,8 @@ so support for older LTS releases is unchanged.
 
 ```bash
 # Does composer.json declare the composer-only metadata?
-jq -e '.extra["typo3/cms"] | has("version") and (.Package.providesPackages | length > 0)' composer.json
+# `version` may be at the root OR under extra.typo3/cms (see Gotcha #2)
+jq -e '(.version // .extra["typo3/cms"].version) and ((.extra["typo3/cms"].Package.providesPackages // {}) | length > 0)' composer.json
 
 # Run functional tests on v14.3 and assert zero deprecations
 typo3DatabaseDriver=pdo_sqlite .Build/bin/phpunit -c Build/phpunit/FunctionalTests.xml --display-deprecations
