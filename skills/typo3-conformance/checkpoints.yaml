@@ -160,7 +160,7 @@ mechanical:
     severity: info
     desc: "Configuration/TCA/ should exist if extension defines database tables"
 
-  - id: TC-36
+  - id: TC-185
     type: regex_not
     target: "ext_tables.sql"
     pattern: "KEY\\s+\\w+\\s*\\([^)]*\\w\\(\\d"
