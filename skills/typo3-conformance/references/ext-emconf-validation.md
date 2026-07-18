@@ -624,6 +624,65 @@ ext_emconf.php:
 
 ---
 
+## v14.3: ext_emconf.php Deprecation & Composer-Only Migration (#108345)
+
+TYPO3 v14.3 deprecates `ext_emconf.php` for Composer-installed extensions. An
+extension that still ships only `ext_emconf.php` triggers `E_USER_DEPRECATED`:
+
+> Extension "<key>" is having an ext_emconf.php file, which is deprecated.
+> Additionally the composer.json is missing "version" and "providesPackages" declaration.
+
+### Migration (keeps v12.4 / v13.4 working)
+
+Declare the metadata under `extra.typo3/cms` in `composer.json` so v14.3 treats the
+extension as "composer-only" and stops reading `ext_emconf.php`. **Keep
+`ext_emconf.php`** — v12.4/v13.4 still read it and ignore the unknown `extra` keys,
+so support for older LTS releases is unchanged.
+
+```json
+{
+    "extra": {
+        "typo3/cms": {
+            "extension-key": "my_extension",
+            "version": "1.2.3",
+            "Package": {
+                "providesPackages": {
+                    "vendor/my-extension": "my_extension"
+                }
+            }
+        }
+    }
+}
+```
+
+### Gotchas (verified against `PackageManager::isComposerOnlyCapable()`)
+
+1. **`providesPackages` must be NON-EMPTY.** An empty `{}` makes TYPO3 believe the
+   Composer package provides no extension → the package is not registered →
+   `Container entry "...ExtTablesFactory" is not available` (failsafe container).
+   Map the Composer package name to the extension key.
+2. **Both `version` AND `providesPackages` are required** to silence the deprecation.
+   `version` may live at the root or under `extra.typo3/cms`; prefer the latter so
+   Packagist/TER do not warn about a hardcoded root `version`.
+3. **Composer-only mode derives dependencies from composer `require`.** Every
+   `typo3/cms-*` in `require` becomes a HARD TYPO3 dependency. Align the
+   `constraints.depends` above to match, and load each one in the functional tests'
+   `coreExtensionsToLoad` (see the typo3-testing skill) — otherwise the package graph
+   is unsatisfiable and you hit the same failsafe-container error.
+
+### Validation Commands
+
+```bash
+# Does composer.json declare the composer-only metadata?
+# `version` may be at the root OR under extra.typo3/cms (see Gotcha #2)
+jq -e '(.version // .extra["typo3/cms"].version) and ((.extra["typo3/cms"].Package.providesPackages // {}) | length > 0)' composer.json
+
+# Run functional tests on v14.3 and assert zero deprecations
+typo3DatabaseDriver=pdo_sqlite .Build/bin/phpunit -c Build/phpunit/FunctionalTests.xml --display-deprecations
+```
+
+---
+
 ## Quick Reference
 
 ### Critical Checks

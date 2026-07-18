@@ -2,7 +2,7 @@
 name: typo3-conformance
 description: "Use when assessing TYPO3 extension quality, conformance checking, standards compliance, modernization to v12/v13/v14 (v14.3 LTS is the default/gold standard), TER readiness, or best practices review. Also triggers on: extension audit, quality score, full assessment, fix all findings, conformance audit, Fluid 5 strict ViewHelpers, ext_tables.php removal, Extbase attributes (Authorize/RateLimit), HashService removal, Bootstrap 5 migration, CSP compliance, ViewHelper security, XLIFF hygiene, PHP 8.4/8.5 compat."
 metadata:
-  version: "2.15.0"
+  version: "2.15.2"
   repository: https://github.com/netresearch/typo3-conformance-skill
   author: Netresearch DTT GmbH
 ---
@@ -20,6 +20,8 @@ Evaluate TYPO3 extensions against TYPO3 coding standards, architecture patterns,
 ## Delegation
 
 Testing -> `typo3-testing` | Docs -> `typo3-docs` | OpenSSF -> `enterprise-readiness`
+
+**Scope:** extensions only. **Site/project** repos (`type: project` + Compose) — score with the gold checker [`typo3-14-gold`](https://git.netresearch.de/typo3/typo3-14-gold)`/tools/conformance`.
 
 ## Workflow
 
@@ -48,9 +50,9 @@ Re-run after fixes. Document score delta.
 ## Quick Grep Recipes
 
 ```bash
-grep -rL 'strict_types' Classes/ --include='*.php'                   # missing strict_types
-grep -rn '\$GLOBALS' Classes/ --include='*.php'                       # prohibited $GLOBALS
-grep -rn 'GeneralUtility::makeInstance' Classes/ --include='*.php'    # makeInstance for services
+grep -rL 'strict_types' Classes/ --include='*.php'
+grep -rn '\$GLOBALS' Classes/ --include='*.php'
+grep -rn 'GeneralUtility::makeInstance' Classes/ --include='*.php'
 grep -rPn '\(\s*[A-Za-z\\]+\s+\$\w+\s*=\s*null' Classes/ --include='*.php' | grep -v '?'  # PHP 8.4 implicit nullable
 grep -rn '->has(' Classes/ --include='*.php'                          # cache has()+get() anti-pattern
 grep -l 'strict_types' ext_emconf.php                                 # ext_emconf must NOT have strict_types
@@ -78,8 +80,7 @@ See `references/`:
 
 - **Architecture & code:** `extension-architecture.md`, `directory-structure.md`, `php-architecture.md`, `coding-guidelines.md`, `best-practices.md`, `hooks-and-events.md`
 - **Validation:** `composer-validation.md`, `ext-emconf-validation.md`, `ext-files-validation.md`, `runtests-validation.md`, `version-requirements.md`, `testing-standards.md`
-- **Multi-version:** `dual-version-compatibility.md` (v12+v13), `v13-v14-dual-compatibility.md` (v13+v14), `multi-version-dependency-compatibility.md`, `v13-deprecations.md`, `v14-deprecations.md`
-- **Practices & environment:** `development-environment.md` (DDEV)
-- **Backend & publishing:** `backend-module-v13.md`, `ter-publishing.md`, `report-template.md`, `excellence-indicators.md`, `localization-coverage.md`, `crowdin-integration.md`
+- **Multi-version:** `dual-version-compatibility.md`, `v13-v14-dual-compatibility.md`, `multi-version-dependency-compatibility.md`, `v13-deprecations.md`, `v14-deprecations.md`
+- **Practices & backend:** `development-environment.md`, `backend-module-v13.md`, `ter-publishing.md`, `report-template.md`, `excellence-indicators.md`, `localization-coverage.md`, `crowdin-integration.md`
 
 Asset templates in `assets/Build/`: PHPStan, PHP-CS-Fixer, Rector, ESLint, Stylelint, TypoScript lint.
