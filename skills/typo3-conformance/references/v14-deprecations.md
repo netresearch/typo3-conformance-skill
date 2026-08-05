@@ -302,6 +302,10 @@ No removals; all removed in v15.0.
 
 ---
 
+### Frontend CSP is opt-in, not default-on (verified against v14 core source)
+
+Frontend Content-Security-Policy is gated by the feature flag `security.frontend.enforceContentSecurityPolicy` (cms-core `CspConfigurationFactory`); only **backend** CSP is default-on in v14. "v14 frontend CSP strict by default" overstates it — any claim that something "fights the default frontend CSP" is conditional on the flag being enabled (recommended for NR projects, but a deliberate choice). Unrelated but adjacent: prefer server-side rendering for Mermaid/syntax highlighting regardless of CSP, since v14.0 removed core asset concat/compression (#108055) and client JS needs an external build tool.
+
 ## Part 3 — New v14 capabilities to recommend (excellence bonus)
 
 Award excellence bonus for extensions that adopt these early:
