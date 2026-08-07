@@ -27,16 +27,20 @@ fi
 For DDEV, cross-check `.ddev/config.yaml` against `composer.json` rather than trusting either file in isolation — mismatches are the actual finding, not the presence of a config file:
 
 ```bash
-MIN_PHP=$(jq -r '.require.php' composer.json | grep -oE '[0-9]+\.[0-9]+' | head -1)
-WEB_DIR=$(jq -r '.extra.typo3.cms."web-dir"' composer.json)
+MIN_PHP=""
+WEB_DIR=""
+if [ -f "composer.json" ] && [ -f ".ddev/config.yaml" ]; then
+    MIN_PHP=$(jq -r '.require.php // empty' composer.json 2>/dev/null | grep -oE '[0-9]+\.[0-9]+' | head -1)
+    WEB_DIR=$(jq -r '.extra."typo3/cms"."web-dir" // empty' composer.json 2>/dev/null)
 
-DDEV_PHP=$(grep 'php_version:' .ddev/config.yaml | awk '{print $2}' | tr -d '"')
-DDEV_DOCROOT=$(grep 'docroot:' .ddev/config.yaml | awk '{print $2}')
-DDEV_TYPE=$(grep 'type:' .ddev/config.yaml | awk '{print $2}')
+    DDEV_PHP=$(grep 'php_version:' .ddev/config.yaml | awk '{print $2}' | tr -d '"')
+    DDEV_DOCROOT=$(grep 'docroot:' .ddev/config.yaml | awk '{print $2}')
+    DDEV_TYPE=$(grep 'type:' .ddev/config.yaml | awk '{print $2}')
 
-[ "${DDEV_PHP}" != "${MIN_PHP}" ] && echo "⚠️  PHP version mismatch: DDEV ${DDEV_PHP} vs required ${MIN_PHP}"
-[ "${DDEV_DOCROOT}" != "${WEB_DIR}" ] && echo "⚠️  Docroot mismatch: DDEV ${DDEV_DOCROOT} vs composer ${WEB_DIR}"
-[ "${DDEV_TYPE}" != "typo3" ] && echo "❌ DDEV type should be 'typo3', found '${DDEV_TYPE}'"
+    [ -n "${MIN_PHP}" ] && [ "${DDEV_PHP}" != "${MIN_PHP}" ] && echo "⚠️  PHP version mismatch: DDEV ${DDEV_PHP} vs required ${MIN_PHP}"
+    [ -n "${WEB_DIR}" ] && [ "${DDEV_DOCROOT}" != "${WEB_DIR}" ] && echo "⚠️  Docroot mismatch: DDEV ${DDEV_DOCROOT} vs composer ${WEB_DIR}"
+    [ "${DDEV_TYPE}" != "typo3" ] && echo "❌ DDEV type should be 'typo3', found '${DDEV_TYPE}'"
+fi
 ```
 
 ## Scoring (Best Practices component, out of 20)
