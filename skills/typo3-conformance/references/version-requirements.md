@@ -5,6 +5,18 @@
 
 ## Official Version Support Matrix
 
+**Verify live before relying on this table.** Support windows in a static document drift;
+the get.typo3.org API is authoritative and machine-readable:
+
+```bash
+curl -s "https://get.typo3.org/api/v1/major/13" | jq '{maintained_until, elts_until, lts}'
+```
+
+`maintained_until` in the future → Free Support (security fixes on public Packagist);
+in the past → ELTS (fixes require an ELTS subscription). Use the API for any
+support-status decision (audit handling, upgrade urgency, CI matrix) instead of
+hardcoded version lists — including this one.
+
 ### TYPO3 12 LTS
 
 **Release:** April 2022
