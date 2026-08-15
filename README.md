@@ -93,7 +93,7 @@ This conformance checker acts as an **orchestrator** that delegates to specializ
 - **excellence-indicators.md** - Optional quality features for exceptional extensions (0-20 bonus points)
   - Community & Internationalization: Crowdin, issue templates, .gitattributes, README badges
   - Advanced Quality Tooling: Fractor, TYPO3 CodingStandards, StyleCI, Makefile, CI matrix
-  - Documentation Excellence: 100+ RST files, modern tooling (guides.xml, screenshots.json)
+  - Documentation Excellence: feature coverage for the extension scope (not file counts), modern tooling (guides.xml, screenshots.json)
   - Extension Configuration: ext_conf_template.txt, composer doc scripts, multiple Sets
 
 **Secondary References:**
@@ -1155,11 +1155,12 @@ This skill is based on official TYPO3 documentation:
 - Makefile with self-documenting help: +1 point
 - CI testing matrix: +1 point
 
-**Documentation Excellence (0-4 points)**
-- Complete documentation for extension scope: +3 points (all required sections present)
-- Partial documentation: +2 points (most sections, some incomplete)
-- Basic documentation: +1 point (Index.rst + Installation only)
-- Modern tooling (guides.xml, screenshots.json): +1 point
+**Documentation Excellence (0-4 points)** — feature coverage, not file counts
+- Scope by class count: focused (≤30) / medium (31-100) / large (>100)
+- focused: user coverage ≥90% + quality ≥80% → 3 (developer docs optional, never penalized)
+- medium: user ≥90% + developer ≥80% → 4; ≥40% developer → 3; user ≥80% → 2
+- large: average of user+developer coverage ≥90% → 4; ≥75% → 3; ≥60% → 2
+- Quality includes modern tooling (guides.xml, screenshots.json)
 
 **Extension Configuration (0-3 points)**
 - ext_conf_template.txt: +1 point
