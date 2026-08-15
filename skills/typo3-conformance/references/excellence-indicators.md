@@ -764,15 +764,33 @@ Advanced Quality Tooling (0-9):
 □ CI matrix: 3+ PHP versions + composerInstall variants (+2)
 □ TER publish workflow (.github/workflows/*ter*.yml) (+2)
 
-Documentation Excellence (0-4):
-□ 50-99 RST files (+1) / 100-149 (+2) / 150+ (+3)
-□ guides.xml + screenshots.json (+1)
+Documentation Excellence (0-4) — feature coverage, not file count:
+□ Classify scope by PHP class count: focused (≤30) / medium (31-100) / large (>100)
+□ Inventory shipped features and check each is documented —
+  user-facing: installation, configuration, backend modules, workflows;
+  developer-facing: CLI commands, events, public APIs
+□ Assess quality q: TYPO3 directives (confval), working examples,
+  modern tooling (guides.xml + screenshots.json)
+□ Score by scope (u = user coverage, d = developer coverage):
+  focused: u≥90% and q≥80% → 3 | u≥75% → 2 | u≥60% → 1 | else 0
+  medium:  u≥90% and d≥80% → 4 | u≥90% and d≥40% → 3 | u≥80% → 2 | u≥60% → 1 | else 0
+  large:   (u+d)/2 ≥90% → 4 | ≥75% → 3 | ≥60% → 2 | ≥40% → 1 | else 0
 
 Extension Configuration (0-3):
 □ ext_conf_template.txt present (+1)
 □ Composer doc scripts (doc-init, doc-make, doc-watch) (+1)
 □ 2+ Configuration Sets in Configuration/Sets/ (+1)
 ```
+
+**Why Documentation Excellence is feature-based:** file counts measure
+volume, not coverage — 22 focused RST files can be a complete, EXCELLENT
+documentation for a small extension, while a 150-file dump with undocumented
+CLI commands is not. The feature-inventory procedure (what counts as a
+user-facing vs developer-facing feature, how to measure coverage) is owned by
+typo3-docs-skill: `references/documentation-coverage-analysis.md`. Never
+penalize a focused extension for lacking developer API docs — at that scope
+they are optional (source: netresearch/typo3-conformance-skill#102, moved
+here from typo3-docs-skill during the 2026-08 authority reconciliation).
 
 ---
 
