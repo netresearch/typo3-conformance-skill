@@ -552,7 +552,7 @@ medium triggers at u≥90% rather than 100%, large aggregates as the average
 
 **Validation:**
 ```bash
-[ -f "Documentation/guides.xml" ] && echo "✅ Modern documentation tooling (+1)"
+[ -f "Documentation/guides.xml" ] && echo "✅ Modern documentation tooling (part of quality q)"
 ```
 
 ---
@@ -698,7 +698,7 @@ SET_COUNT=$(find Configuration/Sets -mindepth 1 -maxdepth 1 -type d | wc -l)
 ### ✅ Documentation Excellence (3/4)
 - Scope: large (140 classes) — feature-based scoring
 - ✅ Coverage: user 90%, developer 60% → (u+d)/2 = 75%: +3 points
-- ❌ guides.xml missing — quality gap, blocks 4/4
+- ℹ️ (u+d)/2 below 90% caps a large extension at 3; the missing guides.xml is a quality gap worth fixing regardless
 
 ### ❌ Extension Configuration (0/3)
 - ❌ ext_conf_template.txt: 0 points

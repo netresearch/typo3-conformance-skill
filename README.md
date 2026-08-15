@@ -1005,7 +1005,7 @@ Claude: [Activates typo3-conformance skill]
 
 The skill generates comprehensive markdown reports with dual scoring system:
 
-### Dual Scoring System (0-120 Total)
+### Dual Scoring System (0-122 Total)
 
 **Base Conformance (0-100 points) - MANDATORY**
 - Extension Architecture: 0-20 points
@@ -1016,7 +1016,7 @@ The skill generates comprehensive markdown reports with dual scoring system:
 
 **Excellence Indicators (0-22 points) - OPTIONAL BONUS**
 - Community & Internationalization: 0-6 points
-- Advanced Quality Tooling: 0-7 points
+- Advanced Quality Tooling: 0-9 points
 - Documentation Excellence: 0-4 points
 - Extension Configuration: 0-3 points
 
@@ -1068,7 +1068,7 @@ The skill generates comprehensive markdown reports with dual scoring system:
 | Category | Score | Status |
 |----------|-------|--------|
 | Community & Internationalization | 4/6 | 🌟 Good |
-| Advanced Quality Tooling | 2/7 | ⚡ Basic |
+| Advanced Quality Tooling | 2/9 | ⚡ Basic |
 | Documentation Excellence | 1/4 | 📝 Standard |
 | Extension Configuration | 1/3 | ⚙️  Minimal |
 
@@ -1076,7 +1076,7 @@ The skill generates comprehensive markdown reports with dual scoring system:
 - ✅ Crowdin integration (+2)
 - ✅ Professional README badges (+2)
 - ✅ Fractor configuration (+2)
-- ✅ Basic documentation structure (+1)
+- ✅ Documentation Excellence 1/4 (focused scope, user coverage ≥60%)
 - ✅ Composer doc scripts (+1)
 
 ## Critical Issues
@@ -1090,8 +1090,8 @@ The skill generates comprehensive markdown reports with dual scoring system:
 3. Increase unit test coverage
 
 ## Excellence Opportunities
-- 🌟 Add TYPO3 CodingStandards package (+2 points)
-- 🌟 Implement CI testing matrix (+1 point)
+- 🌟 Add TYPO3 CodingStandards package (+1 point)
+- 🌟 Implement CI testing matrix (+2 points)
 - 🌟 Add modern documentation tooling (+1 point)
 - 🌟 Create multiple Configuration/Sets/ presets (+1 point)
 ```
