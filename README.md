@@ -1092,7 +1092,7 @@ The skill generates comprehensive markdown reports with dual scoring system:
 ## Excellence Opportunities
 - 🌟 Add TYPO3 CodingStandards package (+1 point)
 - 🌟 Implement CI testing matrix (+2 points)
-- 🌟 Add modern documentation tooling (+1 point)
+- 🌟 Add modern documentation tooling (guides.xml, screenshots.json) — raises documentation quality q
 - 🌟 Create multiple Configuration/Sets/ presets (+1 point)
 ```
 
