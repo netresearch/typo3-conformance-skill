@@ -1137,7 +1137,7 @@ vendor/bin/typo3 cache:flush # Clear caches
 | Best Practices | 15/20 | 20/20 | +5 (Modern JS, accessibility, CSRF) |
 | **Total Base Score** | **82/100** | **94/100** | **+12 points** |
 | Excellence: Documentation | 0/4 | 1/4 | +1 (Added module docs) |
-| **Total Score** | **82/120** | **95/120** | **+13 points** |
+| **Total Score** | **82/122** | **95/122** | **+13 points** |
 
 **Estimated Time Investment:**
 - Analysis: 1-2 hours

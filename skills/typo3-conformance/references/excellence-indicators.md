@@ -675,9 +675,9 @@ SET_COUNT=$(find Configuration/Sets -mindepth 1 -maxdepth 1 -type d | wc -l)
 ### Example Report Section
 
 ```markdown
-## Excellence Indicators (Bonus Score: 12/20)
+## Excellence Indicators (Bonus Score: 13/22)
 
-### ✅ Community & Internationalization (4/6)
+### ✅ Community & Internationalization (5/6)
 - ✅ Crowdin integration (crowdin.yml): +2 points
 - ✅ GitHub issue templates (3 templates): +1 point
 - ❌ .gitattributes export optimization: 0 points
@@ -687,12 +687,13 @@ SET_COUNT=$(find Configuration/Sets -mindepth 1 -maxdepth 1 -type d | wc -l)
   - Download stats: ✅
   - Compatibility matrix: ✅
 
-### ✅ Advanced Quality Tooling (5/7)
+### ✅ Advanced Quality Tooling (5/9)
 - ✅ Fractor configuration (Build/fractor/fractor.php): +2 points
 - ❌ TYPO3 CodingStandards package: 0 points (uses custom config)
 - ✅ StyleCI integration (.styleci.yml): +1 point
 - ❌ Makefile automation: 0 points
 - ✅ Comprehensive CI matrix (4 PHP versions, composerInstallLowest/Highest): +2 points
+- ❌ TER publish workflow: 0 points
 
 ### ✅ Documentation Excellence (3/4)
 - Scope: large (140 classes) — feature-based scoring
@@ -710,6 +711,7 @@ This extension demonstrates exceptional quality in documentation and CI/CD pract
 - TYPO3 CodingStandards package for official community standards
 - Makefile for task automation
 - Modern documentation tooling (guides.xml, screenshots.json)
+- A TER publish workflow for automated releases
 - Extension configuration template for backend settings
 ```
 
@@ -770,7 +772,7 @@ here from typo3-docs-skill during the 2026-08 authority reconciliation).
 
 1. **Never penalize** missing excellence indicators
 2. **Always report** excellence indicators separately from base conformance
-3. **Score format:** `Base: 94/100 | Excellence: 12/20 | Total: 106/120`
+3. **Score format:** `Base: 94/100 | Excellence: 13/22 | Total: 107/122`
 4. **Optional evaluation:** Can be disabled with flag if user only wants base conformance
 
 **Example CLI:**
