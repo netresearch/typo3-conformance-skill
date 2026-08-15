@@ -146,9 +146,10 @@
   - ❌ No StyleCI
   - ❌ No CI testing matrix
 
-- Documentation Excellence: 2/4
-  - ✅ 75 RST files (+1)
-  - ✅ Modern tooling (guides.xml) (+1)
+- Documentation Excellence: 3/4
+  - Scope: focused (24 classes) — feature-based scoring
+  - ✅ User feature coverage 6/6 (100%), quality 4/5 (+3)
+  - ℹ️ Developer API reference missing — optional at this scope, not penalized
 
 - Extension Configuration: 1/3
   - ✅ Composer doc scripts (+1)
