@@ -90,7 +90,7 @@ This conformance checker acts as an **orchestrator** that delegates to specializ
 - **directory-structure.md** - Validate .Build/ vs Build/ directory separation and organization
 
 **Excellence Indicators:**
-- **excellence-indicators.md** - Optional quality features for exceptional extensions (0-20 bonus points)
+- **excellence-indicators.md** - Optional quality features for exceptional extensions (0-22 bonus points)
   - Community & Internationalization: Crowdin, issue templates, .gitattributes, README badges
   - Advanced Quality Tooling: Fractor, TYPO3 CodingStandards, StyleCI, Makefile, CI matrix
   - Documentation Excellence: feature coverage for the extension scope (not file counts), modern tooling (guides.xml, screenshots.json)
@@ -1005,7 +1005,7 @@ Claude: [Activates typo3-conformance skill]
 
 The skill generates comprehensive markdown reports with dual scoring system:
 
-### Dual Scoring System (0-120 Total)
+### Dual Scoring System (0-122 Total)
 
 **Base Conformance (0-100 points) - MANDATORY**
 - Extension Architecture: 0-20 points
@@ -1014,15 +1014,15 @@ The skill generates comprehensive markdown reports with dual scoring system:
 - Testing Standards: 0-20 points
 - Best Practices: 0-20 points
 
-**Excellence Indicators (0-20 points) - OPTIONAL BONUS**
+**Excellence Indicators (0-22 points) - OPTIONAL BONUS**
 - Community & Internationalization: 0-6 points
-- Advanced Quality Tooling: 0-7 points
+- Advanced Quality Tooling: 0-9 points
 - Documentation Excellence: 0-4 points
 - Extension Configuration: 0-3 points
 
 **Interpretation:**
 - Base conformance (0-100): Core TYPO3 standards compliance (pass/fail criteria)
-- Excellence indicators (0-20): Bonus points for exceptional quality (NEVER penalized if missing)
+- Excellence indicators (0-22): Bonus points for exceptional quality (NEVER penalized if missing)
 - Extensions scoring 100/100 base are fully conformant, regardless of excellence score
 - Excellence indicators identify community reference-level extensions
 
@@ -1052,8 +1052,8 @@ The skill generates comprehensive markdown reports with dual scoring system:
 ## Score Summary
 
 **Base Conformance:** 75/100
-**Excellence Indicators:** 8/20 (Bonus)
-**Total Score:** 83/120
+**Excellence Indicators:** 8/22 (Bonus)
+**Total Score:** 83/122
 
 ### Base Conformance Breakdown
 | Category | Score | Status |
@@ -1068,7 +1068,7 @@ The skill generates comprehensive markdown reports with dual scoring system:
 | Category | Score | Status |
 |----------|-------|--------|
 | Community & Internationalization | 4/6 | 🌟 Good |
-| Advanced Quality Tooling | 2/7 | ⚡ Basic |
+| Advanced Quality Tooling | 2/9 | ⚡ Basic |
 | Documentation Excellence | 1/4 | 📝 Standard |
 | Extension Configuration | 1/3 | ⚙️  Minimal |
 
@@ -1076,7 +1076,7 @@ The skill generates comprehensive markdown reports with dual scoring system:
 - ✅ Crowdin integration (+2)
 - ✅ Professional README badges (+2)
 - ✅ Fractor configuration (+2)
-- ✅ Basic documentation structure (+1)
+- ✅ Documentation Excellence 1/4 (focused scope, user coverage ≥60%)
 - ✅ Composer doc scripts (+1)
 
 ## Critical Issues
@@ -1090,9 +1090,9 @@ The skill generates comprehensive markdown reports with dual scoring system:
 3. Increase unit test coverage
 
 ## Excellence Opportunities
-- 🌟 Add TYPO3 CodingStandards package (+2 points)
-- 🌟 Implement CI testing matrix (+1 point)
-- 🌟 Add modern documentation tooling (+1 point)
+- 🌟 Add TYPO3 CodingStandards package (+1 point)
+- 🌟 Implement CI testing matrix (+2 points)
+- 🌟 Add modern documentation tooling (guides.xml, screenshots.json) — raises documentation quality q
 - 🌟 Create multiple Configuration/Sets/ presets (+1 point)
 ```
 
@@ -1140,7 +1140,7 @@ This skill is based on official TYPO3 documentation:
 - Quality tools configured: 2 points
 - Documentation complete: 2 points
 
-### Excellence Indicators (0-20 bonus points)
+### Excellence Indicators (0-22 bonus points)
 
 **Community & Internationalization (0-6 points)**
 - Crowdin integration: +2 points
@@ -1148,12 +1148,13 @@ This skill is based on official TYPO3 documentation:
 - .gitattributes export-ignore: +1 point
 - Professional README badges: +2 points
 
-**Advanced Quality Tooling (0-7 points)**
+**Advanced Quality Tooling (0-9 points)**
 - Fractor configuration: +2 points
-- TYPO3 CodingStandards package: +2 points
+- TYPO3 CodingStandards package: +1 point
 - StyleCI integration: +1 point
 - Makefile with self-documenting help: +1 point
-- CI testing matrix: +1 point
+- CI testing matrix (3+ PHP versions + composerInstall variants): +2 points
+- TER publish workflow: +2 points
 
 **Documentation Excellence (0-4 points)** — feature coverage, not file counts
 - Scope by class count: focused (≤30) / medium (31-100) / large (>100)
@@ -1171,7 +1172,7 @@ This skill is based on official TYPO3 documentation:
 - 0-5 points: Standard extension (meets requirements)
 - 6-10 points: Good practices (actively maintained)
 - 11-15 points: Excellent quality (community reference level)
-- 16-20 points: Outstanding (georgringer/news level)
+- 16-22 points: Outstanding (georgringer/news level)
 
 ## Common Issues Detected
 

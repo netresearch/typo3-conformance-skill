@@ -131,16 +131,16 @@
 ### Excellence Indicators Section
 
 ```markdown
-**Excellence Indicators:** 14/22 (Bonus)
+**Excellence Indicators:** 15/22 (Bonus)
 - Community & Internationalization: 5/6
   - ✅ Crowdin integration (+2)
   - ✅ Professional README badges (+2)
   - ✅ GitHub issue templates (+1)
   - ❌ No .gitattributes export-ignore
 
-- Advanced Quality Tooling: 7/9
+- Advanced Quality Tooling: 6/9
   - ✅ Fractor configuration (+2)
-  - ✅ TYPO3 CodingStandards (+2)
+  - ✅ TYPO3 CodingStandards (+1)
   - ✅ Makefile with help (+1)
   - ✅ TER publishing workflow (+2)
   - ❌ No StyleCI
