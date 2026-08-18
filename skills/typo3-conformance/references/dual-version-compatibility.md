@@ -1,6 +1,6 @@
 # Dual Version (v12 + v13) Compatibility Patterns
 
-> **Source**: netresearch/contexts extension conformance for TYPO3 12.4 + 13.4 LTS (2024-12)
+> **Source**: conformance work on a production TYPO3 extension for 12.4 + 13.4 LTS (2024-12)
 
 ## Version Constraint Strategy
 
