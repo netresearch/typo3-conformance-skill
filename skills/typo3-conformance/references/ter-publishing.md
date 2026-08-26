@@ -424,6 +424,31 @@ See `assets/.github/workflows/publish-to-ter.yml` for the full implementation in
 
 ---
 
+## Triggering Automatically on Every Tag Push
+
+If you also automate creating the GitHub Release itself (e.g. a separate workflow that runs `gh release create` on `push: tags`, so bare tags always get a Release object and a changelog), **do not rely on the `release: published` trigger to fire from that automation.**
+
+**The problem:** GitHub Actions does not fire *any* downstream workflow-trigger event (including `release: published`) for an action performed with the default `GITHUB_TOKEN` — only `workflow_dispatch` and `repository_dispatch` are exempt from this restriction ([GitHub docs](https://docs.github.com/en/actions/using-workflows/triggering-a-workflow#triggering-a-workflow-from-a-workflow)). A release-creation workflow using `GH_TOKEN: ${{ github.token }}` (the common, no-extra-secret way to call `gh release create`) will genuinely publish a real, non-draft Release — but the `publish-to-ter.yml` workflow listening for `release: published` will never see it. This is easy to miss: every `workflow_dispatch` test of the publish workflow keeps succeeding (that trigger is exempt), which looks exactly like "the pipeline works," while the actual advertised automatic path — tag push → auto-created Release → TER publish — silently never fires.
+
+**The fix:** add `push: tags` as the *primary* trigger on `publish-to-ter.yml` itself, matching the same tag pattern the release-creation workflow uses:
+
+```yaml
+on:
+  push:
+    tags:
+      - 'v[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}'
+  release:
+    types: [published]
+  workflow_dispatch:
+    # ... (see above)
+```
+
+Keep `release: published` as a secondary trigger too — it's harmless (the idempotency precheck skips a version that's already published) and still covers a release created manually through the GitHub UI for a tag that was never auto-published. A tag push is a real git event, not a token-gated one, so it doesn't hit the restriction above.
+
+**Verification:** confirming this works requires observing an *actual* tag push trigger a run — testing only via `workflow_dispatch` proves nothing here, since that trigger was never affected by the bug in the first place.
+
+---
+
 ## MANDATORY: TER Metadata Setup (Sidebar Links)
 
 **CRITICAL:** The TER extension page sidebar links (Extension Manual, Found an Issue?, Code Insights, Packagist.org) are **NOT** populated from `composer.json`. They must be set explicitly via `tailor ter:update`.
@@ -679,6 +704,7 @@ Idempotency and Verification:
 [ ] Precheck skips publish if the version already returns 200 from the TER download URL
 [ ] Post-publish step polls (bounded timeout) until TER actually serves the version
 [ ] workflow_dispatch input is verified as a real git tag (git ls-remote), not just format-validated
+[ ] If a separate workflow auto-creates the GitHub Release, publish-to-ter.yml also triggers on push: tags directly (a Release created via GITHUB_TOKEN does not fire release: published downstream) - verified against a real tag push, not just workflow_dispatch
 
 TER Metadata (MANDATORY for initial setup):
 [ ] tailor ter:update --manual has been run (Extension Manual link)

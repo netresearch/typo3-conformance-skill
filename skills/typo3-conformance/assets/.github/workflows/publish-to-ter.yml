@@ -1,6 +1,13 @@
 name: Publish new extension version to TER
 
 on:
+  # push: tags is the primary trigger - see "Triggering Automatically on
+  # Every Tag Push" in references/ter-publishing.md for why release:
+  # published alone is not enough if the Release itself is created by
+  # another workflow using the default GITHUB_TOKEN.
+  push:
+    tags:
+      - 'v[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}'
   release:
     types: [published]
   workflow_dispatch:
