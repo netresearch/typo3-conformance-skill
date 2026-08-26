@@ -347,7 +347,7 @@ mechanical:
   # === BACKEND MODULE MODERNIZATION (v13+) ===
   - id: TC-52
     type: command
-    pattern: "! test -d Resources/Private/Templates/ || ! grep -rq '<script' Resources/Private/Templates/ 2>/dev/null"
+    pattern: "! grep -rEP '<script(?![^>]*\\\\bsrc=)(?![^>]*type=\"application/(json|ld\\\\+json)\")[^>]*' Resources/Private/Templates/ 2>/dev/null"
     severity: warning
     desc: "Templates should not contain inline <script> tags; use ES6 modules"
 
@@ -646,7 +646,7 @@ mechanical:
   - id: TC-68
     type: regex_not
     target: "Resources/Private/**/*.html"
-    pattern: '<script(?![^>]*\bsrc=)[^>]*>'
+    pattern: '<script(?![^>]*\bsrc=)(?![^>]*type="application/(json|ld\+json)")[^>]*>'
     severity: error
     desc: "Inline <script> tags violate CSP. Move JavaScript to external files loaded via f:be.pageRenderer includeJsFiles or AssetCollector"
 
