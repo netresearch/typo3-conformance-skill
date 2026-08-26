@@ -3,30 +3,89 @@ name: Publish new extension version to TER
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Git tag to (re)publish, e.g. v1.2.3 (must already exist)'
+        required: true
+        type: string
+
+permissions: {}
 
 jobs:
   publish:
     name: Publish new version to TER
     runs-on: ubuntu-latest
-    env:
-      TYPO3_EXTENSION_KEY: ${{ secrets.TYPO3_EXTENSION_KEY }}
-      TYPO3_API_TOKEN: ${{ secrets.TYPO3_TER_ACCESS_TOKEN }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Harden Runner
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
 
-      - name: Validate tag format
+      - name: Validate dispatch tag input
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          DISPATCH_TAG: ${{ github.event.inputs.tag }}
         run: |
-          if ! [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-            echo "::error::Invalid tag format '${GITHUB_REF_NAME}'. Expected format: v1.2.3"
+          # Fail fast, before spending time on checkout, on an obviously
+          # malformed input. The authoritative check (is this actually an
+          # existing git tag, not e.g. a same-named branch) runs after
+          # checkout, once "origin" is available to query.
+          if ! [[ "${DISPATCH_TAG}" =~ ^v[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            echo "::error::Invalid tag format '${DISPATCH_TAG}'. Expected format: v1.2.3"
             exit 1
           fi
 
-      - name: Extract version
-        id: version
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Verify the dispatch tag is a real git tag
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          DISPATCH_TAG: ${{ github.event.inputs.tag }}
         run: |
+          # A branch named e.g. "v9.9.9" would pass the format check above
+          # and could resolve at checkout too. Ask origin directly whether
+          # a tag by this name really exists, independent of how checkout
+          # resolved the ref locally.
+          if ! git ls-remote --tags --exit-code origin "refs/tags/${DISPATCH_TAG}" >/dev/null 2>&1; then
+            echo "::error::'${DISPATCH_TAG}' is not an existing git tag on origin (a branch of the same name is not accepted here)"
+            exit 1
+          fi
+
+      - name: Resolve extension key from composer.json
+        id: extkey
+        run: |
+          KEY=$(php -r "echo json_decode(file_get_contents('composer.json'), true)['extra']['typo3/cms']['extension-key'] ?? '';")
+          if [[ -z "${KEY}" ]]; then
+            echo "::error file=composer.json::Missing extension-key in extra.typo3/cms"
+            exit 1
+          fi
+          echo "key=${KEY}" >> "$GITHUB_OUTPUT"
+          echo "Extension key: ${KEY}"
+
+      - name: Resolve target version
+        id: version
+        env:
+          DISPATCH_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          # DISPATCH_TAG is set on a manual workflow_dispatch re-run
+          # (GITHUB_REF_NAME would be the branch the workflow was dispatched
+          # against, not the tag to publish); empty on a normal
+          # release-published run, where GITHUB_REF_NAME already is the tag.
+          TAG="${DISPATCH_TAG:-${GITHUB_REF_NAME}}"
+          if ! [[ "${TAG}" =~ ^v[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+            echo "::error::Invalid tag format '${TAG}'. Expected format: v1.2.3"
+            exit 1
+          fi
           # Strip 'v' prefix for TER (expects "3.0.1" not "v3.0.1")
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${TAG#v}"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Extracted version: ${VERSION}"
 
@@ -36,6 +95,9 @@ jobs:
           RELEASE_BODY: ${{ github.event.release.body }}
           RELEASE_NAME: ${{ github.event.release.name }}
           RELEASE_URL: ${{ github.event.release.html_url }}
+          VERSION: ${{ steps.version.outputs.version }}
+          SERVER_URL: ${{ github.server_url }}
+          REPO: ${{ github.repository }}
         run: |
           # TER Upload Comment Format:
           # - Plain text only (no HTML/Markdown)
@@ -44,28 +106,93 @@ jobs:
           # - Stripped in XML export: # * + = ~ ^ | \ < >
           # See: references/ter-publishing.md
 
-          if [[ -n "${RELEASE_BODY}" ]]; then
-            # Preserve newlines (TER displays them as line breaks)
-            # Limit to reasonable length (1000 chars)
-            COMMENT=$(echo "${RELEASE_BODY}" | head -c 1000)
-          elif [[ -n "${RELEASE_NAME}" ]]; then
-            COMMENT="${RELEASE_NAME}"
-          else
-            COMMENT="Release ${{ steps.version.outputs.version }}"
+          # 0. Prefer the CHANGELOG.md section for this version - curated,
+          # committed, and present even on a workflow_dispatch re-run (which
+          # has no github.event.release.* context at all). Adjust the awk
+          # pattern below if your CHANGELOG.md uses a different heading
+          # convention than Keep a Changelog's "## [1.2.3]".
+          COMMENT=""
+          if [[ -f CHANGELOG.md ]]; then
+            COMMENT=$(awk -v ver="${VERSION}" '
+              { sub(/\r$/, "") }
+              /^## / {
+                if (found) { exit }
+                line = $0
+                sub(/^## *\[?v?/, "", line)
+                sub(/\]?( .*)?$/, "", line)
+                if (line == ver) { found = 1 }
+                next
+              }
+              found { print }
+            ' CHANGELOG.md | sed -e '/./,$!d')
           fi
 
-          # Strip characters not supported in TER XML export
-          COMMENT="${COMMENT//[#*+=~^|\\<>]/}"
+          # 1. Otherwise the GitHub release body (empty on workflow_dispatch)
+          if [[ -z "${COMMENT// }" ]] && [[ -n "${RELEASE_BODY}" ]]; then
+            # Character-safe truncation - `head -c` splits multi-byte UTF-8
+            # sequences (accented characters, em-dashes, emoji) mid-codepoint
+            COMMENT=$(printf '%s' "${RELEASE_BODY}" | python3 -c 'import sys; sys.stdout.write(sys.stdin.read()[:1000])')
+          fi
 
-          # Append release link on new line
+          # 2. Otherwise the release title
+          if [[ -z "${COMMENT// }" ]] && [[ -n "${RELEASE_NAME}" ]]; then
+            COMMENT="${RELEASE_NAME}"
+          fi
+
+          # 3. Bare fallback
+          if [[ -z "${COMMENT// }" ]]; then
+            COMMENT="Release ${VERSION}"
+          fi
+
+          # Strip Markdown heading markers as a unit first ("### Fixed" ->
+          # "Fixed"), then the characters TER's XML export can't handle -
+          # doing this in one character class would instead leave "#" gone
+          # but the heading's now-orphaned leading space behind.
+          COMMENT=$(printf '%s' "${COMMENT}" | sed -E 's/^#+[[:space:]]*//; s/[*+=~^|\\<>]//g')
+
+          if [[ -z "${RELEASE_URL}" ]]; then
+            RELEASE_URL="${SERVER_URL}/${REPO}/releases/tag/v${VERSION}"
+          fi
+
           COMMENT="${COMMENT}"$'\n\n'"Details: ${RELEASE_URL}"
 
-          # Set GitHub Actions output (HEREDOC preserves newlines)
+          # Randomized delimiter - a static "EOF" could be smuggled into
+          # $GITHUB_OUTPUT by a comment source that happens to contain that
+          # exact line, ending the heredoc early
+          DELIMITER="ghadelim_$(openssl rand -hex 8)"
           {
-            echo "comment<<EOF"
+            echo "comment<<${DELIMITER}"
             echo "${COMMENT}"
-            echo "EOF"
+            echo "${DELIMITER}"
           } >> "$GITHUB_OUTPUT"
+
+      - name: Check if version is already on TER
+        id: precheck
+        env:
+          KEY: ${{ steps.extkey.outputs.key }}
+          VERSION: ${{ steps.version.outputs.version }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            # The whole point of a manual re-run is usually to correct
+            # something (e.g. the upload comment) on an already-published
+            # version. TER accepts a re-upload of the same version number
+            # and just overwrites the stored comment, so forcing past the
+            # precheck here is safe, not a duplicate-publish risk.
+            echo "already-published=false" >> "$GITHUB_OUTPUT"
+            echo "Manual re-run - publishing ${VERSION} regardless of TER state"
+            exit 0
+          fi
+
+          URL="https://extensions.typo3.org/extension/download/${KEY}/${VERSION}/zip"
+          STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -I --max-time 15 "${URL}" || echo "000")
+          if [[ "${STATUS}" == "200" ]]; then
+            echo "already-published=true" >> "$GITHUB_OUTPUT"
+            echo "Version ${VERSION} is already on TER - skipping publish"
+          else
+            echo "already-published=false" >> "$GITHUB_OUTPUT"
+            echo "TER precheck status for ${VERSION}: ${STATUS} (will publish)"
+          fi
 
       - name: Setup PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
@@ -75,10 +202,40 @@ jobs:
           tools: composer:v2
 
       - name: Install tailor
-        run: composer global require typo3/tailor --prefer-dist --no-progress
+        run: composer global require "typo3/tailor:^2.0" --prefer-dist --no-progress
 
       - name: Publish to TER
+        if: steps.precheck.outputs.already-published != 'true'
+        env:
+          EXTENSION_KEY: ${{ steps.extkey.outputs.key }}
+          TYPO3_API_TOKEN: ${{ secrets.TYPO3_TER_ACCESS_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          COMMENT: ${{ steps.comment.outputs.comment }}
         run: |
           TAILOR="$(composer global config bin-dir --absolute)/tailor"
-          "${TAILOR}" set-version "${{ steps.version.outputs.version }}"
-          "${TAILOR}" ter:publish --comment "${{ steps.comment.outputs.comment }}" "${{ steps.version.outputs.version }}"
+          "${TAILOR}" ter:publish --comment="${COMMENT}" "${VERSION}" "${EXTENSION_KEY}"
+
+      - name: Verify TER serves the version
+        env:
+          KEY: ${{ steps.extkey.outputs.key }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          URL="https://extensions.typo3.org/extension/download/${KEY}/${VERSION}/zip"
+          TIMEOUT_MINUTES=10
+          POLL_INTERVAL=30
+          DEADLINE=$(( $(date +%s) + TIMEOUT_MINUTES * 60 ))
+          ATTEMPT=0
+          while true; do
+            ATTEMPT=$((ATTEMPT + 1))
+            STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -I --max-time 15 "${URL}" || echo "000")
+            if [[ "${STATUS}" == "200" ]]; then
+              echo "TER serves ${VERSION} (attempt ${ATTEMPT})"
+              exit 0
+            fi
+            if [[ $(date +%s) -ge ${DEADLINE} ]]; then
+              echo "::error::Timed out waiting for TER to serve ${VERSION} (last status: ${STATUS})"
+              exit 1
+            fi
+            echo "Attempt ${ATTEMPT}: status ${STATUS}, retrying in ${POLL_INTERVAL}s"
+            sleep "${POLL_INTERVAL}"
+          done

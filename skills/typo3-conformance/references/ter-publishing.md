@@ -193,7 +193,7 @@ When auditing extensions, verify `publish-to-ter.yml` uses:
 
 **File:** `.github/workflows/publish-to-ter.yml`
 
-**Template:** Copy from `assets/.github/workflows/publish-to-ter.yml`
+**Template:** Copy from `assets/.github/workflows/publish-to-ter.yml` (the file below is a shortened illustration — the asset template additionally includes Harden Runner, SHA-pinned actions, and the idempotency precheck/verify described in the sections after this one; copy the asset, don't retype this excerpt).
 
 ```yaml
 name: Publish new extension version to TER
@@ -206,12 +206,13 @@ jobs:
   publish:
     name: Publish new version to TER
     runs-on: ubuntu-latest
-    env:
-      TYPO3_EXTENSION_KEY: ${{ secrets.TYPO3_EXTENSION_KEY }}
-      TYPO3_API_TOKEN: ${{ secrets.TYPO3_TER_ACCESS_TOKEN }}
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Validate tag format
         run: |
@@ -220,12 +221,18 @@ jobs:
             exit 1
           fi
 
+      - name: Resolve extension key from composer.json
+        id: extkey
+        run: |
+          KEY=$(php -r "echo json_decode(file_get_contents('composer.json'), true)['extra']['typo3/cms']['extension-key'] ?? '';")
+          echo "key=${KEY}" >> "$GITHUB_OUTPUT"
+
       - name: Extract version
         id: version
         run: |
           # Strip 'v' prefix for TER (expects "3.0.1" not "v3.0.1")
           VERSION="${GITHUB_REF_NAME#v}"
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Extracted version: ${VERSION}"
 
       - name: Prepare release comment
@@ -234,33 +241,35 @@ jobs:
           RELEASE_BODY: ${{ github.event.release.body }}
           RELEASE_NAME: ${{ github.event.release.name }}
           RELEASE_URL: ${{ github.event.release.html_url }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          # Build comment from release body or name
+          # Build comment from release body or name. Every value that flows
+          # into this script comes from env:, never from ${{ }} interpolated
+          # directly into the run: body - see "Security Hardening" below.
           if [[ -n "${RELEASE_BODY}" ]]; then
-            # Preserve newlines for TER display, limit length
-            # TER supports newlines - they render as <br> on the frontend
-            COMMENT=$(echo "${RELEASE_BODY}" | head -c 1000)
+            # Character-safe truncation - `head -c` splits multi-byte UTF-8
+            # sequences mid-codepoint, python3 slices by codepoint instead
+            COMMENT=$(printf '%s' "${RELEASE_BODY}" | python3 -c 'import sys; sys.stdout.write(sys.stdin.read()[:1000])')
           elif [[ -n "${RELEASE_NAME}" ]]; then
             COMMENT="${RELEASE_NAME}"
           else
-            COMMENT="Release ${{ steps.version.outputs.version }}"
+            COMMENT="Release ${VERSION}"
           fi
 
           # Strip characters not supported in TER XML export
           # Allowed: word chars, whitespace, " % & [ ] ( ) . , ; : / ? { } ! $ - @
-          COMMENT=$(echo "${COMMENT}" | sed 's/[#*+=~^|\\<>]//g')
+          COMMENT=$(printf '%s' "${COMMENT}" | sed 's/[#*+=~^|\\<>]//g')
 
           # Append release link on new line
-          COMMENT="${COMMENT}
+          COMMENT="${COMMENT}"$'\n\n'"Details: ${RELEASE_URL}"
 
-Details: ${RELEASE_URL}"
-
-          # Escape for GitHub Actions output (preserve newlines)
+          # Randomized delimiter, not a static "EOF" - see "Security Hardening"
+          DELIMITER="ghadelim_$(openssl rand -hex 8)"
           {
-            echo "comment<<EOF"
+            echo "comment<<${DELIMITER}"
             echo "${COMMENT}"
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
+            echo "${DELIMITER}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -270,26 +279,148 @@ Details: ${RELEASE_URL}"
           tools: composer:v2
 
       - name: Install tailor
-        run: composer global require typo3/tailor --prefer-dist --no-progress
+        run: composer global require "typo3/tailor:^2.0" --prefer-dist --no-progress
 
       - name: Publish to TER
+        env:
+          EXTENSION_KEY: ${{ steps.extkey.outputs.key }}
+          TYPO3_API_TOKEN: ${{ secrets.TYPO3_TER_ACCESS_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          COMMENT: ${{ steps.comment.outputs.comment }}
         run: |
           TAILOR="$(composer global config bin-dir --absolute)/tailor"
-          "${TAILOR}" set-version "${{ steps.version.outputs.version }}"
-          "${TAILOR}" ter:publish --comment "${{ steps.comment.outputs.comment }}" "${{ steps.version.outputs.version }}"
+          "${TAILOR}" ter:publish --comment="${COMMENT}" "${VERSION}" "${EXTENSION_KEY}"
 ```
 
 ### Required Secrets
 
 | Secret | Description | Where to Get |
 |--------|-------------|--------------|
-| `TYPO3_EXTENSION_KEY` | Your registered extension key | [my.typo3.org](https://my.typo3.org) |
 | `TYPO3_TER_ACCESS_TOKEN` | API token for TER uploads | [extensions.typo3.org/my-extensions](https://extensions.typo3.org/my-extensions) |
+
+`TYPO3_EXTENSION_KEY` is **not** needed as a secret: `tailor` resolves the extension key from `composer.json`'s `extra.typo3/cms.extension-key` when it's passed as the last positional argument (see the "Resolve extension key from composer.json" step above), which is the single source of truth already used for the same value elsewhere. Passing an extension key positional argument also takes priority over reading `composer.json`, so this stays overridable per-call without needing a secret at all.
 
 ### Tag Format Requirements
 - **Format:** `vMAJOR.MINOR.PATCH` (e.g., `v1.2.3`)
 - **Note:** TER expects version without `v` prefix internally
 - **Validation:** Workflow should validate tag format before publishing
+
+---
+
+## Security Hardening
+
+The publish workflow handles a real API credential (`TYPO3_TER_ACCESS_TOKEN`) and processes attacker-influenceable input (`github.event.release.body`/`.name`, a repository's own `CHANGELOG.md`). Apply the same hardening GitHub's own security guidance recommends for any workflow with secrets:
+
+- **SHA-pin every third-party action**, with a version comment, e.g. `actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`. A floating tag (`@v4`) can be repointed by the action's maintainer (or an attacker who compromises their account) to different code without your workflow file changing.
+- **Add `step-security/harden-runner`** as the first step of the job (`egress-policy: audit` is a reasonable default; tighten to `block` with an explicit allowlist once you know the egress the job needs).
+- **`persist-credentials: false`** on every `actions/checkout` step, so the job's own `GITHUB_TOKEN` isn't left sitting in the git config for later steps (or a compromised dependency) to pick up.
+- **Explicit least-privilege `permissions:`** — top-level `permissions: {}` plus job-level `permissions: contents: read` (this workflow only reads the repo and talks to TER via its own API token; it needs no `GITHUB_TOKEN` write scope at all).
+- **Never interpolate `${{ }}` directly into a `run:` script body.** Route every context value and step output through `env:` and reference it as a shell variable (`"${VAR}"`). Interpolating directly (`"${{ github.event.release.body }}"` inside a multi-line shell script) is the classic GitHub Actions script-injection vector: a release body containing shell metacharacters becomes part of the script text itself, not just a value. Every step in the template above follows this.
+- **Randomize the `$GITHUB_OUTPUT` heredoc delimiter** instead of a static `EOF`. A release body or `CHANGELOG.md` section that happens to contain a line reading exactly `EOF` would otherwise terminate the heredoc early and let the rest of that text inject additional `$GITHUB_OUTPUT` key=value pairs. `DELIMITER="ghadelim_$(openssl rand -hex 8)"` closes that gap at negligible cost.
+- **Pin `typo3/tailor` to at least a major-version constraint** (`"typo3/tailor:^2.0"`), not a bare `composer global require typo3/tailor`. The publish step runs this tool with your live TER token in its environment; an unpinned install picks up whatever the latest release happens to be on every run, with no version history to audit if that ever matters.
+
+---
+
+## Idempotency and Verification
+
+**Problem:** A bare `tailor ter:publish` call has no idempotency guard and no confirmation that TER actually served the version afterward. A re-triggered run (retry after a transient failure, a re-run from the Actions UI) would attempt to publish again, and the workflow's success is only ever "the API call didn't error," not "TER now serves this version."
+
+**Precheck** (before `Publish to TER`): `curl -I` the version's own download URL and skip the publish step if it already returns `200` (confirmed reliable from a real GitHub Actions runner, not just locally — see the caveat below):
+
+```yaml
+- name: Check if version is already on TER
+  id: precheck
+  env:
+    KEY: ${{ steps.extkey.outputs.key }}
+    VERSION: ${{ steps.version.outputs.version }}
+  run: |
+    URL="https://extensions.typo3.org/extension/download/${KEY}/${VERSION}/zip"
+    STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -I --max-time 15 "${URL}" || echo "000")
+    if [[ "${STATUS}" == "200" ]]; then
+      echo "already-published=true" >> "$GITHUB_OUTPUT"
+    else
+      echo "already-published=false" >> "$GITHUB_OUTPUT"
+    fi
+```
+
+Guard the publish step with `if: steps.precheck.outputs.already-published != 'true'`.
+
+**Verify** (after `Publish to TER`, unconditional — it should pass immediately on a skip too): poll the same URL with a bounded timeout instead of trusting the API call's exit code alone:
+
+```yaml
+- name: Verify TER serves the version
+  env:
+    KEY: ${{ steps.extkey.outputs.key }}
+    VERSION: ${{ steps.version.outputs.version }}
+  run: |
+    URL="https://extensions.typo3.org/extension/download/${KEY}/${VERSION}/zip"
+    DEADLINE=$(( $(date +%s) + 600 ))
+    while true; do
+      STATUS=$(curl -sS -o /dev/null -w '%{http_code}' -I --max-time 15 "${URL}" || echo "000")
+      [[ "${STATUS}" == "200" ]] && exit 0
+      [[ $(date +%s) -ge ${DEADLINE} ]] && { echo "::error::Timed out waiting for TER to serve ${VERSION}"; exit 1; }
+      sleep 30
+    done
+```
+
+**Caveat on trusting this check:** the download URL returns `303` (redirecting to the extension's overview page) for a version that genuinely isn't published yet, and `200` once it is — this is verified against real production Actions logs of an existing Netresearch extension (precheck logged `303` before publish, verify logged `200` on the first attempt right after). Testing this specific check by hand from an arbitrary machine or with a non-default `curl` User-Agent can give inconsistent results (bot-protection on the TER frontend), so don't use ad-hoc manual `curl` probing to judge whether this pattern "works" — trust the actual GitHub Actions run logs instead.
+
+---
+
+## CHANGELOG.md as a Comment Source
+
+Prefer the repository's own `CHANGELOG.md` section for the released version over the GitHub release body, when one exists: it's curated, already committed at tag time, and — critically — it's the only source that has real content on a `workflow_dispatch` re-run (see below), where `github.event.release.*` doesn't exist at all.
+
+For a changelog following [Keep a Changelog](https://keepachangelog.com/) (`## [1.2.3] - 2024-01-01` headings, `### Added`/`### Fixed` subsections):
+
+```bash
+COMMENT=$(awk -v ver="${VERSION}" '
+  { sub(/\r$/, "") }
+  /^## / {
+    if (found) { exit }
+    line = $0
+    sub(/^## *\[?v?/, "", line)
+    sub(/\]?( .*)?$/, "", line)
+    if (line == ver) { found = 1 }
+    next
+  }
+  found { print }
+' CHANGELOG.md | sed -e '/./,$!d')
+```
+
+The leading `{ sub(/\r$/, "") }` rule strips a trailing `\r` from every line before matching — without it, a CRLF-saved `CHANGELOG.md` (e.g. edited on Windows) leaves the heading as `"1.2.3\r"`, which never equals `"1.2.3"`, and the extraction **silently** falls through to whatever fallback comment source is next in the chain. Verify this extraction against your own file's actual heading convention if it differs from Keep a Changelog (some projects use a bare `# 1.2.3` per version with no brackets/date) — adjust the two `sub()` patterns accordingly and test with `awk` directly against the real file for the first version, the last version (no following `## ` line to terminate on), and a nonexistent version (must produce empty output, not an error).
+
+When stripping unsupported characters from a `### Fixed`-style subsection heading, strip the leading `#`s as one unit first, not as part of the same character class as the other disallowed characters — `sed 's/[#*+=~^|\\<>]//g'` turns `"### Fixed"` into `" Fixed"` (an orphaned leading space, no visible heading), not `"Fixed"`. Do the heading strip as its own pass before the character-class strip:
+
+```bash
+COMMENT=$(printf '%s' "${COMMENT}" | sed -E 's/^#+[[:space:]]*//; s/[*+=~^|\\<>]//g')
+```
+
+---
+
+## Manual Republish via workflow_dispatch
+
+Add a `workflow_dispatch` trigger so an already-tagged version can be re-published on demand (e.g. to correct the upload comment, or to publish a version whose original release-triggered run failed):
+
+```yaml
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Git tag to (re)publish, e.g. v1.2.3 (must already exist)'
+        required: true
+        type: string
+```
+
+Two things this needs beyond just adding the trigger:
+
+1. **Resolve the target version from the dispatch input, not `GITHUB_REF_NAME`.** On `workflow_dispatch`, `GITHUB_REF_NAME` is the branch the workflow was dispatched against, not the tag to publish — only `github.event.inputs.tag` carries it. `VERSION="${DISPATCH_TAG:-${GITHUB_REF_NAME}}"` (with `DISPATCH_TAG` from `env:`) covers both trigger types in one step.
+2. **Verify the input is a real tag, not a same-named branch**, after checkout: validating the *format* of the input (`^v[0-9]+\.[0-9]+\.[0-9]+$`) is not the same as confirming it's an actual tag. Anyone able to trigger `workflow_dispatch` (repo write access) could otherwise push a branch named e.g. `v9.9.9` and get its unreviewed content checked out and published, bypassing whatever review gate normally applies to creating a real release. `git ls-remote --tags --exit-code origin "refs/tags/${DISPATCH_TAG}"` checks against the remote directly, independent of how `actions/checkout` happened to resolve the ambiguous ref locally.
+3. **Bypass the idempotency precheck on `workflow_dispatch`** (`if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then ... force publish ...`) — the whole point of a manual re-run is usually to correct something on an already-published version, and TER's own re-upload behavior (see the Troubleshooting table) makes that safe.
+
+See `assets/.github/workflows/publish-to-ter.yml` for the full implementation including all three points.
 
 ---
 
@@ -533,7 +664,21 @@ GitHub Actions Workflow:
 [ ] Handles release body for comment
 [ ] Has fallback comment if body empty
 [ ] Uses typo3/tailor for publishing
-[ ] Secrets properly configured
+[ ] Secrets properly configured (TYPO3_TER_ACCESS_TOKEN only - extension key from composer.json)
+
+Security Hardening:
+[ ] Every third-party action is SHA-pinned with a version comment
+[ ] step-security/harden-runner is the first step of the job
+[ ] persist-credentials: false on every checkout step
+[ ] Explicit least-privilege permissions: (top-level {} + job-level contents: read)
+[ ] No ${{ }} expression interpolated directly into a run: script body (env: only)
+[ ] $GITHUB_OUTPUT heredoc delimiter is randomized, not a static EOF
+[ ] typo3/tailor is pinned to at least a major-version constraint
+
+Idempotency and Verification:
+[ ] Precheck skips publish if the version already returns 200 from the TER download URL
+[ ] Post-publish step polls (bounded timeout) until TER actually serves the version
+[ ] workflow_dispatch input is verified as a real git tag (git ls-remote), not just format-validated
 
 TER Metadata (MANDATORY for initial setup):
 [ ] tailor ter:update --manual has been run (Extension Manual link)
