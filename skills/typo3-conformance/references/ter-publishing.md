@@ -189,7 +189,32 @@ When auditing extensions, verify `publish-to-ter.yml` uses:
 
 ## GitHub Actions Workflow
 
-### Recommended Workflow Template
+### Where the publish pipeline actually lives
+
+This skill *checks* the TER publish setup; it does not own it. Building and maintaining the pipeline belongs to two other places, and an audit should recognise both rather than re-derive them:
+
+| Owner | What it provides |
+|-------|------------------|
+| [`netresearch/typo3-ci-workflows`](https://github.com/netresearch/typo3-ci-workflows) | The implementation: reusable workflows `publish-to-ter.yml` (idempotency precheck, bounded post-publish verification, CHANGELOG-first upload comment, `ter:update` metadata sync) and `release-typo3-extension.yml` (build/sign, then TER, Packagist and docs in parallel). |
+| `github-release` skill | The procedure: caller templates (`templates/release-typo3.yml`, `templates/ter-publish.yml`), plus `references/typo3-ter-publishing.md` and `references/ter-republish.md` for the version-match rules and the re-publish path. |
+
+**For a Netresearch extension this is settled**: call the reusable workflow. Every unarchived `t3x-*` repository in the org routes TER through it, and none carries a hand-written `ter:publish` step. A caller is short enough to read in one screen:
+
+```yaml
+jobs:
+  publish-to-ter:
+    uses: netresearch/typo3-ci-workflows/.github/workflows/publish-to-ter.yml@main
+    permissions:
+      contents: read
+    secrets:
+      TYPO3_TER_ACCESS_TOKEN: ${{ secrets.TYPO3_TER_ACCESS_TOKEN }}
+```
+
+Note the caller correctly carries no Harden Runner step, no `persist-credentials: false` and no SHA-pinned action — the hardening sits in the callee, and org-owned reusable workflows stay on `@main` so upstream fixes propagate. Do not report that as a finding; see the checklist at the end of this file.
+
+### Standalone template (no reusable workflow available)
+
+Only for a repository that cannot call the reusable workflow — outside the org, or on a forge without it. It reproduces a subset of what the callee does and must then be maintained by whoever copies it.
 
 **File:** `.github/workflows/publish-to-ter.yml`
 
@@ -468,7 +493,7 @@ Details: https://github.com/vendor/extension/releases/tag/v2.0.0
 | Issue | Cause | Solution |
 |-------|-------|----------|
 | "No upload comment" error | Empty comment passed to tailor | Ensure fallback comment in workflow |
-| Special characters in XML feed | Unsupported chars in comment | Strip `#*+=~^|\\<>` from comments |
+| Special characters in XML feed | Unsupported chars in comment | Strip `#*+=~^\|\\<>` from comments |
 | Version mismatch | Tag doesn't match ext_emconf | Use `tailor set-version` before publish |
 | Authentication failed | Invalid/expired API token | Regenerate token at extensions.typo3.org |
 | Published with wrong / outdated upload comment | Publish ran before the release body was finalized | Re-run `tailor ter:publish --comment "..." vX.Y.Z` on the same version — TER overwrites the upload comment on republish. The ZIP contents are unchanged (the version number doesn't let you ship different code under the same version), only the comment updates. Safe to re-trigger the publish workflow after editing the GitHub release body. |
@@ -524,8 +549,19 @@ validate_comment() {
 
 ### TER Publishing Excellence Indicators
 
+Score the workflow along whichever of the two routes the repository took — they are alternatives, not a sequence. Applying the standalone items to a caller of the reusable workflow fails exactly the repositories that do this best.
+
 ```
-GitHub Actions Workflow:
+GitHub Actions Workflow -- Route A: calls the reusable workflow (expected for netresearch/*):
+[ ] A workflow calls netresearch/typo3-ci-workflows/.github/workflows/publish-to-ter.yml
+    or .../release-typo3-extension.yml
+[ ] The calling job declares permissions: contents: read (a reusable workflow whose
+    inner permissions the caller did not grant fails at startup, before any job runs)
+[ ] TYPO3_TER_ACCESS_TOKEN is passed through; TYPO3_EXTENSION_KEY is NOT
+    (deprecated -- the key is resolved from composer.json)
+-> Everything under Route B is the callee's responsibility. Do not report it here.
+
+GitHub Actions Workflow -- Route B: standalone workflow (no reusable workflow available):
 [ ] publish-to-ter.yml exists in .github/workflows/
 [ ] Triggers on release published event
 [ ] Validates tag format (vX.Y.Z)

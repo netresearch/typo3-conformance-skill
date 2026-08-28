@@ -19,7 +19,7 @@ Evaluate TYPO3 extensions against TYPO3 coding standards, architecture patterns,
 
 ## Delegation
 
-Testing -> `typo3-testing` | Docs -> `typo3-docs` | OpenSSF -> `enterprise-readiness`
+Testing -> `typo3-testing` | Docs -> `typo3-docs` | OpenSSF -> `enterprise-readiness` | Release/TER -> `github-release`
 
 **Scope:** extensions only. **Site/project** repos (`type: project` + Compose) — score with the gold checker [`typo3-14-gold`](https://git.netresearch.de/typo3/typo3-14-gold)`/tools/conformance`.
 
