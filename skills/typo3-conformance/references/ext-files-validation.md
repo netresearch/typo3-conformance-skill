@@ -224,7 +224,7 @@ optionName = defaultValue
 ### Field Types
 
 | Type | Purpose | Example |
-|------|---------|---------
+|------|---------|---------|
 | `boolean` | Checkbox | `type=boolean` |
 | `string` | Text field | `type=string` |
 | `int` / `integer` | Whole number | `type=int` |
