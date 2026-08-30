@@ -1,0 +1,52 @@
+{
+  "skill_name": "typo3-conformance",
+  "note": "Trigger evals in the format agentskills.io documents: realistic requests, labelled with whether this skill should be consulted. They test ROUTING, which the assertion evals in evals.json cannot: those are graded by matching the answer text, so they only ever measure what the skill does once it is already loaded. Every prompt below is a request that was actually put to an agent, not one written for this file — the sources are named per entry.",
+  "queries": [
+    {
+      "query": "Our extensions have to state which TYPO3 versions they support, and this one's statements do not agree with each other. Sort it out.",
+      "should_trigger": true,
+      "source": "netresearch/agent-system-evals OFR-TYPO3-METADATA-001",
+      "measured": "0 of 7 equipped trials loaded any skill with the description as it stood"
+    },
+    {
+      "query": "Our extensions have to state which TYPO3 versions they support, in more than one place. Check this one and tell me whether its statements are right.",
+      "should_trigger": true,
+      "source": "netresearch/agent-system-evals OFR-TYPO3-CONSISTENT-001",
+      "measured": "0 of 9 on the released description; 6 of 6 once the same artefacts were named in the opening clause"
+    },
+    {
+      "query": "Review this TYPO3 extension and tell me what needs attention.",
+      "should_trigger": true,
+      "source": "netresearch/agent-system-evals OFR-TYPO3-EXT-001",
+      "measured": "41 of 42 equipped trials loaded a skill"
+    },
+    {
+      "query": "composer.json says ^12.4 but ext_emconf.php says 11.5-12.4.99. Which is right?",
+      "should_trigger": true,
+      "source": "the defect OFR-TYPO3-METADATA-001 is built on, phrased as a maintainer would ask it"
+    },
+    {
+      "query": "I bumped the version for the release but the docs still show the old one somewhere.",
+      "should_trigger": true,
+      "source": "the four-places finding in OFR-TYPO3-RELEASE-001, phrased as a user would report it"
+    },
+    {
+      "query": "The fix that went in is ready to ship. Please prepare the 2.4.2 release of this extension — everything except pushing it.",
+      "should_trigger": false,
+      "source": "netresearch/agent-system-evals OFR-TYPO3-RELEASE-001",
+      "note": "github-release owns this; conformance answering it would be a false positive"
+    },
+    {
+      "query": "Editors report that saving a translation in the TextDb backend module does nothing — the dialog closes, but the old value is still there. Please find out what is going on.",
+      "should_trigger": false,
+      "source": "netresearch/agent-system-evals OFR-TYPO3-RUNTIME-001",
+      "note": "a runtime defect, not a conformance question"
+    },
+    {
+      "query": "When using the CKEditor 5 image resize feature, the resized width is stored correctly but lost during frontend rendering.",
+      "should_trigger": false,
+      "source": "netresearch/t3x-rte_ckeditor_image#863",
+      "note": "a rendering defect in one extension, reported by its user"
+    }
+  ]
+}
