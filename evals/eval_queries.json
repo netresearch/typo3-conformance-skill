@@ -1,52 +1,48 @@
 {
   "skill_name": "typo3-conformance",
-  "note": "Trigger evals in the format agentskills.io documents: realistic requests, labelled with whether this skill should be consulted. They test ROUTING, which the assertion evals in evals.json cannot: those are graded by matching the answer text, so they only ever measure what the skill does once it is already loaded. Every prompt below is a request that was actually put to an agent, not one written for this file — the sources are named per entry.",
+  "note": "Trigger evals in the format agentskills.io documents: realistic requests, labelled with whether this skill should be consulted. They test ROUTING, which the assertion evals in evals.json cannot: those are graded by matching the answer text, so they only ever measure what the skill does once it is already loaded. Prompts are written in the vocabulary maintainers and editors use, deliberately not in the skill's own. Two rules they must keep. No prompt is copied from a benchmark that measures this skill, and no case identifier or measured figure appears here: a skill that ships a benchmark's own prompts contaminates every run it takes part in, and this file did exactly that until it was rewritten. Sharing a subject with a benchmark case is unavoidable and fine; sharing its sentences is not.",
   "queries": [
     {
-      "query": "Our extensions have to state which TYPO3 versions they support, and this one's statements do not agree with each other. Sort it out.",
-      "should_trigger": true,
-      "source": "netresearch/agent-system-evals OFR-TYPO3-METADATA-001",
-      "measured": "0 of 7 equipped trials loaded any skill with the description as it stood"
+      "query": "Which TYPO3 versions does this extension actually claim to support? I get a different answer depending on where I look.",
+      "should_trigger": true
     },
     {
-      "query": "Our extensions have to state which TYPO3 versions they support, in more than one place. Check this one and tell me whether its statements are right.",
+      "query": "composer.json says ^12.4 but ext_emconf.php says 11.5-12.4.99. Which one is right?",
       "should_trigger": true,
-      "source": "netresearch/agent-system-evals OFR-TYPO3-CONSISTENT-001",
-      "measured": "0 of 9 on the released description; 6 of 6 once the same artefacts were named in the opening clause"
+      "note": "the two artefacts named outright, the shortest form of the same question"
     },
     {
-      "query": "Review this TYPO3 extension and tell me what needs attention.",
-      "should_trigger": true,
-      "source": "netresearch/agent-system-evals OFR-TYPO3-EXT-001",
-      "measured": "41 of 42 equipped trials loaded a skill"
+      "query": "We support v12 and v13 now. Did I update every place that names a version, or did I miss one?",
+      "should_trigger": true
     },
     {
-      "query": "composer.json says ^12.4 but ext_emconf.php says 11.5-12.4.99. Which is right?",
+      "query": "I bumped the version for the release and somewhere it still shows the old one.",
       "should_trigger": true,
-      "source": "the defect OFR-TYPO3-METADATA-001 is built on, phrased as a maintainer would ask it"
+      "note": "a version bump that did not reach every file stating the version"
     },
     {
-      "query": "I bumped the version for the release but the docs still show the old one somewhere.",
+      "query": "Have a look over this extension before I hand it on — what would you flag?",
       "should_trigger": true,
-      "source": "the four-places finding in OFR-TYPO3-RELEASE-001, phrased as a user would report it"
+      "note": "the unspecific request; it routed reliably even before the description named any artefact"
     },
     {
-      "query": "The fix that went in is ready to ship. Please prepare the 2.4.2 release of this extension — everything except pushing it.",
+      "query": "Is this extension ready for the TER, and is it still using anything deprecated in v13?",
+      "should_trigger": true
+    },
+    {
+      "query": "Tag 2.4.2, write the notes and get everything ready to publish, but do not push.",
       "should_trigger": false,
-      "source": "netresearch/agent-system-evals OFR-TYPO3-RELEASE-001",
       "note": "github-release owns this; conformance answering it would be a false positive"
     },
     {
-      "query": "Editors report that saving a translation in the TextDb backend module does nothing — the dialog closes, but the old value is still there. Please find out what is going on.",
+      "query": "An editor saves a record in one of our backend modules and it silently keeps the previous content. Find out why.",
       "should_trigger": false,
-      "source": "netresearch/agent-system-evals OFR-TYPO3-RUNTIME-001",
-      "note": "a runtime defect, not a conformance question"
+      "note": "a runtime defect, not a question about what the extension declares"
     },
     {
-      "query": "When using the CKEditor 5 image resize feature, the resized width is stored correctly but lost during frontend rendering.",
+      "query": "The width an editor sets on an image in the RTE is stored but lost again when the page renders.",
       "should_trigger": false,
-      "source": "netresearch/t3x-rte_ckeditor_image#863",
-      "note": "a rendering defect in one extension, reported by its user"
+      "note": "a rendering defect, reported by a user of one extension"
     }
   ]
 }
