@@ -43,6 +43,11 @@
       "query": "The width an editor sets on an image in the RTE is stored but lost again when the page renders.",
       "should_trigger": false,
       "note": "a rendering defect, reported by a user of one extension"
+    },
+    {
+      "query": "Our extension should run on whichever TYPO3 LTS is current now — please sort that out.",
+      "should_trigger": false,
+      "note": "raising the version is typo3-extension-upgrade's; measured, this request went here 3 times out of 3 while that skill sat beside it unread"
     }
   ]
 }

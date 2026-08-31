@@ -1,6 +1,6 @@
 ---
 name: typo3-conformance
-description: "Use when checking which TYPO3 versions an extension says it supports, when composer.json and ext_emconf.php disagree, when a version bump must reach every file that states it, when reviewing a TYPO3 extension for what needs attention, or when auditing coding standards, TER readiness, deprecations and modernization to v12/v13/v14 (v14.3 LTS is the default)."
+description: "Use when checking which TYPO3 versions an extension says it supports, when composer.json and ext_emconf.php disagree, when a version bump must reach every file that states it, when reviewing a TYPO3 extension for what needs attention, or when auditing coding standards, TER readiness, deprecations and modernization to v12/v13/v14 (v14.3 LTS is the default). Raising an extension to a newer TYPO3 version is not this skill: that belongs to typo3-extension-upgrade."
 metadata:
   version: "2.19.2"
   repository: https://github.com/netresearch/typo3-conformance-skill
