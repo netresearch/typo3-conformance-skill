@@ -97,7 +97,8 @@ mechanical:
 
   - id: TC-16
     type: command
-    pattern: "composer validate --strict 2>&1 || true"
+    pattern: |
+      composer validate --strict 2>&1 || true
     severity: warning
     desc: "composer.json should pass strict validation"
 
@@ -365,7 +366,8 @@ mechanical:
   # otherwise require Configuration/Sets/.
   - id: TC-54
     type: command
-    pattern: 'if [ -e Configuration/page.tsconfig ] || [ -d Configuration/Yaml/Site ] || [ -d Resources/Private/Templates/Page ] || [ -d Resources/Private/Layouts/Page ]; then [ -d Configuration/Sets ]; else exit 0; fi'
+    pattern: |
+      if [ -e Configuration/page.tsconfig ] || [ -d Configuration/Yaml/Site ] || [ -d Resources/Private/Templates/Page ] || [ -d Resources/Private/Layouts/Page ]; then [ -d Configuration/Sets ]; else exit 0; fi
     severity: info
     desc: "Configuration/Sets/ required for sitepackage extensions in TYPO3 v13+ (detected via page templates / page.tsconfig / Yaml/Site/). Skipped for service/provider extensions."
 
@@ -419,10 +421,14 @@ mechanical:
     severity: warning
     desc: "TCA should not contain prependAtCopy or hideAtCopy; removed in TYPO3 v13"
 
+  # `find -exec` is refused by the runner's dangerous-pattern screen ('exec'
+  # followed by whitespace), so this never executed and reported a failure on
+  # every project. Piping into xargs is the shape TC-120 and TC-157 already use.
   - id: TC-103
     type: command
-    command: |
-      found=$(find Configuration/TCA/ -name '*.php' -exec grep -lP 'foreign_table' {} + 2>/dev/null)
+    pattern: |
+      [ -d Configuration/TCA/ ] || exit 0
+      found=$(find Configuration/TCA/ -name '*.php' -not -path '*/.Build/*' -not -path '*/vendor/*' -print0 2>/dev/null | xargs -0 -r grep -lP 'foreign_table' 2>/dev/null)
       [ -z "$found" ] && exit 0
       missing=$(echo "$found" | while IFS= read -r f; do
         grep -LP 'default' "$f" 2>/dev/null
@@ -438,7 +444,8 @@ mechanical:
   # === DI / ARCHITECTURE CHECKS ===
   - id: TC-110
     type: command
-    pattern: "set -o pipefail; ! grep -rn 'GeneralUtility::makeInstance' Classes/ 2>/dev/null | grep -v 'Classes/Task/' | grep -v 'Classes/Scheduler/' | grep -v 'Typo3QuerySettings' | grep -v 'ConnectionPool' | grep -v 'QueryBuilder' | grep -v 'FlashMessage' | grep -q ."
+    pattern: |
+      set -o pipefail; ! grep -rn 'GeneralUtility::makeInstance' Classes/ 2>/dev/null | grep -v 'Classes/Task/' | grep -v 'Classes/Scheduler/' | grep -v 'Typo3QuerySettings' | grep -v 'ConnectionPool' | grep -v 'QueryBuilder' | grep -v 'FlashMessage' | grep -q .
     severity: warning
     desc: "Classes/ should use dependency injection instead of GeneralUtility::makeInstance for services (excludes Scheduler tasks, ConnectionPool, QueryBuilder, FlashMessage)"
 
@@ -457,15 +464,20 @@ mechanical:
     desc: "Should inject ExtensionConfiguration via constructor DI instead of using GeneralUtility::makeInstance"
 
   # === SECURITY PATTERN CHECKS ===
+  # Prohibited process-execution functions. Token-level, because a regex
+  # reads prose: `system (` inside a docblock ("...content in the system
+  # (default + custom tables)") matched the previous pattern and reported
+  # a call that does not exist. token_get_all() classifies comments as
+  # T_COMMENT/T_DOC_COMMENT and literals as T_CONSTANT_ENCAPSED_STRING, so
+  # only a T_STRING/T_NAME_FULLY_QUALIFIED name directly before `(` — and
+  # not after ->, ?->, ::, function or new — counts as a call.
+  #
+  # The file list comes from find, which excludes the ignored dependency
+  # trees (.Build/, vendor/, node_modules/). `find -exec` is unusable here:
+  # the runner's dangerous-pattern filter matches `exec` + whitespace.
   - id: TC-120
     type: command
-    command: |
-      found=$(find Classes/ -name '*.php' -exec grep -lP '(shell_exec|\bexec\s*\(|\bsystem\s*\(|passthru\s*\()' {} + 2>/dev/null)
-      if [ -n "$found" ]; then
-        echo "Prohibited function usage found in: $found"
-        exit 1
-      fi
-      exit 0
+    pattern: "find Classes/ -type f -name '*.php' -not -path '*/.Build/*' -not -path '*/vendor/*' -not -path '*/node_modules/*' 2>/dev/null | php -r 'exit( (fn($files) => count(array_filter( $files, fn($f) => (fn($n) => count( array_filter( array_filter( array_filter( array_filter( array_keys($n), fn($i) => in_array($n[$i][0], [T_STRING, T_NAME_FULLY_QUALIFIED], true) ), fn($i) => in_array(ltrim(strtolower($n[$i][1]), chr(92)), [\"shell_exec\", \"exec\", \"system\", \"passthru\"], true) ), fn($i) => ($n[$i + 1] ?? \"\") === \"(\" ), fn($i) => !in_array(($n[$i - 1] ?? [0])[0], [T_OBJECT_OPERATOR, T_NULLSAFE_OBJECT_OPERATOR, T_DOUBLE_COLON, T_FUNCTION, T_NEW], true) ) ) > 0)( array_values(array_filter( token_get_all(file_get_contents($f)), fn($x) => !in_array($x[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true) )) ) )) > 0 ? 1 : 0)( array_filter(array_map(\"trim\", explode(chr(10), file_get_contents(\"php://stdin\"))), \"is_file\") ) ) ?>'"
     severity: error
     desc: "Must not use shell_exec, exec, system, or passthru; use CommandUtility or Symfony Process"
 
@@ -490,9 +502,12 @@ mechanical:
     severity: error
     desc: "Must not use unserialize(); use json_decode instead — unserialize() without allowed_classes is an object injection vulnerability"
 
+  # Exit status comes from the match itself. The previous pattern ended in
+  # `grep ... | head -5 && echo ... || true`, where head exits 0 on empty
+  # input, so the verdict never depended on the tree.
   - id: TC-123
     type: command
-    pattern: "grep -rn '{[a-zA-Z]\\+}\\|{[a-zA-Z]\\+\\.' Resources/Private/Templates/ 2>/dev/null | grep -v 'f:format.raw\\|f:format.html\\|f:uri\\|f:link\\|f:translate\\|f:image\\|f:if\\|f:for\\|f:render\\|f:section\\|f:layout\\|f:comment\\|f:count\\|f:format.htmlspecialchars\\|f:security\\|f:be\\.' | head -5 && echo 'INFO: Check that dynamic Fluid output uses f:format.htmlspecialchars where appropriate' || true"
+    pattern: "! grep -rn '{[a-zA-Z]\\+}\\|{[a-zA-Z]\\+\\.' Resources/Private/Templates/ 2>/dev/null | grep -v 'f:format.raw\\|f:format.html\\|f:uri\\|f:link\\|f:translate\\|f:image\\|f:if\\|f:for\\|f:render\\|f:section\\|f:layout\\|f:comment\\|f:count\\|f:format.htmlspecialchars\\|f:security\\|f:be\\.' | grep -q ."
     severity: warning
     desc: "Fluid templates should use f:format.htmlspecialchars on dynamic output to prevent XSS"
 
@@ -507,7 +522,7 @@ mechanical:
   # === CI CONFIGURATION CHECKS ===
   - id: TC-140
     type: command
-    command: |
+    pattern: |
       # Only fail if push trigger exists WITHOUT branch restrictions
       grep -A2 '^on:' .github/workflows/ci.yml 2>/dev/null | grep -q 'push:' || exit 0
       grep -A5 'push:' .github/workflows/ci.yml 2>/dev/null | grep -q 'branches' && exit 0
@@ -526,34 +541,37 @@ mechanical:
   # === PHPSTAN BASELINE CHECKS ===
   - id: TC-150
     type: command
-    pattern: "if [ -f phpstan-baseline.neon ]; then count=$(grep -c 'message:' phpstan-baseline.neon 2>/dev/null || echo 0); if [ \"$count\" -gt 10 ]; then echo \"WARN: PHPStan baseline has $count suppressed errors (should trend toward 0)\" && exit 1; fi; elif [ -f Build/phpstan-baseline.neon ]; then count=$(grep -c 'message:' Build/phpstan-baseline.neon 2>/dev/null || echo 0); if [ \"$count\" -gt 10 ]; then echo \"WARN: PHPStan baseline has $count suppressed errors (should trend toward 0)\" && exit 1; fi; fi; exit 0"
+    pattern: |
+      if [ -f phpstan-baseline.neon ]; then count=$(grep -c 'message:' phpstan-baseline.neon 2>/dev/null || echo 0); if [ "$count" -gt 10 ]; then echo "WARN: PHPStan baseline has $count suppressed errors (should trend toward 0)" && exit 1; fi; elif [ -f Build/phpstan-baseline.neon ]; then count=$(grep -c 'message:' Build/phpstan-baseline.neon 2>/dev/null || echo 0); if [ "$count" -gt 10 ]; then echo "WARN: PHPStan baseline has $count suppressed errors (should trend toward 0)" && exit 1; fi; fi; exit 0
     severity: warning
     desc: "PHPStan baseline should trend toward zero suppressed errors (>10 indicates significant technical debt)"
 
   # === TCA SEARCHFIELDS AND SORTBY CHECKS ===
   - id: TC-151
     type: command
-    pattern: "find Configuration/TCA/ -name '*.php' 2>/dev/null | xargs grep -lP \"'ctrl'\" 2>/dev/null | while read f; do if ! grep -qP \"'searchFields'\" \"$f\" 2>/dev/null; then echo \"FAIL: $f missing searchFields in ctrl\" && exit 1; fi; done || exit 1"
+    pattern: "! find Configuration/TCA/ -name '*.php' -not -path '*/.Build/*' -not -path '*/vendor/*' -not -path '*/node_modules/*' 2>/dev/null | xargs -r grep -lE '(^|[^a-zA-Z_])ctrl[^a-zA-Z_]' 2>/dev/null | xargs -r grep -L 'searchFields' 2>/dev/null | grep -q ."
     severity: error
     desc: "All TCA ctrl arrays must define searchFields for backend search functionality"
 
   - id: TC-152
     type: command
-    pattern: "find Configuration/TCA/ -name '*.php' 2>/dev/null | xargs grep -lP \"['\\\"]sortby['\\\"]\" 2>/dev/null | while read f; do if ! grep -qP \"['\\\"]default_sortby['\\\"]\" \"$f\" 2>/dev/null; then echo \"WARN: $f has sortby but no default_sortby\" && exit 1; fi; done"
+    pattern: "! find Configuration/TCA/ -name '*.php' -not -path '*/.Build/*' -not -path '*/vendor/*' -not -path '*/node_modules/*' 2>/dev/null | xargs -r grep -lE '(^|[^a-zA-Z_])sortby[^a-zA-Z_]' 2>/dev/null | xargs -r grep -L 'default_sortby' 2>/dev/null | grep -q ."
     severity: warning
     desc: "TCA tables with sortby should also define default_sortby for consistent ordering"
 
   # === DI INTERFACE ALIAS CHECKS ===
   - id: TC-153
     type: command
-    pattern: "interfaces=$(grep -rhoP '[A-Z][a-zA-Z0-9_]*Interface' Classes/ 2>/dev/null | sort -u); if [ -n \"$interfaces\" ] && [ -f Configuration/Services.yaml ]; then missing=0; for iface in $interfaces; do case $iface in ServerRequestInterface|ResponseInterface|ContainerInterface|LoggerInterface|EventDispatcherInterface|CacheInterface|RequestFactoryInterface|UriFactoryInterface|StreamFactoryInterface) continue ;; esac; if ! grep -q \"$iface\" Configuration/Services.yaml 2>/dev/null; then echo \"WARN: Interface $iface used in Classes/ but not aliased in Services.yaml\"; missing=1; fi; done; if [ \"$missing\" -eq 1 ]; then exit 1; fi; fi; exit 0"
+    pattern: |
+      interfaces=$(grep -rhoP '[A-Z][a-zA-Z0-9_]*Interface' Classes/ 2>/dev/null | sort -u); if [ -n "$interfaces" ] && [ -f Configuration/Services.yaml ]; then missing=0; for iface in $interfaces; do case $iface in ServerRequestInterface|ResponseInterface|ContainerInterface|LoggerInterface|EventDispatcherInterface|CacheInterface|RequestFactoryInterface|UriFactoryInterface|StreamFactoryInterface) continue ;; esac; if ! grep -q "$iface" Configuration/Services.yaml 2>/dev/null; then echo "WARN: Interface $iface used in Classes/ but not aliased in Services.yaml"; missing=1; fi; done; if [ "$missing" -eq 1 ]; then exit 1; fi; fi; exit 0
     severity: warning
     desc: "Interfaces used for constructor injection should have explicit aliases in Services.yaml"
 
   # === CACHE DOUBLE-LOOKUP ANTI-PATTERN ===
   - id: TC-154
     type: command
-    pattern: "[ -d Classes/ ] || exit 0; set -o pipefail; ! grep -rnP '->has\\(' Classes/ 2>/dev/null | sed -E 's/^[^:]+:[0-9]+://' | grep -iq cache"
+    pattern: |
+      [ -d Classes/ ] || exit 0; set -o pipefail; ! grep -rnP '->has\(' Classes/ 2>/dev/null | sed -E 's/^[^:]+:[0-9]+://' | grep -iq cache
     severity: warning
     desc: "Cache get should not be preceded by has() -- use get() directly and check for false (path-prefix stripped to avoid false-positives from Cache/ directory names)"
 
@@ -564,24 +582,36 @@ mechanical:
   # don't generate false positives.
   - id: TC-155
     type: command
-    pattern: "[ -d Classes/Domain/Repository/ ] || exit 0; set -o pipefail; ! grep -rn '\\->equals(' Classes/Domain/Repository/ 2>/dev/null | sed -E 's/^[^:]+:[0-9]+://' | grep -Eq '_[a-z]'"
+    pattern: |
+      [ -d Classes/Domain/Repository/ ] || exit 0; set -o pipefail; ! grep -rn '\->equals(' Classes/Domain/Repository/ 2>/dev/null | sed -E 's/^[^:]+:[0-9]+://' | grep -Eq '_[a-z]'
     severity: error
     desc: "Extbase repository queries should use model property names (camelCase), not database column names (snake_case)"
 
   # === XLIFF COMPLETENESS CHECK ===
+  # Only the extension's OWN static keys are checked. The previous grep
+  # reported three classes of non-finding: `content.` / `menu.` fragments
+  # left by Fluid `content.{label}` and PHP `'menu.' . $action`, which no
+  # trans-unit can ever match; and TYPO3 core labels such as
+  # LLL:EXT:core/.../locallang_core.xlf:labels.reload, which do not live in
+  # this extension's Resources/Private/Language/ at all. The extension key
+  # comes from composer.json extra.typo3/cms.extension-key, falling back to
+  # ext_emconf.php; with no key resolvable the check cannot tell own from
+  # foreign and skips.
   - id: TC-156
     type: command
-    pattern: "lll_refs=$(grep -rhoP 'LLL:EXT:[^/]+/Resources/Private/Language/[^:]+:[a-zA-Z0-9_.]+' Configuration/ Classes/ Resources/Private/Templates/ 2>/dev/null | sed 's/.*://' | sort -u); if [ -n \"$lll_refs\" ]; then missing=0; for key in $lll_refs; do if ! grep -rq \"id=\\\"$key\\\"\" Resources/Private/Language/ 2>/dev/null; then echo \"MISSING XLIFF key: $key\"; missing=$((missing+1)); fi; done; if [ $missing -gt 0 ]; then echo \"FAIL: $missing LLL references have no XLIFF trans-unit\" && exit 1; fi; fi; exit 0"
+    pattern: "php -r 'exit( (fn($read) => (fn($k) => $k === \"\" ? 0 : (fn($src, $hay) => (fn($m) => count(array_filter( array_keys($m[1]), fn($i) => $m[1][$i] === $k ? (str_ends_with($m[2][$i], \".\") ? false : (str_contains($m[2][$i], \"{\") ? false : strpos($hay, \"id=\" . chr(34) . $m[2][$i] . chr(34)) === false)) : false )) > 0 ? 1 : 0)( (fn($s) => preg_match_all(\"~LLL:EXT:([a-zA-Z0-9_]+)/Resources/Private/Language/[^:]+:([a-zA-Z0-9_.{}]+)~\", $s, $mm) ? $mm : [1 => [], 2 => []])($src) ) )( $read([\"Configuration\", \"Classes\", \"Resources/Private/Templates\"]), $read([\"Resources/Private/Language\"]) ) )( (fn($a) => $a !== \"\" ? $a : (fn($t) => preg_match(\"~EM_CONF[[][^]]*?([a-zA-Z0-9_]+)~\", $t, $me) ? $me[1] : \"\")(is_file(\"ext_emconf.php\") ? file_get_contents(\"ext_emconf.php\") : \"\") )( (fn($c) => is_string($c[\"extra\"][\"typo3/cms\"][\"extension-key\"] ?? null) ? $c[\"extra\"][\"typo3/cms\"][\"extension-key\"] : \"\")(is_file(\"composer.json\") ? (json_decode(file_get_contents(\"composer.json\"), true) ?? []) : []) ) ) )( fn($dirs) => implode(\" \", array_map( fn($d) => is_dir($d) ? implode(\" \", array_map(\"file_get_contents\", array_filter(array_map(\"strval\", iterator_to_array(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($d, RecursiveDirectoryIterator::SKIP_DOTS)), false)), \"is_file\"))) : \"\", $dirs )) ) ) ?>'"
     severity: error
-    desc: "All LLL: references in TCA, classes, and templates must have corresponding XLIFF trans-unit entries"
+    desc: "All LLL: references to this extension must have a corresponding XLIFF trans-unit (dynamic keys and other extensions' labels excluded)"
 
   # === DEPRECATED CONSTANTS WITH ENUM REPLACEMENTS ===
-  # Walk PHP files: detect @deprecated docblocks followed by a `const`
-  # declaration (typical pattern — @deprecated lives in the docblock above
-  # the const, not on the same line). Single-line greps would miss this.
+  # A @deprecated docblock immediately followed by a `const` declaration,
+  # while the same tree also declares an enum. Token-level: T_DOC_COMMENT
+  # carrying @deprecated with T_CONST among the next significant tokens,
+  # and T_ENUM anywhere. The file list comes from find, which excludes the
+  # ignored dependency trees (.Build/, vendor/, node_modules/).
   - id: TC-157
     type: command
-    pattern: "[ -d Classes/ ] || exit 0; set -o pipefail; if find Classes/ -type f -name '*.php' 2>/dev/null | xargs awk 'BEGIN{in_doc=0; doc_deprecated=0; pending_deprecated=0} /^[[:space:]]*\\/\\*\\*/{in_doc=1; doc_deprecated=0} {if (in_doc && /@deprecated/) doc_deprecated=1} in_doc && /\\*\\//{in_doc=0; if (doc_deprecated) pending_deprecated=1; next} pending_deprecated && /^[[:space:]]*(public|protected|private)?[[:space:]]*const[[:space:]]+/ {found=1; exit} pending_deprecated && /^[[:space:]]*(\\/\\*\\*|#|\\/\\/|$)/ {next} pending_deprecated {pending_deprecated=0} END{exit found ? 0 : 1}' 2>/dev/null && grep -rlqP '\\benum\\b' Classes/ 2>/dev/null; then exit 1; else exit 0; fi"
+    pattern: "find Classes/ -type f -name '*.php' -not -path '*/.Build/*' -not -path '*/vendor/*' -not -path '*/node_modules/*' 2>/dev/null | php -r 'exit( (fn($c) => count(array_filter($c, fn($v) => $v[0])) > 0 ? (count(array_filter($c, fn($v) => $v[1])) > 0 ? 1 : 0) : 0)( array_map( fn($f) => (fn($n) => [ count(array_filter( array_keys($n), fn($i) => $n[$i][0] === T_DOC_COMMENT ? (str_contains($n[$i][1], \"@deprecated\") ? in_array(T_CONST, [($n[$i + 1] ?? [0])[0], ($n[$i + 2] ?? [0])[0], ($n[$i + 3] ?? [0])[0]], true) : false) : false )) > 0, count(array_filter($n, fn($x) => $x[0] === T_ENUM)) > 0, ])( array_values(array_filter( token_get_all(file_get_contents($f)), fn($x) => !in_array($x[0], [T_WHITESPACE, T_COMMENT], true) )) ), array_filter(array_map(\"trim\", explode(chr(10), file_get_contents(\"php://stdin\"))), \"is_file\") ) ) ) ?>'"
     severity: warning
     desc: "Deprecated string constants (in @deprecated docblock) should not coexist with enum replacements in active code paths"
 
@@ -653,7 +683,20 @@ mechanical:
   # === CODECOV PATCH TARGET CHECK ===
   - id: TC-160
     type: command
-    command: "if [ ! -f codecov.yml ]; then exit 0; fi; target=$(sed -n '/patch:/,/target:/{ s/.*target:\\s*//p; }' codecov.yml 2>/dev/null | head -1 || echo auto); case \"$target\" in auto|'') exit 0 ;; 100%) echo \"WARN: codecov patch target is 100% — use 80% or auto when only unit test coverage is uploaded\" && exit 1 ;; *) exit 0 ;; esac"
+    # The `| head -1 || echo auto` fallback could never fire — head exits 0 even on
+    # empty input, so an unreadable or patch-less codecov.yml yielded an empty
+    # target rather than "auto". Handled explicitly below instead.
+    pattern: |
+      [ -f codecov.yml ] || exit 0
+      target=$(sed -n '/patch:/,/target:/{ s/.*target:[[:space:]]*//p; }' codecov.yml 2>/dev/null | sed -n 1p)
+      if [ -z "$target" ]; then
+        exit 0
+      fi
+      if [ "$target" = "100%" ]; then
+        echo "FAIL: codecov patch target is 100% — use 80% or auto when only unit test coverage is uploaded"
+        exit 1
+      fi
+      exit 0
     severity: warning
     desc: "codecov patch target should not be 100% — use 80% or auto when only unit test coverage is uploaded"
     tags: [ci, codecov, coverage]
@@ -661,7 +704,8 @@ mechanical:
   # === PHPSTAN LEVEL 10 CHECK ===
   - id: TC-176
     type: command
-    command: "if ! grep -q 'typo3-ci-workflows' composer.json 2>/dev/null; then exit 0; fi; for f in Build/phpstan.neon phpstan.neon; do if [ -f \"$f\" ] && grep -qP 'level:\\s*(10|max)' \"$f\" 2>/dev/null; then exit 0; fi; done; echo 'WARN: PHPStan should use level 10 (max) for extensions using typo3-ci-workflows shared config' && exit 1"
+    pattern: |
+      if ! grep -q 'typo3-ci-workflows' composer.json 2>/dev/null; then exit 0; fi; for f in Build/phpstan.neon phpstan.neon; do if [ -f "$f" ] && grep -qP 'level:\s*(10|max)' "$f" 2>/dev/null; then exit 0; fi; done; echo 'WARN: PHPStan should use level 10 (max) for extensions using typo3-ci-workflows shared config' && exit 1
     severity: warning
     desc: "PHPStan should use level 10 (max) for extensions using typo3-ci-workflows shared config"
     tags: [phpstan, ci, static-analysis]
