@@ -423,7 +423,8 @@ mechanical:
 
   # `find -exec` is refused by the runner's dangerous-pattern screen ('exec'
   # followed by whitespace), so this never executed and reported a failure on
-  # every project. Piping into xargs is the shape TC-120 and TC-157 already use.
+  # every project. Piping find's output into a consumer is the shape TC-120 and
+  # TC-157 already use — into `php -r` there, into xargs here.
   - id: TC-103
     type: command
     pattern: |
@@ -547,15 +548,20 @@ mechanical:
     desc: "PHPStan baseline should trend toward zero suppressed errors (>10 indicates significant technical debt)"
 
   # === TCA SEARCHFIELDS AND SORTBY CHECKS ===
+  # NUL-delimited throughout. A whitespace-separated hand-off splits
+  # `Configuration/TCA/tx my table.php` into three non-existent paths, every
+  # grep in the chain fails, and the pipeline reports the tree as clean — a
+  # violating file passes silently. `-print0`/`xargs -0` for the first hop,
+  # `grep -lZ` for the second.
   - id: TC-151
     type: command
-    pattern: "! find Configuration/TCA/ -name '*.php' -not -path '*/.Build/*' -not -path '*/vendor/*' -not -path '*/node_modules/*' 2>/dev/null | xargs -r grep -lE '(^|[^a-zA-Z_])ctrl[^a-zA-Z_]' 2>/dev/null | xargs -r grep -L 'searchFields' 2>/dev/null | grep -q ."
+    pattern: "! find Configuration/TCA/ -name '*.php' -not -path '*/.Build/*' -not -path '*/vendor/*' -not -path '*/node_modules/*' -print0 2>/dev/null | xargs -0 -r grep -lZE '(^|[^a-zA-Z_])ctrl[^a-zA-Z_]' 2>/dev/null | xargs -0 -r grep -L 'searchFields' 2>/dev/null | grep -q ."
     severity: error
     desc: "All TCA ctrl arrays must define searchFields for backend search functionality"
 
   - id: TC-152
     type: command
-    pattern: "! find Configuration/TCA/ -name '*.php' -not -path '*/.Build/*' -not -path '*/vendor/*' -not -path '*/node_modules/*' 2>/dev/null | xargs -r grep -lE '(^|[^a-zA-Z_])sortby[^a-zA-Z_]' 2>/dev/null | xargs -r grep -L 'default_sortby' 2>/dev/null | grep -q ."
+    pattern: "! find Configuration/TCA/ -name '*.php' -not -path '*/.Build/*' -not -path '*/vendor/*' -not -path '*/node_modules/*' -print0 2>/dev/null | xargs -0 -r grep -lZE '(^|[^a-zA-Z_])sortby[^a-zA-Z_]' 2>/dev/null | xargs -0 -r grep -L 'default_sortby' 2>/dev/null | grep -q ."
     severity: warning
     desc: "TCA tables with sortby should also define default_sortby for consistent ordering"
 
@@ -597,9 +603,23 @@ mechanical:
   # comes from composer.json extra.typo3/cms.extension-key, falling back to
   # ext_emconf.php; with no key resolvable the check cannot tell own from
   # foreign and skips.
+  #
+  # The ext_emconf fallback accepts a literal key only — `[^]$]*?` stops the
+  # capture group reaching into `$EM_CONF[$_EXTKEY]`, the classic
+  # ext_emconf.php spelling, where it captured the
+  # VARIABLE NAME `_EXTKEY`. That key matches no LLL: reference, so every
+  # missing trans-unit was reported as present. There is no reliable second
+  # source for the key (the directory name is the branch name in a worktree
+  # checkout, and a wrong key means false errors), so an unresolvable key
+  # skips.
+  #
+  # The trans-unit lookup matches `id` as an XML attribute rather than the
+  # literal `id="key"`: XML permits whitespace around `=` and single quotes,
+  # and this check's severity is error, so a spelling difference must not
+  # report an existing translation as missing.
   - id: TC-156
     type: command
-    pattern: "php -r 'exit( (fn($read) => (fn($k) => $k === \"\" ? 0 : (fn($src, $hay) => (fn($m) => count(array_filter( array_keys($m[1]), fn($i) => $m[1][$i] === $k ? (str_ends_with($m[2][$i], \".\") ? false : (str_contains($m[2][$i], \"{\") ? false : strpos($hay, \"id=\" . chr(34) . $m[2][$i] . chr(34)) === false)) : false )) > 0 ? 1 : 0)( (fn($s) => preg_match_all(\"~LLL:EXT:([a-zA-Z0-9_]+)/Resources/Private/Language/[^:]+:([a-zA-Z0-9_.{}]+)~\", $s, $mm) ? $mm : [1 => [], 2 => []])($src) ) )( $read([\"Configuration\", \"Classes\", \"Resources/Private/Templates\"]), $read([\"Resources/Private/Language\"]) ) )( (fn($a) => $a !== \"\" ? $a : (fn($t) => preg_match(\"~EM_CONF[[][^]]*?([a-zA-Z0-9_]+)~\", $t, $me) ? $me[1] : \"\")(is_file(\"ext_emconf.php\") ? file_get_contents(\"ext_emconf.php\") : \"\") )( (fn($c) => is_string($c[\"extra\"][\"typo3/cms\"][\"extension-key\"] ?? null) ? $c[\"extra\"][\"typo3/cms\"][\"extension-key\"] : \"\")(is_file(\"composer.json\") ? (json_decode(file_get_contents(\"composer.json\"), true) ?? []) : []) ) ) )( fn($dirs) => implode(\" \", array_map( fn($d) => is_dir($d) ? implode(\" \", array_map(\"file_get_contents\", array_filter(array_map(\"strval\", iterator_to_array(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($d, RecursiveDirectoryIterator::SKIP_DOTS)), false)), \"is_file\"))) : \"\", $dirs )) ) ) ?>'"
+    pattern: "php -r 'exit( (fn($read) => (fn($k) => $k === \"\" ? 0 : (fn($src, $hay) => (fn($m) => count(array_filter( array_keys($m[1]), fn($i) => $m[1][$i] === $k ? (str_ends_with($m[2][$i], \".\") ? false : (str_contains($m[2][$i], \"{\") ? false : preg_match(\"~[[:space:]]id[[:space:]]*=[[:space:]]*[\" . chr(34) . chr(39) . \"]\" . preg_quote($m[2][$i], \"~\") . \"[\" . chr(34) . chr(39) . \"]~\", $hay) === 0)) : false )) > 0 ? 1 : 0)( (fn($s) => preg_match_all(\"~LLL:EXT:([a-zA-Z0-9_]+)/Resources/Private/Language/[^:]+:([a-zA-Z0-9_.{}]+)~\", $s, $mm) ? $mm : [1 => [], 2 => []])($src) ) )( $read([\"Configuration\", \"Classes\", \"Resources/Private/Templates\"]), $read([\"Resources/Private/Language\"]) ) )( (fn($a) => $a !== \"\" ? $a : (fn($t) => preg_match(\"~EM_CONF[[][^]$]*?([a-zA-Z0-9_]+)~\", $t, $me) ? $me[1] : \"\")(is_file(\"ext_emconf.php\") ? file_get_contents(\"ext_emconf.php\") : \"\") )( (fn($c) => is_string($c[\"extra\"][\"typo3/cms\"][\"extension-key\"] ?? null) ? $c[\"extra\"][\"typo3/cms\"][\"extension-key\"] : \"\")(is_file(\"composer.json\") ? (json_decode(file_get_contents(\"composer.json\"), true) ?? []) : []) ) ) )( fn($dirs) => implode(\" \", array_map( fn($d) => is_dir($d) ? implode(\" \", array_map(\"file_get_contents\", array_filter(array_map(\"strval\", iterator_to_array(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($d, RecursiveDirectoryIterator::SKIP_DOTS)), false)), \"is_file\"))) : \"\", $dirs )) ) ) ?>'"
     severity: error
     desc: "All LLL: references to this extension must have a corresponding XLIFF trans-unit (dynamic keys and other extensions' labels excluded)"
 
@@ -686,16 +706,26 @@ mechanical:
     # The `| head -1 || echo auto` fallback could never fire — head exits 0 even on
     # empty input, so an unreadable or patch-less codecov.yml yielded an empty
     # target rather than "auto". Handled explicitly below instead.
+    #
+    # The raw sed output is not the target: `target: "100%"`, `target: 100` and
+    # `target: 100% # only unit coverage` are all a 100% patch target and none
+    # of them equals the string `100%`, so a literal comparison passed four of
+    # the five spellings. Strip the trailing comment, then the quotes, spaces
+    # and percent sign, then compare the number.
     pattern: |
       [ -f codecov.yml ] || exit 0
       target=$(sed -n '/patch:/,/target:/{ s/.*target:[[:space:]]*//p; }' codecov.yml 2>/dev/null | sed -n 1p)
+      target=${target%%#*}
+      target=$(printf '%s' "$target" | tr -d "[:space:]\"'%")
       if [ -z "$target" ]; then
         exit 0
       fi
-      if [ "$target" = "100%" ]; then
-        echo "FAIL: codecov patch target is 100% — use 80% or auto when only unit test coverage is uploaded"
-        exit 1
-      fi
+      case "$target" in
+        100|100.0|100.00)
+          echo "WARN: codecov patch target is 100% — use 80% or auto when only unit test coverage is uploaded"
+          exit 1
+          ;;
+      esac
       exit 0
     severity: warning
     desc: "codecov patch target should not be 100% — use 80% or auto when only unit test coverage is uploaded"
