@@ -1,6 +1,6 @@
 {
   "name": "typo3-conformance",
-  "version": "2.19.2",
+  "version": "2.19.3",
   "description": "Evaluate TYPO3 extensions for conformance to v12/v13/v14 standards (v14.3 LTS is the default/gold standard)",
   "author": {
     "name": "Netresearch DTT GmbH",
