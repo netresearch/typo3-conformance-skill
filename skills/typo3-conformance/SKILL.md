@@ -1,6 +1,6 @@
 ---
 name: typo3-conformance
-description: "Use when checking which TYPO3 versions an extension says it supports, when composer.json and ext_emconf.php disagree, when a version bump must reach every file that states it, when reviewing a TYPO3 extension for what needs attention, or when auditing coding standards, TER readiness, deprecations and modernization to v12/v13/v14 (v14.3 LTS is the default)."
+description: "Use when checking which TYPO3 versions an extension says it supports, when composer.json and ext_emconf.php disagree, when a version bump has left some of the files that state it behind, when reviewing a TYPO3 extension for what needs attention, or when auditing coding standards, TER readiness, deprecations and modernization to v12/v13/v14 (v14.3 LTS is the default). Raising an extension to a newer TYPO3 version is not this skill: that belongs to typo3-extension-upgrade."
 metadata:
   version: "2.19.3"
   repository: https://github.com/netresearch/typo3-conformance-skill
@@ -20,6 +20,8 @@ Evaluate TYPO3 extensions against TYPO3 coding standards, architecture patterns,
 ## Delegation
 
 Testing -> `typo3-testing` | Docs -> `typo3-docs` | OpenSSF -> `enterprise-readiness` | Release/TER -> `github-release`
+
+**Raising the extension onto a newer TYPO3 version -> `typo3-extension-upgrade`, and stop here.** Measured: asked to make an extension work with the current LTS, agents loaded this skill instead and delivered a conformance pass — `ext_tables.php` removed, deprecated calls searched, `strict_types` counted — then reported done. The manifest still named the old versions and nothing had been installed or tested against the new one. An audit of the current state is not an upgrade, and a widened constraint is not one either. If the request is a version raise, hand it over rather than auditing what is in front of you.
 
 **Scope:** extensions only. **Site/project** repos (`type: project` + Compose) — score with the gold checker [`typo3-14-gold`](https://git.netresearch.de/typo3/typo3-14-gold)`/tools/conformance`.
 
