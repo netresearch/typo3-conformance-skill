@@ -10,6 +10,14 @@
 version: 1
 skill_id: typo3-conformance
 
+# Only run for TYPO3 extensions (SKILL.md: "Scope: extensions only"). Without
+# this gate /assess ran all checks against a Python repository and reported
+# 39 failures that were not about that repository.
+preconditions:
+  - type: json_path
+    target: composer.json
+    pattern: '.type == "typo3-cms-extension"'
+
 mechanical:
   # === ext_emconf.php CHECKS ===
   - id: TC-01
