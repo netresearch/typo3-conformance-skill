@@ -65,15 +65,16 @@ curl -s "https://get.typo3.org/api/v1/major/14" \
 
 The Core checks only the lower end. `typo3/sysext/install/Classes/
 SystemEnvironment/DatabaseCheck/Platform/MySql.php` carries a `$minimumVersion`
-array and no maximum (12.4, 13.4, 14.3 and main alike), so a newer server runs
-without a warning anywhere in the install tool. Both statements are true at once,
-and a "MariaDB 10.4+" reading collapses them into the wrong one.
+array and no maximum (12.4, 13.4, 14.3 and main alike), so no version warning is
+raised above the declared range — the same checker still reports on SQL modes,
+charset and database name. Both statements are true at once, and a
+"MariaDB 10.4+" reading collapses them into the wrong one.
 
 What the Core *does* carry for newer lines is platform integration, which is a
 third, separate thing: `CustomPlatformDriverDecorator` registers
 `MariaDB110700Platform` and `MariaDB120300Platform` in 13.4 and 14.3 (with
-`doctrine/dbal` pinned to `~4.4.4`), while 12.4 has no such file and pins
-`doctrine/dbal ^3.9`. TYPO3's own nightly CI tests `mariadb 10.4` and `11.8` on
+`doctrine/dbal` constrained to `~4.4.4`), while 12.4 has no such file and
+constrains `doctrine/dbal` to `^3.9`. TYPO3's own nightly CI tests `mariadb 10.4` and `11.8` on
 14.3, `10.4` and `10.10` on 13.4, `10.3` and `10.10` on 12.4 — no branch tests
 12.3.
 
