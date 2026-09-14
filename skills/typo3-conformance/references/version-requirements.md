@@ -1,7 +1,7 @@
 # TYPO3 and PHP Version Requirements
 
 **Purpose:** Definitive version compatibility matrix for TYPO3 conformance checking
-**Last Updated:** 2025-01-18
+**Last Updated:** 2026-09-15
 
 ## Official Version Support Matrix
 
@@ -30,9 +30,9 @@ hardcoded version lists — including this one.
 | 8.3 | ✅ Supported | 12.4.0 |
 | 8.4 | ✅ Supported | 12.4.24 (Dec 2024) |
 
-**Minimum Requirements:**
-- PHP: 8.1.0
-- Database: MariaDB 10.4+ / MySQL 8.0+ / PostgreSQL 10.0+ / SQLite 3.8.3+
+**Declared Requirements:**
+- PHP: 8.1.0 - 8.4.99
+- Database: MariaDB 10.3 - 10.99.99 / MySQL 8.0.17 - 8.99.99 / PostgreSQL 10.0+ / SQLite 3.8.3+
 
 ### TYPO3 13 LTS
 
@@ -47,9 +47,43 @@ hardcoded version lists — including this one.
 | 8.3 | ✅ Supported | 13.0.0 |
 | 8.4 | ✅ Supported | 13.4.0 |
 
-**Minimum Requirements:**
-- PHP: 8.2.0
-- Database: MariaDB 10.4+ / MySQL 8.0+ / PostgreSQL 10.0+ / SQLite 3.8.3+
+**Declared Requirements:**
+- PHP: 8.2.0 - 8.5.99
+- Database: MariaDB 10.4.3 - 10.99.99 / MySQL 8.0.17 - 8.99.99 / PostgreSQL 10.0+ / SQLite 3.8.3+
+
+### Database versions have a declared upper bound, and the Core does not enforce it
+
+The published requirement is a **range**, not a floor. `get.typo3.org` declares
+`mariadb max 10.99.99` for TYPO3 12, 13 **and** 14, and `10.11.99` for 10 and 11
+(9 stops at 10.3) — so MariaDB 11.x and 12.x are outside the published range of
+every current TYPO3 version:
+
+```bash
+curl -s "https://get.typo3.org/api/v1/major/14" \
+  | jq '.requirements[] | select(.category=="database") | {name, min, max}'
+```
+
+The Core checks only the lower end. `typo3/sysext/install/Classes/
+SystemEnvironment/DatabaseCheck/Platform/MySql.php` carries a `$minimumVersion`
+array and no maximum (12.4, 13.4, 14.3 and main alike), so no version warning is
+raised above the declared range — the same checker still reports on SQL modes,
+charset and database name. Both statements are true at once, and a
+"MariaDB 10.4+" reading collapses them into the wrong one.
+
+What the Core *does* carry for newer lines is platform integration, which is a
+third, separate thing: `CustomPlatformDriverDecorator` registers
+`MariaDB110700Platform` and `MariaDB120300Platform` in 13.4 and 14.3 (with
+`doctrine/dbal` constrained to `~4.4.4`), while 12.4 has no such file and
+constrains `doctrine/dbal` to `^3.9`. TYPO3's own nightly CI tests `mariadb 10.4` and `11.8` on
+14.3, `10.4` and `10.10` on 13.4, `10.3` and `10.10` on 12.4 — no branch tests
+12.3.
+
+So, when deciding a database version for a project, separate four things:
+declared range (the table above), enforced minimum (the install check),
+implemented platform support (the decorator), and tested combinations (the
+nightly matrix). Anything above the declared range is a deliberate decision that
+needs its own acceptance evidence — at minimum a second, clean run of the
+database analyzer, which is where the known incompatibilities surfaced.
 
 ## Conformance Checker Standards
 
