@@ -1143,9 +1143,12 @@ Three things make this easy to get wrong:
   cookie, and the page renders as if nothing happened — no message, no log entry
   at default level. A ceremony that succeeded therefore leaves the visitor
   anonymous, and the defect looks like a frontend bug.
-- **A form assembled in JavaScript can never work,** because only a rendered
-  form carries the token. Submit felogin's form where one exists, render your own
-  hidden one where it does not, and refuse rather than build one.
+- **JavaScript cannot mint the token, only carry one the server rendered.** A
+  form built in the browser works if you copy a valid token into it, and fails
+  the moment the value is missing, stale or from another scope — which is the
+  state you get when there is no rendered form to copy from. Submit felogin's
+  form where one exists, render your own hidden one where it does not, and
+  refuse rather than build a form with no token to put in it.
 
 The storage page follows the same rule: `checkPid_value` is taken from the
 token's `params['pid']` by felogin's `ProcessRequestTokenListener`, not from a
