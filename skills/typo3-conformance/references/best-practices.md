@@ -1112,6 +1112,49 @@ System columns (`uid`, `pid`, `tstamp`, `crdate`, `deleted`, `hidden`) should **
 
 ## Security Patterns
 
+### Frontend Login From Your Own Form
+
+An extension that authenticates a frontend user itself — a passwordless flow, a
+one-time link, anything that posts `logintype=login` without felogin's form —
+has to carry a `__RequestToken` whose **scope is fixed**:
+
+```php
+// Controller: hand the template a token the core user authentication accepts
+$this->view->assign(
+    'loginRequestToken',
+    RequestToken::create('core/user-auth/fe')->withMergedParams(['pid' => $storagePageIds]),
+);
+```
+
+```html
+<f:form actionUri="{f:uri.page()}" method="post" requestToken="{loginRequestToken}" fieldNamePrefix="">
+    <input type="hidden" name="logintype" value="login" />
+    <input type="hidden" name="user" value="…" />
+    <input type="hidden" name="pass" value="…" />
+</f:form>
+```
+
+Three things make this easy to get wrong:
+
+- **`requestToken="true"` is not enough.** It signs the page's own scope, and
+  `AbstractUserAuthentication` compares the token against `core/user-auth/` plus
+  the login type. A token with any other scope is rejected.
+- **The rejection is silent.** The response is a plain `200` with no session
+  cookie, and the page renders as if nothing happened — no message, no log entry
+  at default level. A ceremony that succeeded therefore leaves the visitor
+  anonymous, and the defect looks like a frontend bug.
+- **JavaScript cannot mint the token, only carry one the server rendered.** A
+  form built in the browser works if you copy a valid token into it, and fails
+  the moment the value is missing, stale or from another scope — which is the
+  state you get when there is no rendered form to copy from. Submit felogin's
+  form where one exists, render your own hidden one where it does not, and
+  refuse rather than build a form with no token to put in it.
+
+The storage page follows the same rule: `checkPid_value` is taken from the
+token's `params['pid']` by felogin's `ProcessRequestTokenListener`, not from a
+`pid` form field — felogin's own template has none. An authentication service
+that resolves the user itself (by credential, by token) never reads it.
+
 ### Shell Execution
 
 Never use `shell_exec()` or similar shell functions. Use PHP file functions instead.
