@@ -892,6 +892,10 @@ llm_reviews:
       1. Check that 'typo3' constraint in ext_emconf.php constraints.depends matches composer.json require.typo3/cms-core version range
       2. Check that PHP version constraint matches between both files
       3. Flag any mismatch that would cause installation failures
+      A Composer constraint with a gap (e.g. ^13.4 || ^14.3) matches the
+      ext_emconf.php range that spans its lowest floor to its highest ceiling
+      (13.4.0-14.3.99). The range format cannot express the gap, so the gap
+      itself is NOT a mismatch; flag only a differing floor or ceiling.
     severity: error
     desc: "ext_emconf.php and composer.json version constraints must be synchronized to prevent installation failures"
 
