@@ -192,7 +192,7 @@ The TYPO3 conformance checker validates extensions against:
 
 ### From TYPO3 13 to 14
 1. Ensure PHP 8.3+ is already in use (recommended: 8.5+)
-2. Update TYPO3 dependencies to ^14.0
+2. Update TYPO3 dependencies to ^14.3 (the LTS floor; ^14.0 admits the unsupported 14.0–14.2)
 3. Replace `$GLOBALS['TCA']` with `TcaSchemaFactory` DI
 4. Remove all v13-deprecated APIs (ext_localconf.php addService, etc.)
 5. Test on PHP 8.5

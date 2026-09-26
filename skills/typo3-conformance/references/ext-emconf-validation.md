@@ -359,11 +359,14 @@ grep -A 5 "'depends' =>" ext_emconf.php | grep -q "'php'" && echo "✅ PHP depen
 
 **Critical:** ext_emconf.php and composer.json must have matching constraints.
 
+"Matching" means the same floor and the same ceiling. The `ext_emconf.php` format is one min–max range, so a Composer constraint with a gap (`^13.4 || ^14.3` excludes 14.0–14.2) maps to the range covering both parts (`13.4.0-14.3.99`). The gap is not a mismatch; `composer.json` remains the authoritative constraint (see `v13-v14-dual-compatibility.md`).
+
 ### Mapping Table
 
 | composer.json | ext_emconf.php | Example |
 |--------------|----------------|---------|
 | `"typo3/cms-core": "^12.4 \|\| ^13.4"` | `'typo3' => '12.4.0-13.4.99'` | TYPO3 version |
+| `"typo3/cms-core": "^13.4 \|\| ^14.3"` | `'typo3' => '13.4.0-14.3.99'` | TYPO3 version with a gap |
 | `"php": "^8.1"` | `'php' => '8.1.0-8.4.99'` | PHP version |
 | `"typo3/cms-fluid": "^12.4"` | `'fluid' => '12.4.0-12.4.99'` | Extension dependency |
 

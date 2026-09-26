@@ -18,11 +18,7 @@
 }
 ```
 
-Alternative allowing pre-14.3 sprint releases (not recommended for prod):
-
-```json
-"typo3/cms-core": "^13.4 || ^14.0"
-```
+Require the LTS floors only. `^14.0`, `^14.1` or `^14.2` admit the non-LTS sprint releases 14.0–14.2, which are unsupported; a finding, not an alternative.
 
 ### ext_emconf.php
 
@@ -36,6 +32,8 @@ Alternative allowing pre-14.3 sprint releases (not recommended for prod):
 ```
 
 > Note: `ext_emconf.php` itself is deprecated in v14.2 (#108345). Keep it for classic-mode support, but mirror all metadata in `composer.json` — v15 will remove `ext_emconf.php` entirely.
+
+The `ext_emconf.php` range is a single min–max span, so `13.4.0-14.3.99` still includes 14.0–14.2, and `constraints` cannot exclude TYPO3 versions. That gap is unavoidable, not a defect: `composer.json` is the authoritative constraint, and TYPO3 14 requires it even in classic mode (#108310). State this in the PR description when a constraint changes — review bots otherwise raise the gap as a finding. The same range repeated for `typo3` and each core-extension dependency also trips SonarCloud's duplicate-literal rule (php:S1192); accept that finding, because `ext_emconf.php` must stay plain PHP for TER.
 
 ---
 
