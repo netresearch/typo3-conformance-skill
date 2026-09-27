@@ -25,13 +25,14 @@ Testing -> `typo3-testing` | Docs -> `typo3-docs` | OpenSSF -> `enterprise-readi
 
 **When the request is only to check the version statements and they already agree, say so and stop.** Name the range in both notations and the places you compared, and change nothing. Leave out any "minor observations" or "notes, not errors" section: an unrequested remark in a check reads as a finding, and a check that found nothing has nothing else to report.
 
-**When `composer.json` and `ext_emconf.php` disagree, `composer.json` is authoritative** (`references/version-requirements.md`) unless the repository's own `AGENTS.md`, `CONTRIBUTING.md` or README names the other file -- quote whichever rule you follow. Before aligning, check that rule against the evidence:
+**When `composer.json` and `ext_emconf.php` disagree, establish which one is right before making them match.** The newest LTS is not the answer by default. Collect the evidence first, then decide:
 
-1. **What is tested** -- the TYPO3 versions in the CI matrix (`.github/workflows/`, `Build/`, `runTests.sh` defaults).
-2. **What the code needs** -- APIs that exist in only one of the two lines (`references/v14-deprecations.md`, `references/v13-deprecations.md`).
-3. **How the disagreement arose** -- `git log -p -- composer.json ext_emconf.php`, where history exists.
+1. **The repository's own rule** -- `AGENTS.md`, `CONTRIBUTING.md` or a README may name one file as authoritative. Quote it.
+2. **What is tested** -- the TYPO3 versions in the CI matrix (`.github/workflows/`, `Build/`, `runTests.sh` defaults).
+3. **What the code needs** -- APIs that exist in only one of the two lines (`references/v14-deprecations.md`, `references/v13-deprecations.md`).
+4. **How the disagreement arose** -- `git log -p -- composer.json ext_emconf.php`, where history exists.
 
-Align the other file to the authoritative one. Where the evidence disagrees with it -- the authoritative file names a line the CI matrix does not test -- still follow it, and report the untested line as a finding rather than rewriting the authoritative file or widening CI or code to match. Change only version statements: the two declarations, and documentation that repeats them. Write each file in its own notation (`^13.4` in composer.json, `13.4.0-13.4.99` in ext_emconf.php -- never a caret in ext_emconf.php), and name the evidence that decided it in the answer.
+Where the rule and the evidence agree, align both files to that line. Where they conflict -- the authoritative file names a line the CI matrix does not test -- follow the rule, and report the untested line as a finding rather than widening CI or code to match. Change only version statements: the two declarations, and documentation that repeats them. Write each file in its own notation (`^13.4` in composer.json, `13.4.0-13.4.99` in ext_emconf.php -- never a caret in ext_emconf.php), and name the evidence that decided it in the answer.
 
 **Scope:** extensions only. **Site/project** repos (`type: project` + Compose) — score with the gold checker [`typo3-14-gold`](https://git.netresearch.de/typo3/typo3-14-gold)`/tools/conformance`.
 
