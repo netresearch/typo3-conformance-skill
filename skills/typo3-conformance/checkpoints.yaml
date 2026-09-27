@@ -597,12 +597,105 @@ mechanical:
     desc: "TCA tables with sortby should also define default_sortby for consistent ordering"
 
   # === DI INTERFACE ALIAS CHECKS ===
+  # Only interfaces DECLARED under Classes/ and named as a CONSTRUCTOR
+  # parameter type count. The previous grep collected every token ending in
+  # `Interface` (use lines, implements, catch blocks, framework callback
+  # signatures such as execute(InputInterface $input), ::class constants) and
+  # tested the short name as a substring of Services.yaml, so foreign
+  # interfaces aliased by their own package and interfaces consumed only as a
+  # !tagged_iterator were reported. An interface counts as aliased when
+  # Services.yaml has it as a KEY (quoted or not), or when a class under
+  # Classes/ implementing it carries #[AsAlias] (bare, on a class with that
+  # single interface, or naming it). Symfony also aliases an interface with
+  # exactly one implementation in the loaded resource on its own
+  # (FileLoader::registerAliasesForSinglyImplementedInterfaces); the explicit
+  # alias demanded here is the skill's rule from php-architecture.md
+  # "Interface Aliases", and a hard requirement once a second implementation
+  # exists.
   - id: TC-153
     type: command
     pattern: |
-      interfaces=$(grep -rhoP '[A-Z][a-zA-Z0-9_]*Interface' Classes/ 2>/dev/null | sort -u); if [ -n "$interfaces" ] && [ -f Configuration/Services.yaml ]; then missing=0; for iface in $interfaces; do case $iface in ServerRequestInterface|ResponseInterface|ContainerInterface|LoggerInterface|EventDispatcherInterface|CacheInterface|RequestFactoryInterface|UriFactoryInterface|StreamFactoryInterface) continue ;; esac; if ! grep -q "$iface" Configuration/Services.yaml 2>/dev/null; then echo "WARN: Interface $iface used in Classes/ but not aliased in Services.yaml"; missing=1; fi; done; if [ "$missing" -eq 1 ]; then exit 1; fi; fi; exit 0
+      [ -d Classes ] || exit 0
+      [ -f Configuration/Services.yaml ] || exit 0
+      find Classes -type f -name '*.php' -not -path '*/vendor/*' -not -path '*/node_modules/*' -not -path '*/.Build/*' 2>/dev/null | php -r '
+      $files = array_filter(array_map("trim", explode("\n", stream_get_contents(STDIN))), "is_file");
+      $yaml = file_get_contents("Configuration/Services.yaml");
+      $own = [];          // FQCN => true for interfaces declared under Classes/
+      $injected = [];     // FQCN => "file" of the first constructor naming it
+      $implementors = []; // FQCN of interface => list of [class, hasAsAlias, asAliasTarget]
+      foreach ($files as $f) {
+          $t = array_values(array_filter(token_get_all(file_get_contents($f)), fn($x) => !(is_array($x) && in_array($x[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true))));
+          $ns = ""; $uses = []; $n = count($t); $asAlias = null;
+          $resolve = function (string $name) use (&$ns, &$uses): string {
+              if ($name[0] === "\\") return ltrim($name, "\\");
+              $first = explode("\\", $name)[0];
+              if (isset($uses[$first])) return $uses[$first] . substr($name, strlen($first));
+              return ltrim($ns . "\\" . $name, "\\");
+          };
+          $nameAt = function (int $i) use ($t): ?string {
+              return is_array($t[$i] ?? null) && in_array($t[$i][0], [T_STRING, T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED], true) ? $t[$i][1] : null;
+          };
+          $depth = 0;
+          for ($i = 0; $i < $n; $i++) {
+              $tok = $t[$i]; $id = is_array($tok) ? $tok[0] : $tok;
+              if ($id === "{" || $id === T_CURLY_OPEN || $id === T_DOLLAR_OPEN_CURLY_BRACES) { $depth++; continue; }
+              if ($id === "}") { $depth--; continue; }
+              if ($id === T_NAMESPACE && ($nm = $nameAt($i + 1)) !== null) { $ns = $nm; continue; }
+              if ($id === T_USE && $depth === 0 && ($nm = $nameAt($i + 1)) !== null) {
+                  $alias = substr(strrchr("\\" . $nm, "\\"), 1);
+                  if (is_array($t[$i + 2]) && $t[$i + 2][0] === T_AS) $alias = $t[$i + 3][1];
+                  $uses[$alias] = ltrim($nm, "\\");
+                  continue;
+              }
+              if ($id === T_ATTRIBUTE) {
+                  $nm = $nameAt($i + 1);
+                  if ($nm !== null && str_ends_with($nm, "AsAlias")) {
+                      $asAlias = "";
+                      if (($t[$i + 2] ?? null) === "(" && ($a = $nameAt($i + 3)) !== null && is_array($t[$i + 4]) && $t[$i + 4][0] === T_DOUBLE_COLON) $asAlias = $resolve($a);
+                  }
+                  continue;
+              }
+              if ($id === T_INTERFACE && ($nm = $nameAt($i + 1)) !== null) { $own[$resolve($nm)] = true; continue; }
+              if ($id === T_CLASS && ($nm = $nameAt($i + 1)) !== null && !(is_array($t[$i - 1] ?? null) && $t[$i - 1][0] === T_DOUBLE_COLON)) {
+                  $cls = $resolve($nm); $ifs = [];
+                  for ($j = $i + 2; $j < $n && $t[$j] !== "{"; $j++) {
+                      if (is_array($t[$j]) && $t[$j][0] === T_IMPLEMENTS) {
+                          for ($k = $j + 1; $k < $n && $t[$k] !== "{"; $k++) if (($x = $nameAt($k)) !== null) $ifs[] = $resolve($x);
+                          break;
+                      }
+                  }
+                  foreach ($ifs as $if) $implementors[$if][] = [$cls, $asAlias !== null && ($asAlias === $if || ($asAlias === "" && count($ifs) === 1))];
+                  $asAlias = null;
+                  continue;
+              }
+              if ($id === T_FUNCTION && ($t[$i + 1][1] ?? "") === "__construct" && ($t[$i + 2] ?? null) === "(") {
+                  $level = 0;
+                  for ($j = $i + 2; $j < $n; $j++) {
+                      if ($t[$j] === "(") $level++;
+                      elseif ($t[$j] === ")") { if (--$level === 0) break; }
+                      elseif ($level === 1 && ($x = $nameAt($j)) !== null && !(is_array($t[$j + 1]) && $t[$j + 1][0] === T_DOUBLE_COLON)) {
+                          $fq = $resolve($x);
+                          $injected[$fq] ??= $f;
+                      }
+                  }
+              }
+          }
+      }
+      $missing = 0;
+      foreach ($injected as $fq => $f) {
+          if (!isset($own[$fq])) continue;
+          $key = preg_quote($fq, "~");
+          $keyEsc = preg_quote(str_replace("\\", "\\\\", $fq), "~");
+          if (preg_match("~^[ \t]+[\x27\"]?(" . $key . "|" . $keyEsc . ")[\x27\"]?[ \t]*:~m", $yaml)) continue;
+          $viaAttr = array_filter($implementors[$fq] ?? [], fn($c) => $c[1]);
+          if ($viaAttr !== []) continue;
+          echo "WARN: $fq is injected by a constructor ($f) but has no alias (Services.yaml key or #[AsAlias])\n";
+          $missing = 1;
+      }
+      exit($missing);
+      '
     severity: warning
-    desc: "Interfaces used for constructor injection should have explicit aliases in Services.yaml"
+    desc: "Interfaces declared in Classes/ and injected through a constructor should have an explicit alias (Services.yaml key or #[AsAlias])"
 
   # === CACHE DOUBLE-LOOKUP ANTI-PATTERN ===
   - id: TC-154
@@ -780,6 +873,148 @@ mechanical:
     desc: "PHPStan baseline should be empty — zero suppressed errors is the target"
     tags: [phpstan, baseline, aspirational]
     # Note: TC-177 is aspirational; TC-150 catches excessive baselines
+
+  # === CHECKS MOVED FROM llm_reviews ===
+  # TC-161, TC-162 and TC-172..TC-175 were `type: command` entries filed under
+  # llm_reviews, which the runner never reads, so none of them ever ran. Each
+  # body was run against a real extension and against fixtures before moving;
+  # the corrections below are what that showed.
+  #
+  # TC-170 and TC-171 are retired (do not reuse the ids). Both only gathered
+  # context for the judgement TC-100f makes: whether a multi-major dependency
+  # is used through API that differs between its majors. Run as a gate,
+  # TC-170 reported every direct import of such a dependency (60 in one
+  # extension), which says nothing about whether the API differs, and
+  # TC-171 always exited 0. Their dependency listing now lives in TC-100f's prompt.
+
+  # One-liners with `;` are refused by the runner's allowlist, hence the block.
+  - id: TC-161
+    name: datahandler-hook-completeness
+    type: command
+    command: |
+      [ -f ext_localconf.php ] || exit 0
+      grep -q 'processDatamapClass' ext_localconf.php || exit 0
+      grep -q 'processCmdmapClass' ext_localconf.php && exit 0
+      echo 'WARN: processDatamapClass registered but processCmdmapClass missing -- delete/copy operations will not be handled'
+      exit 1
+    severity: warning
+    desc: "If processDatamapClass is registered, processCmdmapClass should also be registered for delete/copy handling"
+    tags: [hooks, datahandler, completeness, assessment]
+
+  # Only version tags reachable from HEAD: `git tag` alone lists tags of later
+  # releases when an older commit is assessed. `## 1.2.3`, `## v1.2.3` and
+  # `## [1.2.3]` headings are all accepted.
+  - id: TC-162
+    name: changelog-completeness
+    type: command
+    command: |
+      [ -f CHANGELOG.md ] || exit 0
+      git rev-parse --git-dir >/dev/null 2>&1 || exit 0
+      missing=0
+      for tag in $(git tag --merged HEAD --sort=-v:refname 2>/dev/null | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | sed -n '1,20p'); do
+        version=${tag#v}
+        esc=$(printf '%s' "$version" | sed 's/\./\\./g')
+        if ! grep -qE "^##[[:space:]]+\[?v?${esc}\]?([[:space:]]|$)" CHANGELOG.md; then
+          echo "WARN: no CHANGELOG.md heading for tag $tag"
+          missing=$((missing + 1))
+        fi
+      done
+      [ "$missing" -eq 0 ]
+    severity: warning
+    desc: "CHANGELOG.md should have a heading for each of the last 20 version tags reachable from HEAD"
+    tags: [documentation, changelog, completeness, assessment]
+
+  # mechanical-counterpart of TC-100h. Adapter interfaces only (Classes/Adapter/);
+  # interfaces elsewhere are TC-153's. The interface must be a Services.yaml KEY
+  # or named by #[AsAlias(...::class)] — a substring match also accepted a
+  # comment or another service's argument.
+  - id: TC-172
+    name: adapter-interface-wired-in-services-yaml
+    type: command
+    command: |
+      ifaces=$(find Classes/Adapter -name '*Interface.php' 2>/dev/null)
+      [ -z "$ifaces" ] && exit 0
+      if [ ! -f Configuration/Services.yaml ]; then echo "FAIL: adapter interfaces exist but no Configuration/Services.yaml"; exit 1; fi
+      missing=0
+      while IFS= read -r file; do
+        short=$(basename "$file" .php)
+        ns=$(grep -m1 -oP '^namespace\s+\K[^;\s]+' "$file")
+        fq="$ns\\$short"
+        fq_re=$(printf '%s' "$fq" | sed 's/\\/\\\\/g')
+        if grep -qE "^[[:space:]]+['\"]?${fq_re}['\"]?[[:space:]]*:" Configuration/Services.yaml; then continue; fi
+        if grep -rqE "AsAlias\([[:space:]]*[A-Za-z0-9_\\]*${short}::class" Classes/Adapter; then continue; fi
+        echo "FAIL: adapter interface $fq has no Services.yaml alias key and no #[AsAlias($short::class)]"
+        missing=1
+      done <<<"$ifaces"
+      exit "$missing"
+    severity: error
+    desc: "Adapter interfaces must be wired in Services.yaml (alias key) or by #[AsAlias] for dependency injection to resolve them"
+    tags: [architecture, di, services-yaml, adapter]
+
+  # mechanical-counterpart of TC-100h. The previous `if grep … | head -3; then`
+  # took head's exit status (0 on empty input) and warned for every adapter.
+  - id: TC-173
+    name: concrete-adapter-typehint
+    type: command
+    command: |
+      adapters=$(find Classes/Adapter -name '*.php' ! -name '*Interface.php' ! -name '*Factory.php' 2>/dev/null)
+      [ -z "$adapters" ] && exit 0
+      violations=0
+      while IFS= read -r file; do
+        short=$(basename "$file" .php)
+        hits=$(grep -rnP "(private|protected|public)\s+(readonly\s+)?\??$short\s+\\$" Classes/ 2>/dev/null | grep -vP '^Classes/(Adapter|Factory)/')
+        if [ -n "$hits" ]; then
+          printf '%s\n' "$hits"
+          echo "WARN: concrete adapter class $short type-hinted outside Adapter/ -- use its interface"
+          violations=1
+        fi
+      done <<<"$adapters"
+      exit "$violations"
+    severity: warning
+    desc: "Constructors should type-hint adapter interfaces, not concrete adapter implementations"
+    tags: [architecture, di, adapter, type-hint]
+
+  # mechanical-counterpart of TC-100g. Multi-major dependencies come from
+  # `require` only (the old grep also read require-dev and `scripts`). Whether
+  # an ignore is caused by a version difference is TC-100g's judgement, so this
+  # is a heuristic pointer at info severity.
+  - id: TC-174
+    name: phpstan-version-specific-ignore
+    type: command
+    command: |
+      found=$(grep -rnP '@phpstan-ignore(-next-line|-line)?\s+(method\.notFound|call\.notFound|argument\.type)' Classes/ 2>/dev/null)
+      [ -z "$found" ] && exit 0
+      deps=$(jq -r '.require // {} | to_entries[] | select(.value | contains("||")) | .key | select(test("^(php$|ext-|lib-|composer-|typo3/cms-)") | not)' composer.json 2>/dev/null)
+      [ -z "$deps" ] && exit 0
+      printf '%s\n' "$found"
+      echo "INFO: @phpstan-ignore for method/call/argument issues next to multi-version dependencies ($(echo $deps)) -- check whether the ignore hides a version difference"
+      exit 1
+    severity: info
+    desc: "PHPStan ignores for method.notFound/call.notFound/argument.type next to multi-major dependencies may hide a version difference (see TC-100g)"
+    tags: [phpstan, multi-version, ignore-tags]
+
+  # The previous version piped into `head -1` inside `if`, so it warned for
+  # every method_exists($var) call. Now reports only when the same variable is
+  # declared with a class type (not object/mixed/untyped) in that file.
+  - id: TC-175
+    name: method-exists-typed-parameter
+    type: command
+    command: |
+      found=$(grep -rnoP 'method_exists\s*\(\s*\$\K[A-Za-z_][A-Za-z0-9_]*' Classes/ --include='*.php' 2>/dev/null)
+      [ -z "$found" ] && exit 0
+      violations=0
+      while IFS=: read -r file line var; do
+        typed=$(grep -nP "(?<![\w\\\\])(?!object\b|mixed\b)\??[A-Z][\w\\\\]*(\|[\w\\\\]+)*\s+\\\$$var\b\s*[,)=]" "$file")
+        if [ -n "$typed" ]; then
+          echo "$file:$line: method_exists() on \$$var, declared as: $(printf '%s' "$typed" | sed -n 1p)"
+          violations=1
+        fi
+      done <<<"$found"
+      exit "$violations"
+    severity: warning
+    desc: "method_exists() for version detection should use 'object' type parameter to avoid PHPStan type narrowing across versions"
+    tags: [phpstan, multi-version, method-exists, type-narrowing]
+
 
 llm_reviews:
   # === CODE QUALITY REVIEWS ===
@@ -1021,38 +1256,9 @@ llm_reviews:
 
   # === ASSESSMENT-DERIVED CHECKPOINTS (quality audit findings) ===
 
-  # --- Mechanical checks from assessment findings ---
-  # Note: TC-160 (makeInstance) removed — covered by existing TC-110
-
-  - id: TC-161
-    name: datahandler-hook-completeness
-    type: command
-    pattern: "if grep -qP 'processDatamapClass' ext_localconf.php 2>/dev/null; then if ! grep -qP 'processCmdmapClass' ext_localconf.php 2>/dev/null; then echo 'WARNING: processDatamapClass registered but processCmdmapClass missing -- delete/copy operations will not be handled'; exit 1; fi; fi; exit 0"
-    severity: warning
-    desc: "If processDatamapClass is registered, processCmdmapClass should also be registered for delete/copy handling"
-    tags: [hooks, datahandler, completeness, assessment]
-
-  - id: TC-162
-    name: changelog-completeness
-    type: command
-    command: |
-      [ ! -f CHANGELOG.md ] && exit 0
-      missing=0
-      for tag in $(git tag --sort=-v:refname 2>/dev/null | head -20); do
-        version=$(echo "$tag" | sed 's/^v//')
-        if ! grep -qF "## [${version}]" CHANGELOG.md 2>/dev/null; then
-          echo "WARNING: No CHANGELOG.md entry for tag $tag"
-          missing=$((missing+1))
-        fi
-      done
-      if [ "$missing" -gt 0 ]; then
-        echo "WARNING: $missing tagged versions missing from CHANGELOG.md"
-        exit 1
-      fi
-      exit 0
-    severity: warning
-    desc: "CHANGELOG.md should have entries for all tagged versions (compare git tags vs changelog headings)"
-    tags: [documentation, changelog, completeness, assessment]
+  # Note: TC-160 (makeInstance) removed — covered by existing TC-110.
+  # The mechanical checks from this audit (TC-161, TC-162) now sit in
+  # mechanical:, under "CHECKS MOVED FROM llm_reviews".
 
   # --- LLM review checks from assessment findings ---
 
@@ -1174,19 +1380,28 @@ llm_reviews:
     desc: "Options in ext_conf_template.txt should match implemented functionality (no phantom options)"
     tags: [configuration, alignment, assessment]
 
-  # === MULTI-VERSION DEPENDENCY COMPATIBILITY CHECKS ===
-  # mechanical-counterpart: none (command gathers context; the judgement is the checkpoint)
-  - id: TC-170
-    name: multi-version-direct-api-usage
-    type: command
-    # Context-gathering command: it lists direct imports of multi-major
-    # dependencies outside Adapter/ and Factory/. Whether an import touches
-    # API that differs between the majors is the judgement of this review.
-    # Only `require` is read (not `scripts`, not `require-dev`); platform
-    # packages and typo3/cms-* are excluded. A dependency's namespaces come
-    # from its installed composer.json; without an install the command says
-    # so instead of guessing, and the extension's own namespace never counts.
-    command: |
+  # === MULTI-VERSION DEPENDENCY LLM REVIEWS ===
+  # mechanical-counterpart: none (the command in the prompt gathers context; the judgement is the checkpoint)
+  - id: TC-100f
+    name: multi-version-api-divergence
+    domain: architecture
+    prompt: |
+      Check for multi-version dependency compatibility:
+      1. Parse composer.json for dependencies with multi-major-version constraints
+         (e.g., "^3 || ^4", "^1.0 || ^2.0") — exclude php and typo3/cms-* packages
+      2. For each such dependency, identify API differences between the major versions
+         that could cause runtime errors (changed method signatures, removed classes,
+         renamed methods, changed constructor arguments)
+      3. Check if the extension uses an adapter/interface pattern to abstract these
+         differences, or if version-specific APIs are called directly in business logic
+      4. Verify that adapter implementations exist for EACH supported major version
+      5. Flag any direct usage of version-specific APIs outside of adapter classes
+      Context: this lists the direct imports of multi-major dependencies
+      outside Adapter/ and Factory/ (it needs the dependencies installed in
+      .Build/vendor or vendor; it prints UNKNOWN for one that is not). An
+      import is a finding only if it touches API that differs between the
+      majors — the listing alone is not a finding.
+      ```bash
       deps=$(jq -r '.require // {} | to_entries[] | select(.value | contains("||")) | .key | select(test("^(php$|ext-|lib-|composer-|typo3/cms-)") | not)' composer.json 2>/dev/null)
       [ -z "$deps" ] && exit 0
       own=$(jq -r '.autoload["psr-4"] // {} | keys | join(" ")' composer.json 2>/dev/null)
@@ -1211,141 +1426,7 @@ llm_reviews:
         done
       done
       exit "$violations"
-    severity: warning
-    desc: "Multi-version dependencies (^X || ^Y) should be accessed through adapter interfaces, not used directly in business logic"
-    tags: [architecture, multi-version, adapter, dependency]
-
-  - id: TC-171
-    name: multi-version-adapter-interface-exists
-    type: command
-    command: |
-      # Same dependency set as TC-170: `require` only, platform packages and typo3/cms-* excluded.
-      multi_deps=$(jq -r '.require // {} | to_entries[] | select(.value | contains("||")) | .key | select(test("^(php$|ext-|lib-|composer-|typo3/cms-)") | not)' composer.json 2>/dev/null)
-      [ -z "$multi_deps" ] && exit 0
-      # Only require adapters when TC-170 detected direct API usage (version-specific code)
-      # Without direct API usage evidence, the dependency APIs may be identical across versions
-      if [ -d Classes/Adapter ] || [ -d Classes/Service ]; then
-        ifaces=$(find Classes/Adapter Classes/Service -name '*Interface.php' 2>/dev/null)
-        if [ -z "$ifaces" ]; then
-          echo "HINT: Multi-version dependencies found but no adapter interfaces in Classes/Adapter/ or Classes/Service/ — consider adding adapters if APIs differ between versions"
-        fi
-      else
-        echo "HINT: Multi-version dependencies found but no Classes/Adapter/ directory — consider adding adapters if APIs differ between versions"
-      fi
-      exit 0
-    severity: info
-    desc: "Extensions with multi-version dependencies may benefit from adapter interfaces when APIs differ between major versions"
-    tags: [architecture, multi-version, adapter, interface]
-
-  - id: TC-172
-    name: adapter-interface-wired-in-services-yaml
-    type: command
-    command: |
-      # Find adapter interfaces in Classes/
-      ifaces=$(find Classes/Adapter Classes/Service -name '*Interface.php' 2>/dev/null | sed 's|^Classes/||')
-      [ -z "$ifaces" ] && exit 0
-      [ ! -f Configuration/Services.yaml ] && echo "FAIL: Adapter interfaces exist but no Services.yaml" && exit 1
-      missing=0
-      # Iterate safely over newline-delimited interfaces and search by short interface name
-      while IFS= read -r iface; do
-        # Normalise any backslashes to forward slashes, then extract the short class name without extension
-        iface_path=$(printf '%s\n' "$iface" | sed 's|\\|/|g')
-        classname=${iface_path##*/}
-        classname=${classname%.php}
-        if ! grep -q "$classname" Configuration/Services.yaml 2>/dev/null; then
-          echo "FAIL: Interface $iface not wired in Services.yaml"
-          missing=1
-        fi
-      done <<<"$ifaces"
-      [ "$missing" -eq 1 ] && exit 1
-      exit 0
-    severity: error
-    desc: "Adapter interfaces must be wired in Services.yaml (alias or factory) for dependency injection to resolve them"
-    tags: [architecture, di, services-yaml, adapter]
-
-  - id: TC-173
-    name: concrete-adapter-typehint
-    type: command
-    command: |
-      # Find concrete adapter implementations (non-interface PHP files in Adapter/)
-      adapters=$(find Classes/Adapter -name '*.php' ! -name '*Interface.php' ! -name '*Factory.php' 2>/dev/null | sed 's|Classes/||;s|\.php||;s|/|\\\\|g')
-      [ -z "$adapters" ] && exit 0
-      violations=0
-      for adapter in $adapters; do
-        shortname=$(echo "$adapter" | grep -oP '[^\\]+$')
-        # Check if concrete adapter class is type-hinted in constructors outside Adapter/
-        if grep -rnP "(private|protected|public)\s+(readonly\s+)?${shortname}\s+" Classes/ 2>/dev/null | grep -vP 'Adapter/|Factory/' | head -3; then
-          echo "WARN: Concrete adapter class $shortname type-hinted in constructor — use interface instead"
-          violations=1
-        fi
-      done
-      [ "$violations" -gt 0 ] && exit 1
-      exit 0
-    severity: warning
-    desc: "Constructors should type-hint adapter interfaces, not concrete adapter implementations"
-    tags: [architecture, di, adapter, type-hint]
-
-  # === PHPSTAN MULTI-VERSION COMPATIBILITY CHECKS ===
-  - id: TC-174
-    name: phpstan-version-specific-ignore
-    type: command
-    command: |
-      # Check for @phpstan-ignore tags in PHP files that reference version-specific issues
-      found=$(grep -rnP '@phpstan-ignore\s+(method\.notFound|call\.notFound|argument\.type)' Classes/ 2>/dev/null | head -5)
-      if [ -n "$found" ]; then
-        # Only flag if multi-version deps exist
-        multi_deps=$(grep -oP '"[^"]+"\s*:\s*"[^"]*\|\|[^"]*"' composer.json 2>/dev/null | grep -vP '^"php"\s*:|^"typo3/cms-[^"]*"\s*:')
-        if [ -n "$multi_deps" ]; then
-          echo "$found"
-          echo "WARN: @phpstan-ignore tags for method/call/argument issues may be version-specific — use adapter pattern instead"
-          exit 1
-        fi
-      fi
-      exit 0
-    severity: warning
-    desc: "PHPStan ignore tags for method.notFound/call.notFound/argument.type suggest version-specific code — use adapter pattern instead"
-    tags: [phpstan, multi-version, ignore-tags]
-
-  - id: TC-175
-    name: method-exists-typed-parameter
-    type: command
-    command: |
-      # Check for method_exists() calls with typed (non-object) first argument
-      # This causes PHPStan type narrowing issues across versions
-      found=$(grep -rnP 'method_exists\s*\(\s*\$' Classes/ 2>/dev/null | head -10)
-      [ -z "$found" ] && exit 0
-      # Check if any of these are inside methods with typed parameters (not object type)
-      violations=0
-      while IFS= read -r line; do
-        file=$(echo "$line" | cut -d: -f1)
-        varname=$(echo "$line" | grep -oP 'method_exists\s*\(\s*\$\K[a-zA-Z_]+')
-        # Check if the variable has a concrete type hint (not object) in the method signature
-        if grep -P "(${varname})\s*[,)]" "$file" 2>/dev/null | grep -vP 'object\s+\$' | grep -P '[A-Z][a-zA-Z]+\s+\$'"${varname}" | head -1; then
-          echo "WARN: method_exists() used with typed parameter \$$varname — use 'object' type to avoid PHPStan narrowing issues"
-          violations=1
-        fi
-      done <<<"$found"
-      [ "$violations" -gt 0 ] && exit 1
-      exit 0
-    severity: warning
-    desc: "method_exists() for version detection should use 'object' type parameter to avoid PHPStan type narrowing across versions"
-    tags: [phpstan, multi-version, method-exists, type-narrowing]
-
-  # === MULTI-VERSION DEPENDENCY LLM REVIEWS ===
-  - id: TC-100f
-    name: multi-version-api-divergence
-    domain: architecture
-    prompt: |
-      Check for multi-version dependency compatibility:
-      1. Parse composer.json for dependencies with multi-major-version constraints
-         (e.g., "^3 || ^4", "^1.0 || ^2.0") — exclude php and typo3/cms-* packages
-      2. For each such dependency, identify API differences between the major versions
-         that could cause runtime errors (changed method signatures, removed classes,
-         renamed methods, changed constructor arguments)
-      3. Check if the extension uses an adapter/interface pattern to abstract these
-         differences, or if version-specific APIs are called directly in business logic
-      4. Verify that adapter implementations exist for EACH supported major version
-      5. Flag any direct usage of version-specific APIs outside of adapter classes
+      ```
     severity: error
     desc: "Multi-version dependencies must use adapter pattern when APIs differ between major versions"
     tags: [architecture, multi-version, adapter, dependency, assessment]
