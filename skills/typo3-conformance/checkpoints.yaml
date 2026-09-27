@@ -408,12 +408,20 @@ mechanical:
     desc: "PHPStan config should include shared config from typo3-ci-workflows"
 
   # === TCA v13 PATTERN CHECKS ===
+  # `eval => 'trim'` is NOT deprecated: DataHandler::checkValue_input_Eval()
+  # still handles it at v14.3.7, and the core's own migration example for
+  # Deprecation #97035 keeps `'eval' => 'trim'` as the correct form. What is
+  # deprecated (since v12.0, auto-migrated with an E_USER_DEPRECATED) is
+  # `required` inside `eval`; the standalone `'required' => true` replaces it.
   - id: TC-100
     type: regex_not
     target: Configuration/TCA/**/*.php
-    pattern: "eval.*trim"
+    pattern: "['\"]eval['\"]\\s*=>\\s*['\"][^'\"]*\\brequired\\b"
     severity: warning
-    desc: "TCA files should not contain eval=trim; use trim option in fieldControl instead (v13+)"
+    desc: "TCA eval must not contain 'required' (deprecated since v12.0, #97035); use 'required' => true. eval=trim stays valid"
+    provenance: upstream
+    source: https://github.com/TYPO3/typo3/blob/v14.3.7/typo3/sysext/core/Documentation/Changelog/12.0/Deprecation-97035-RequiredOptionInEvalKeyword.rst
+    verified: 2026-09-27
 
   - id: TC-101
     type: regex_not
@@ -561,11 +569,26 @@ mechanical:
   # grep in the chain fails, and the pipeline reports the tree as clean — a
   # violating file passes silently. `-print0`/`xargs -0` for the first hop,
   # `grep -lZ` for the second.
+  #
+  # TYPO3 v14 removed ctrl.searchFields (Breaking #106972): suitable fields are
+  # searchable by default and a per-column `searchable` option replaces it. The
+  # option is therefore demanded only while the extension still supports a core
+  # older than v14 (typo3/cms-core constraint naming a 10-13 major); a
+  # v14-only extension passes without it.
   - id: TC-151
-    type: command
-    pattern: "! find Configuration/TCA/ -name '*.php' -not -path '*/.Build/*' -not -path '*/vendor/*' -not -path '*/node_modules/*' -print0 2>/dev/null | xargs -0 -r grep -lZE '(^|[^a-zA-Z_])ctrl[^a-zA-Z_]' 2>/dev/null | xargs -0 -r grep -L 'searchFields' 2>/dev/null | grep -q ."
+    type: script
+    command: |
+      core=$(jq -r '.require["typo3/cms-core"] // ""' composer.json 2>/dev/null)
+      if [ -n "$core" ] && ! printf '%s' "$core" | grep -qE '(^|[^0-9.])1[0-3]([^0-9]|$)'; then
+        exit 0
+      fi
+      missing=$(find Configuration/TCA/ -name '*.php' -not -path '*/.Build/*' -not -path '*/vendor/*' -not -path '*/node_modules/*' -print0 2>/dev/null | xargs -0 -r grep -lZE '(^|[^a-zA-Z_])ctrl[^a-zA-Z_]' 2>/dev/null | xargs -0 -r grep -L 'searchFields' 2>/dev/null)
+      test -z "$missing"
     severity: error
-    desc: "All TCA ctrl arrays must define searchFields for backend search functionality"
+    desc: "TCA ctrl arrays must define searchFields while TYPO3 < 14 is supported (removed in v14, #106972; v14-only extensions pass)"
+    provenance: upstream
+    source: https://github.com/TYPO3/typo3/blob/v14.3.7/typo3/sysext/core/Documentation/Changelog/14.0/Breaking-106972-TCAControlOptionSearchFieldsRemoved.rst
+    verified: 2026-09-27
 
   - id: TC-152
     type: command
@@ -1152,27 +1175,42 @@ llm_reviews:
     tags: [configuration, alignment, assessment]
 
   # === MULTI-VERSION DEPENDENCY COMPATIBILITY CHECKS ===
+  # mechanical-counterpart: none (command gathers context; the judgement is the checkpoint)
   - id: TC-170
     name: multi-version-direct-api-usage
     type: command
+    # Context-gathering command: it lists direct imports of multi-major
+    # dependencies outside Adapter/ and Factory/. Whether an import touches
+    # API that differs between the majors is the judgement of this review.
+    # Only `require` is read (not `scripts`, not `require-dev`); platform
+    # packages and typo3/cms-* are excluded. A dependency's namespaces come
+    # from its installed composer.json; without an install the command says
+    # so instead of guessing, and the extension's own namespace never counts.
     command: |
-      # Check if composer.json has multi-major-version constraints (^X || ^Y)
-      multi_deps=$(grep -oP '"[^"]+"\s*:\s*"[^"]*\|\|[^"]*"' composer.json 2>/dev/null | grep -vP '^"php"\s*:|^"typo3/cms-[^"]*"\s*:')
-      [ -z "$multi_deps" ] && exit 0
-      # For each multi-version dep, check if version-specific classes are used outside Adapter/
+      deps=$(jq -r '.require // {} | to_entries[] | select(.value | contains("||")) | .key | select(test("^(php$|ext-|lib-|composer-|typo3/cms-)") | not)' composer.json 2>/dev/null)
+      [ -z "$deps" ] && exit 0
+      own=$(jq -r '.autoload["psr-4"] // {} | keys | join(" ")' composer.json 2>/dev/null)
       violations=0
-      while IFS= read -r dep; do
-        pkg=$(echo "$dep" | grep -oP '"[^"]+"' | head -1 | tr -d '"')
-        # Use the vendor segment (before the first /) as a namespace prefix and search case-insensitively
-        vendor=$(echo "$pkg" | cut -d'/' -f1)
-        vendor_ns_prefix=$(echo "$vendor" | sed 's|/|\\\\|g')
-        if grep -rinP "use\s+${vendor_ns_prefix}\\\\\\\\" Classes/ 2>/dev/null | grep -vP 'Adapter/|Factory/' | head -3; then
-          echo "WARN: Direct use of multi-version dependency $pkg outside Adapter/ classes"
-          violations=1
+      for pkg in $deps; do
+        meta=""
+        for dir in .Build/vendor vendor; do
+          if [ -f "$dir/$pkg/composer.json" ]; then meta="$dir/$pkg/composer.json"; break; fi
+        done
+        if [ -z "$meta" ]; then
+          echo "UNKNOWN: $pkg is not installed; its namespace cannot be resolved"
+          continue
         fi
-      done <<<"$multi_deps"
-      [ "$violations" -gt 0 ] && exit 1
-      exit 0
+        for ns in $(jq -r '.autoload["psr-4"] // {} | keys[]' "$meta"); do
+          case " $own " in *" $ns "*) continue ;; esac
+          hits=$(grep -rnF --include='*.php' "use $ns" Classes/ 2>/dev/null | grep -vE '/(Adapter|Factory)/')
+          if [ -n "$hits" ]; then
+            printf '%s\n' "$hits"
+            echo "WARN: $pkg ($ns) imported outside Adapter/ or Factory/"
+            violations=1
+          fi
+        done
+      done
+      exit "$violations"
     severity: warning
     desc: "Multi-version dependencies (^X || ^Y) should be accessed through adapter interfaces, not used directly in business logic"
     tags: [architecture, multi-version, adapter, dependency]
@@ -1181,7 +1219,8 @@ llm_reviews:
     name: multi-version-adapter-interface-exists
     type: command
     command: |
-      multi_deps=$(grep -oP '"[^"]+"\s*:\s*"[^"]*\|\|[^"]*"' composer.json 2>/dev/null | grep -vP '^"php"\s*:|^"typo3/cms-[^"]*"\s*:')
+      # Same dependency set as TC-170: `require` only, platform packages and typo3/cms-* excluded.
+      multi_deps=$(jq -r '.require // {} | to_entries[] | select(.value | contains("||")) | .key | select(test("^(php$|ext-|lib-|composer-|typo3/cms-)") | not)' composer.json 2>/dev/null)
       [ -z "$multi_deps" ] && exit 0
       # Only require adapters when TC-170 detected direct API usage (version-specific code)
       # Without direct API usage evidence, the dependency APIs may be identical across versions
@@ -1371,17 +1410,38 @@ llm_reviews:
     prompt: |
       Review the TYPO3 extension codebase for PSR-3 logging compliance.
 
-      Check for:
-      1. Classes implementing LoggerAwareInterface should use LoggerAwareTrait
-      2. Constructor should set $this->logger = new NullLogger() as default
-      3. A private getLogger(): LoggerInterface helper should exist to narrow
-         the nullable trait property for PHPStan
-      4. No nullable $logger properties with null checks scattered in methods
-      5. Logger should NOT be a required constructor parameter
+      Two patterns are compliant; accept either:
+      A. Constructor injection of a non-nullable Psr\Log\LoggerInterface in an
+         autowired service. TYPO3 core's LoggerInterfacePass
+         (typo3/sysext/core/Classes/DependencyInjection/LoggerInterfacePass.php,
+         present in 12.4, 13.4 and 14.3) wires such a parameter to
+         LogManager::getLogger() for the class's channel, and the TYPO3 logging
+         quickstart names constructor injection as the way to get a logger.
+      B. LoggerAwareInterface together with LoggerAwareTrait, with a
+         NullLogger default set in the constructor and a private
+         getLogger(): LoggerInterface helper that narrows the nullable trait
+         property for PHPStan.
+
+      Flag:
+      1. LoggerAwareInterface implemented without LoggerAwareTrait (or an
+         equivalent setLogger()).
+      2. LoggerAwareTrait used without a NullLogger default or getLogger()
+         helper, so $this->logger may be null where it is called.
+      3. Nullable ?LoggerInterface properties or parameters with null checks
+         scattered through methods.
+      4. A constructor-injected logger in a class that is NOT built by the
+         container (instantiated with `new` or a plain makeInstance() without
+         DI), where the parameter would never be filled.
+
+      Do not flag a required LoggerInterface constructor parameter in an
+      autowired service — that is pattern A.
 
       Examine files in Classes/ directory. Report specific violations.
     severity: warning
-    desc: "TYPO3 services must use LoggerAwareInterface with NullLogger default (not nullable)"
+    desc: "Loggers come from constructor injection (non-nullable LoggerInterface) or LoggerAwareTrait with NullLogger default; never nullable with scattered null checks"
+    provenance: upstream
+    source: https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/ApiOverview/Logging/Quickstart/Index.html
+    verified: 2026-09-27
     tags: [psr-3, logging, logger-aware, null-logger, typo3]
 
   # === PSR-14 EVENT DISPATCH SAFETY (relocated from php-modernization PM-27) ===

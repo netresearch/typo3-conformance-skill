@@ -780,7 +780,8 @@ return [
             'config' => [
                 'type' => 'input',
                 'size' => 30,
-                'eval' => 'trim,required',
+                'required' => true,
+                'eval' => 'trim',
                 'max' => 255,
             ],
         ],
@@ -1027,20 +1028,21 @@ The `l10n_parent` field **MUST** use `type=select` / `renderType=selectSingle` w
 
 ### Deprecated eval Values
 
-`eval=trim` is **deprecated** for `type=input` and `type=text` in TYPO3 v13. Remove it from all TCA column definitions.
+`required` inside `eval` is **deprecated** since TYPO3 v12.0 ([#97035](https://github.com/TYPO3/typo3/blob/v14.3.7/typo3/sysext/core/Documentation/Changelog/12.0/Deprecation-97035-RequiredOptionInEvalKeyword.rst)); the core migrates it at runtime and logs a deprecation. Use the standalone `'required' => true`. `eval=trim` is **not** deprecated — `DataHandler::checkValue_input_Eval()` still applies it in v14.3.
 
 ```php
-// ✅ Right: No eval=trim in v13
+// ✅ Right: 'required' as standalone config key, eval=trim stays
 'title' => [
     'config' => [
         'type' => 'input',
         'size' => 30,
         'max' => 255,
-        'required' => true,  // Use 'required' as standalone config key
+        'required' => true,
+        'eval' => 'trim',
     ],
 ],
 
-// ❌ Wrong: eval=trim is deprecated
+// ❌ Wrong: 'required' inside eval is deprecated
 'title' => [
     'config' => [
         'type' => 'input',
@@ -1575,7 +1577,7 @@ grep -A 2 'push:' .github/workflows/*.yml | grep -v 'branches:'
 - [ ] Branch protection with required conversation resolution enabled
 - [ ] Netresearch CI workflows used (not individual tool packages)
 - [ ] TCA l10n_parent uses select/selectSingle (not group)
-- [ ] No eval=trim on type=input or type=text fields
+- [ ] No `required` inside `eval` (use `'required' => true`; `eval=trim` stays valid)
 - [ ] No prependAtCopy or hideAtCopy in ctrl
 - [ ] System columns not redefined in TCA columns
 - [ ] No shell_exec usage
