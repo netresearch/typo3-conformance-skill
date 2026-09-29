@@ -32,7 +32,7 @@ Testing -> `typo3-testing` | Docs -> `typo3-docs` | OpenSSF -> `enterprise-readi
 3. **What the code needs** -- APIs that exist in only one of the two lines (`references/v14-deprecations.md`, `references/v13-deprecations.md`).
 4. **How the disagreement arose** -- `git log -p -- composer.json ext_emconf.php`, where history exists.
 
-Where the rule and the evidence agree, align both files to that line. Where they conflict -- the authoritative file names a line the CI matrix does not test -- follow the rule, and report the untested line as a finding rather than widening CI or code to match. Change only version statements: the two declarations, and documentation that repeats them. Write each file in its own notation (`^13.4` in composer.json, `13.4.0-13.4.99` in ext_emconf.php -- never a caret in ext_emconf.php), and name the evidence that decided it in the answer.
+Where the rule and the evidence agree, align both files to that line. Where they conflict -- the authoritative file names a line the CI matrix does not test -- follow the rule, and report the untested line as a finding rather than widening CI or code to match. Change only version statements: the two declarations, and documentation that repeats them. Write each file in its own notation (`^13.4` in composer.json, `13.4.0-13.4.99` in ext_emconf.php -- never a caret in ext_emconf.php; a Composer gap such as `^13.4 || ^14.3` maps to one range, see `references/ext-emconf-validation.md`), and name the evidence that decided it in the answer.
 
 **Scope:** extensions only. **Site/project** repos (`type: project` + Compose) — score with the gold checker [`typo3-14-gold`](https://git.netresearch.de/typo3/typo3-14-gold)`/tools/conformance`.
 
