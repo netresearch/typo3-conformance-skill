@@ -48,7 +48,7 @@ Read ext_emconf.php + composer.json for version, type, scope.
 2. **Structure** -- composer.json, ext_emconf.php, Classes/, Configuration/, Resources/
 3. **Coding** -- strict_types, PSR-12, PHP 8.4 explicit nullable, PHP 8.5 float-to-int
 4. **Prohibited** -- no `$GLOBALS`, no `GeneralUtility::makeInstance()` for services
-5. **Architecture** -- constructor DI, Services.yaml, PSR-14 events (try/catch), PSR-3 logging (constructor-injected LoggerInterface, or LoggerAware+NullLogger), factory fallback
+5. **Architecture** -- constructor DI, Services.yaml, PSR-14 events (try/catch), PSR-3 logging (constructor-injected LoggerInterface in a container-built service, or LoggerAware+NullLogger), factory fallback
 6. **Backend** -- ES6, Modal API, CSRF, CSP (v13+)
 7. **Testing** -- PHPUnit, Playwright E2E, coverage >70%
 8. **Practices** -- DDEV, runTests.sh, CI/CD
