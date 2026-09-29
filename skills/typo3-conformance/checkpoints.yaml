@@ -604,7 +604,8 @@ mechanical:
   # tested the short name as a substring of Services.yaml, so foreign
   # interfaces aliased by their own package and interfaces consumed only as a
   # !tagged_iterator were reported. An interface counts as aliased when
-  # Services.yaml has it as a KEY (quoted or not), or when a class under
+  # Services.yaml has it as a service id directly under `services:` (quoted or
+  # not; a key under `_instanceof:`, `bind:` or `arguments:` is no alias), or when a class under
   # Classes/ implementing it carries #[AsAlias] (bare, on a class with that
   # single interface, or naming it, positionally or as `id:`). Symfony also aliases an interface with
   # exactly one implementation in the loaded resource on its own
@@ -620,6 +621,22 @@ mechanical:
       find Classes -type f -name '*.php' -not -path '*/vendor/*' -not -path '*/node_modules/*' -not -path '*/.Build/*' 2>/dev/null | php -r '
       $files = array_filter(array_map("trim", explode("\n", stream_get_contents(STDIN))), "is_file");
       $yaml = file_get_contents("Configuration/Services.yaml");
+      // Service ids directly under `services:` (quoted or not). A key under
+      // `_instanceof:`, `bind:`, `arguments:` or any other nested map is not
+      // an alias and is not collected.
+      $keys = []; $in = false; $ind = -1;
+      foreach (preg_split("/\R/", $yaml) as $l) {
+          if (preg_match("~^[^\s#]~", $l)) { $in = (bool) preg_match("~^services:\s*(#.*)?$~", $l); $ind = -1; continue; }
+          if (!$in || preg_match("~^\s*(#|$)~", $l)) continue;
+          $i = strlen($l) - strlen(ltrim($l, " \t"));
+          if ($ind < 0) $ind = $i;
+          if ($i !== $ind) continue;
+          if (!preg_match("~^\s*(\x27[^\x27]*\x27|\"(?:[^\"\\\\]|\\\\.)*\"|[^\s:#\x27\"][^:]*?)\s*:(\s|$)~", $l, $m)) continue;
+          $k = $m[1];
+          if ($k[0] === "\x27") $k = substr($k, 1, -1);
+          elseif ($k[0] === "\"") $k = stripcslashes(substr($k, 1, -1));
+          $keys[ltrim($k, "\\")] = true;
+      }
       $own = [];          // FQCN => true for interfaces declared under Classes/
       $injected = [];     // FQCN => "file" of the first constructor naming it
       $implementors = []; // FQCN of interface => list of [class, hasAsAlias, asAliasTarget]
@@ -686,9 +703,7 @@ mechanical:
       $missing = 0;
       foreach ($injected as $fq => $f) {
           if (!isset($own[$fq])) continue;
-          $key = preg_quote($fq, "~");
-          $keyEsc = preg_quote(str_replace("\\", "\\\\", $fq), "~");
-          if (preg_match("~^[ \t]+[\x27\"]?(" . $key . "|" . $keyEsc . ")[\x27\"]?[ \t]*:~m", $yaml)) continue;
+          if (isset($keys[$fq])) continue;
           $viaAttr = array_filter($implementors[$fq] ?? [], fn($c) => $c[1]);
           if ($viaAttr !== []) continue;
           echo "WARN: $fq is injected by a constructor ($f) but has no alias (Services.yaml key or #[AsAlias])\n";
@@ -927,7 +942,7 @@ mechanical:
     tags: [documentation, changelog, completeness, assessment]
 
   # mechanical-counterpart of TC-100h. Adapter interfaces only (Classes/Adapter/);
-  # interfaces elsewhere are TC-153's. The interface must be a Services.yaml KEY
+  # interfaces elsewhere are TC-153's. The interface must be a service id directly under `services:` (not under `_instanceof:`)
   # or named by #[AsAlias(...::class)] — a substring match also accepted a
   # comment or another service's argument.
   - id: TC-172
@@ -937,13 +952,28 @@ mechanical:
       ifaces=$(find Classes/Adapter -name '*Interface.php' 2>/dev/null)
       [ -z "$ifaces" ] && exit 0
       if [ ! -f Configuration/Services.yaml ]; then echo "FAIL: adapter interfaces exist but no Configuration/Services.yaml"; exit 1; fi
+      # Service ids directly under `services:`, as in TC-153.
+      keys=$(php -r '$yaml = file_get_contents("Configuration/Services.yaml");
+      $keys = []; $in = false; $ind = -1;
+      foreach (preg_split("/\R/", $yaml) as $l) {
+          if (preg_match("~^[^\s#]~", $l)) { $in = (bool) preg_match("~^services:\s*(#.*)?$~", $l); $ind = -1; continue; }
+          if (!$in || preg_match("~^\s*(#|$)~", $l)) continue;
+          $i = strlen($l) - strlen(ltrim($l, " \t"));
+          if ($ind < 0) $ind = $i;
+          if ($i !== $ind) continue;
+          if (!preg_match("~^\s*(\x27[^\x27]*\x27|\"(?:[^\"\\\\]|\\\\.)*\"|[^\s:#\x27\"][^:]*?)\s*:(\s|$)~", $l, $m)) continue;
+          $k = $m[1];
+          if ($k[0] === "\x27") $k = substr($k, 1, -1);
+          elseif ($k[0] === "\"") $k = stripcslashes(substr($k, 1, -1));
+          $keys[ltrim($k, "\\")] = true;
+      }
+      foreach ($keys as $k => $_) echo $k, "\n";')
       missing=0
       while IFS= read -r file; do
         short=$(basename "$file" .php)
         ns=$(grep -m1 -oP '^namespace\s+\K[^;\s]+' "$file")
         fq="$ns\\$short"
-        fq_re=$(printf '%s' "$fq" | sed 's/\\/\\\\/g')
-        if grep -qE "^[[:space:]]+['\"]?${fq_re}['\"]?[[:space:]]*:" Configuration/Services.yaml; then continue; fi
+        if printf '%s\n' "$keys" | grep -qxF -- "$fq"; then continue; fi
         if grep -rqE "AsAlias\([[:space:]]*(id:[[:space:]]*)?[A-Za-z0-9_\\]*${short}::class" Classes/Adapter; then continue; fi
         echo "FAIL: adapter interface $fq has no Services.yaml alias key and no #[AsAlias($short::class)]"
         missing=1
