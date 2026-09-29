@@ -573,13 +573,13 @@ mechanical:
   # TYPO3 v14 removed ctrl.searchFields (Breaking #106972): suitable fields are
   # searchable by default and a per-column `searchable` option replaces it. The
   # option is therefore demanded only while the extension still supports a core
-  # older than v14 (typo3/cms-core constraint naming a 10-13 major); a
+  # older than v14 (typo3/cms-core constraint naming a 1-13 major); a
   # v14-only extension passes without it.
   - id: TC-151
     type: script
     command: |
       core=$(jq -r '.require["typo3/cms-core"] // ""' composer.json 2>/dev/null)
-      if [ -n "$core" ] && ! printf '%s' "$core" | grep -qE '(^|[^0-9.])1[0-3]([^0-9]|$)'; then
+      if [ -n "$core" ] && ! printf '%s' "$core" | grep -qE '(^|[^0-9.])([1-9]|1[0-3])([^0-9]|$)'; then
         exit 0
       fi
       missing=$(find Configuration/TCA/ -name '*.php' -not -path '*/.Build/*' -not -path '*/vendor/*' -not -path '*/node_modules/*' -print0 2>/dev/null | xargs -0 -r grep -lZE '(^|[^a-zA-Z_])ctrl[^a-zA-Z_]' 2>/dev/null | xargs -0 -r grep -L 'searchFields' 2>/dev/null)
@@ -606,7 +606,7 @@ mechanical:
   # !tagged_iterator were reported. An interface counts as aliased when
   # Services.yaml has it as a KEY (quoted or not), or when a class under
   # Classes/ implementing it carries #[AsAlias] (bare, on a class with that
-  # single interface, or naming it). Symfony also aliases an interface with
+  # single interface, or naming it, positionally or as `id:`). Symfony also aliases an interface with
   # exactly one implementation in the loaded resource on its own
   # (FileLoader::registerAliasesForSinglyImplementedInterfaces); the explicit
   # alias demanded here is the skill's rule from php-architecture.md
@@ -651,7 +651,9 @@ mechanical:
                   $nm = $nameAt($i + 1);
                   if ($nm !== null && str_ends_with($nm, "AsAlias")) {
                       $asAlias = "";
-                      if (($t[$i + 2] ?? null) === "(" && ($a = $nameAt($i + 3)) !== null && is_array($t[$i + 4]) && $t[$i + 4][0] === T_DOUBLE_COLON) $asAlias = $resolve($a);
+                      $o = $i + 3; // #[AsAlias(Foo::class)] or the named form #[AsAlias(id: Foo::class)]
+                      if (is_array($t[$o] ?? null) && $t[$o][0] === T_STRING && $t[$o][1] === "id" && ($t[$o + 1] ?? null) === ":") $o += 2;
+                      if (($t[$i + 2] ?? null) === "(" && ($a = $nameAt($o)) !== null && is_array($t[$o + 1] ?? null) && $t[$o + 1][0] === T_DOUBLE_COLON) $asAlias = $resolve($a);
                   }
                   continue;
               }
@@ -942,7 +944,7 @@ mechanical:
         fq="$ns\\$short"
         fq_re=$(printf '%s' "$fq" | sed 's/\\/\\\\/g')
         if grep -qE "^[[:space:]]+['\"]?${fq_re}['\"]?[[:space:]]*:" Configuration/Services.yaml; then continue; fi
-        if grep -rqE "AsAlias\([[:space:]]*[A-Za-z0-9_\\]*${short}::class" Classes/Adapter; then continue; fi
+        if grep -rqE "AsAlias\([[:space:]]*(id:[[:space:]]*)?[A-Za-z0-9_\\]*${short}::class" Classes/Adapter; then continue; fi
         echo "FAIL: adapter interface $fq has no Services.yaml alias key and no #[AsAlias($short::class)]"
         missing=1
       done <<<"$ifaces"
@@ -995,12 +997,14 @@ mechanical:
 
   # The previous version piped into `head -1` inside `if`, so it warned for
   # every method_exists($var) call. Now reports only when the same variable is
-  # declared with a class type (not object/mixed/untyped) in that file.
+  # declared with a class type (not object/mixed/untyped) in that file. The
+  # variable must be the whole first argument: method_exists($x->getY(), ...)
+  # tests the call's return value, which no parameter type can change.
   - id: TC-175
     name: method-exists-typed-parameter
     type: command
     command: |
-      found=$(grep -rnoP 'method_exists\s*\(\s*\$\K[A-Za-z_][A-Za-z0-9_]*' Classes/ --include='*.php' 2>/dev/null)
+      found=$(grep -rnoP 'method_exists\s*\(\s*\$\K[A-Za-z_][A-Za-z0-9_]*(?=\s*,)' Classes/ --include='*.php' 2>/dev/null)
       [ -z "$found" ] && exit 0
       violations=0
       while IFS=: read -r file line var; do
