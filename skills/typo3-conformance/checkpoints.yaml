@@ -612,7 +612,8 @@ mechanical:
   # (FileLoader::registerAliasesForSinglyImplementedInterfaces); the explicit
   # alias demanded here is the skill's rule from php-architecture.md
   # "Interface Aliases", and a hard requirement once a second implementation
-  # exists.
+  # exists. Short names resolve through every clause of a `use` statement,
+  # including `use A\B, C\D;` and the group form `use A\{B, C as D};`.
   - id: TC-153
     type: command
     pattern: |
@@ -642,7 +643,7 @@ mechanical:
       $implementors = []; // FQCN of interface => list of [class, hasAsAlias, asAliasTarget]
       foreach ($files as $f) {
           $t = array_values(array_filter(token_get_all(file_get_contents($f)), fn($x) => !(is_array($x) && in_array($x[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true))));
-          $ns = ""; $uses = []; $n = count($t); $asAlias = null;
+          $ns = ""; $uses = []; $n = count($t); $asAlias = [];
           $resolve = function (string $name) use (&$ns, &$uses): string {
               if ($name[0] === "\\") return ltrim($name, "\\");
               $first = explode("\\", $name)[0];
@@ -658,19 +659,32 @@ mechanical:
               if ($id === "{" || $id === T_CURLY_OPEN || $id === T_DOLLAR_OPEN_CURLY_BRACES) { $depth++; continue; }
               if ($id === "}") { $depth--; continue; }
               if ($id === T_NAMESPACE && ($nm = $nameAt($i + 1)) !== null) { $ns = $nm; continue; }
-              if ($id === T_USE && $depth === 0 && ($nm = $nameAt($i + 1)) !== null) {
-                  $alias = substr(strrchr("\\" . $nm, "\\"), 1);
-                  if (is_array($t[$i + 2]) && $t[$i + 2][0] === T_AS) $alias = $t[$i + 3][1];
-                  $uses[$alias] = ltrim($nm, "\\");
+              // Every clause of `use A\B, C\D as E;` and every member of the
+              // group form `use A\{B, C\D as E};`; `function` and `const`
+              // members are skipped.
+              if ($id === T_USE && $depth === 0 && $nameAt($i + 1) !== null) {
+                  $prefix = ""; $grp = false;
+                  for ($j = $i + 1; $j < $n && $t[$j] !== ";"; $j++) {
+                      if ($t[$j] === "{") { $grp = true; continue; }
+                      if ($t[$j] === "}") { $grp = false; $prefix = ""; continue; }
+                      if (is_array($t[$j]) && in_array($t[$j][0], [T_FUNCTION, T_CONST], true)) { $j++; continue; }
+                      if (($nm = $nameAt($j)) === null) continue;
+                      if (!$grp && is_array($t[$j + 1] ?? null) && $t[$j + 1][0] === T_NS_SEPARATOR && ($t[$j + 2] ?? null) === "{") { $prefix = ltrim($nm, "\\") . "\\"; $j++; continue; }
+                      $alias = substr(strrchr("\\" . $nm, "\\"), 1);
+                      if (is_array($t[$j + 1] ?? null) && $t[$j + 1][0] === T_AS) { $alias = $t[$j + 2][1]; $j += 2; }
+                      $uses[$alias] = ltrim($prefix . $nm, "\\");
+                  }
+                  $i = $j;
                   continue;
               }
               if ($id === T_ATTRIBUTE) {
                   $nm = $nameAt($i + 1);
                   if ($nm !== null && str_ends_with($nm, "AsAlias")) {
-                      $asAlias = "";
+                      $target = "";
                       $o = $i + 3; // #[AsAlias(Foo::class)] or the named form #[AsAlias(id: Foo::class)]
                       if (is_array($t[$o] ?? null) && $t[$o][0] === T_STRING && $t[$o][1] === "id" && ($t[$o + 1] ?? null) === ":") $o += 2;
-                      if (($t[$i + 2] ?? null) === "(" && ($a = $nameAt($o)) !== null && is_array($t[$o + 1] ?? null) && $t[$o + 1][0] === T_DOUBLE_COLON) $asAlias = $resolve($a);
+                      if (($t[$i + 2] ?? null) === "(" && ($a = $nameAt($o)) !== null && is_array($t[$o + 1] ?? null) && $t[$o + 1][0] === T_DOUBLE_COLON) $target = $resolve($a);
+                      $asAlias[] = $target; // "" is a bare #[AsAlias]; the attribute is repeatable
                   }
                   continue;
               }
@@ -683,8 +697,8 @@ mechanical:
                           break;
                       }
                   }
-                  foreach ($ifs as $if) $implementors[$if][] = [$cls, $asAlias !== null && ($asAlias === $if || ($asAlias === "" && count($ifs) === 1))];
-                  $asAlias = null;
+                  foreach ($ifs as $if) $implementors[$if][] = [$cls, in_array($if, $asAlias, true) || (in_array("", $asAlias, true) && count($ifs) === 1)];
+                  $asAlias = [];
                   continue;
               }
               if ($id === T_FUNCTION && ($t[$i + 1][1] ?? "") === "__construct" && ($t[$i + 2] ?? null) === "(") {
@@ -943,8 +957,13 @@ mechanical:
 
   # mechanical-counterpart of TC-100h. Adapter interfaces only (Classes/Adapter/);
   # interfaces elsewhere are TC-153's. The interface must be a service id directly under `services:` (not under `_instanceof:`)
-  # or named by #[AsAlias(...::class)] — a substring match also accepted a
-  # comment or another service's argument.
+  # or aliased by #[AsAlias] on a class anywhere under Classes/ — naming it
+  # (positionally or as `id:`), or bare on a class that implements only this
+  # interface: Symfony's FileLoader then takes the single implemented
+  # interface as the alias. A class that implements two interfaces with a bare
+  # #[AsAlias] makes Symfony throw, and aliases nothing here. The attribute is
+  # read with TC-153's tokenizer; a substring match also accepted a comment or
+  # another service's argument.
   - id: TC-172
     name: adapter-interface-wired-in-services-yaml
     type: command
@@ -968,14 +987,77 @@ mechanical:
           $keys[ltrim($k, "\\")] = true;
       }
       foreach ($keys as $k => $_) echo $k, "\n";')
+      # Interfaces aliased by #[AsAlias], as in TC-153.
+      aliased=$(find Classes -type f -name '*.php' -not -path '*/vendor/*' -not -path '*/node_modules/*' -not -path '*/.Build/*' 2>/dev/null | php -r '
+      $files = array_filter(array_map("trim", explode("\n", stream_get_contents(STDIN))), "is_file");
+      foreach ($files as $f) {
+          $t = array_values(array_filter(token_get_all(file_get_contents($f)), fn($x) => !(is_array($x) && in_array($x[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true))));
+          $ns = ""; $uses = []; $n = count($t); $asAlias = [];
+          $resolve = function (string $name) use (&$ns, &$uses): string {
+              if ($name[0] === "\\") return ltrim($name, "\\");
+              $first = explode("\\", $name)[0];
+              if (isset($uses[$first])) return $uses[$first] . substr($name, strlen($first));
+              return ltrim($ns . "\\" . $name, "\\");
+          };
+          $nameAt = function (int $i) use ($t): ?string {
+              return is_array($t[$i] ?? null) && in_array($t[$i][0], [T_STRING, T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED], true) ? $t[$i][1] : null;
+          };
+          $depth = 0;
+          for ($i = 0; $i < $n; $i++) {
+              $tok = $t[$i]; $id = is_array($tok) ? $tok[0] : $tok;
+              if ($id === "{" || $id === T_CURLY_OPEN || $id === T_DOLLAR_OPEN_CURLY_BRACES) { $depth++; continue; }
+              if ($id === "}") { $depth--; continue; }
+              if ($id === T_NAMESPACE && ($nm = $nameAt($i + 1)) !== null) { $ns = $nm; continue; }
+              if ($id === T_USE && $depth === 0 && $nameAt($i + 1) !== null) {
+                  $prefix = ""; $grp = false;
+                  for ($j = $i + 1; $j < $n && $t[$j] !== ";"; $j++) {
+                      if ($t[$j] === "{") { $grp = true; continue; }
+                      if ($t[$j] === "}") { $grp = false; $prefix = ""; continue; }
+                      if (is_array($t[$j]) && in_array($t[$j][0], [T_FUNCTION, T_CONST], true)) { $j++; continue; }
+                      if (($nm = $nameAt($j)) === null) continue;
+                      if (!$grp && is_array($t[$j + 1] ?? null) && $t[$j + 1][0] === T_NS_SEPARATOR && ($t[$j + 2] ?? null) === "{") { $prefix = ltrim($nm, "\\") . "\\"; $j++; continue; }
+                      $alias = substr(strrchr("\\" . $nm, "\\"), 1);
+                      if (is_array($t[$j + 1] ?? null) && $t[$j + 1][0] === T_AS) { $alias = $t[$j + 2][1]; $j += 2; }
+                      $uses[$alias] = ltrim($prefix . $nm, "\\");
+                  }
+                  $i = $j;
+                  continue;
+              }
+              if ($id === T_ATTRIBUTE) {
+                  $nm = $nameAt($i + 1);
+                  if ($nm !== null && str_ends_with($nm, "AsAlias")) {
+                      $target = "";
+                      $o = $i + 3;
+                      if (is_array($t[$o] ?? null) && $t[$o][0] === T_STRING && $t[$o][1] === "id" && ($t[$o + 1] ?? null) === ":") $o += 2;
+                      if (($t[$i + 2] ?? null) === "(" && ($a = $nameAt($o)) !== null && is_array($t[$o + 1] ?? null) && $t[$o + 1][0] === T_DOUBLE_COLON) $target = $resolve($a);
+                      $asAlias[] = $target;
+                  }
+                  continue;
+              }
+              if ($id === T_CLASS && ($nm = $nameAt($i + 1)) !== null && !(is_array($t[$i - 1] ?? null) && $t[$i - 1][0] === T_DOUBLE_COLON)) {
+                  $ifs = [];
+                  for ($j = $i + 2; $j < $n && $t[$j] !== "{"; $j++) {
+                      if (is_array($t[$j]) && $t[$j][0] === T_IMPLEMENTS) {
+                          for ($k = $j + 1; $k < $n && $t[$k] !== "{"; $k++) if (($x = $nameAt($k)) !== null) $ifs[] = $resolve($x);
+                          break;
+                      }
+                  }
+                  foreach ($asAlias as $target) {
+                      if ($target !== "") echo $target, "\n";
+                      elseif (count($ifs) === 1) echo $ifs[0], "\n";
+                  }
+                  $asAlias = [];
+              }
+          }
+      }')
       missing=0
       while IFS= read -r file; do
         short=$(basename "$file" .php)
         ns=$(grep -m1 -oP '^namespace\s+\K[^;\s]+' "$file")
         fq="$ns\\$short"
         if printf '%s\n' "$keys" | grep -qxF -- "$fq"; then continue; fi
-        if grep -rqE "AsAlias\([[:space:]]*(id:[[:space:]]*)?[A-Za-z0-9_\\]*${short}::class" Classes/Adapter; then continue; fi
-        echo "FAIL: adapter interface $fq has no Services.yaml alias key and no #[AsAlias($short::class)]"
+        if printf '%s\n' "$aliased" | grep -qxF -- "$fq"; then continue; fi
+        echo "FAIL: adapter interface $fq has no Services.yaml alias key and no #[AsAlias] aliasing it (naming it, or bare on a class that implements only $short)"
         missing=1
       done <<<"$ifaces"
       exit "$missing"
