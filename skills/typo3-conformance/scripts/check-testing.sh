@@ -59,7 +59,7 @@ if [ -d "Tests/Unit" ]; then
     echo "- ✅ Tests/Unit/ directory present"
     echo "  - **${unit_test_count} unit test files found**"
 
-    if [ $unit_test_count -eq 0 ]; then
+    if [ "$unit_test_count" -eq 0 ]; then
         echo "  - ⚠️  No unit tests found"
     fi
 
@@ -95,7 +95,7 @@ if [ -d "Tests/Functional" ]; then
         fixture_count=$(find Tests/Functional/Fixtures/ -name "*.csv" -o -name "*.xml" 2>/dev/null | wc -l)
         echo "  - ✅ Tests/Functional/Fixtures/ found (${fixture_count} fixture files)"
     else
-        if [ $func_test_count -gt 0 ]; then
+        if [ "$func_test_count" -gt 0 ]; then
             echo "  - ⚠️  No Tests/Functional/Fixtures/ (functional tests may need fixtures)"
         fi
     fi
@@ -173,13 +173,13 @@ if [ -d "Classes" ]; then
     echo "- **Total Classes:** $class_count"
     echo "- **Total Tests:** $total_tests"
 
-    if [ $class_count -gt 0 ]; then
+    if [ "$class_count" -gt 0 ]; then
         coverage_ratio=$((total_tests * 100 / class_count))
         echo "- **Test Ratio:** ${coverage_ratio}%"
 
-        if [ $coverage_ratio -ge 70 ]; then
+        if [ "$coverage_ratio" -ge 70 ]; then
             echo "  - ✅ Good test coverage (≥70%)"
-        elif [ $coverage_ratio -ge 50 ]; then
+        elif [ "$coverage_ratio" -ge 50 ]; then
             echo "  - ⚠️  Moderate test coverage (50-70%)"
         else
             echo "  - ❌ Low test coverage (<50%)"
@@ -211,7 +211,7 @@ echo ""
 echo "### Summary"
 echo ""
 
-if [ $has_issues -eq 0 ]; then
+if [ "$has_issues" -eq 0 ]; then
     echo "- ✅ **Testing Standards: PASSED**"
 else
     echo "- ⚠️  **Testing Standards: ISSUES FOUND**"

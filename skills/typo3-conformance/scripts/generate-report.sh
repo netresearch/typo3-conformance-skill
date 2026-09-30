@@ -19,12 +19,12 @@ cd "${PROJECT_DIR}"
 TOTAL_SCORE=$((STRUCTURE_SCORE + CODING_SCORE + ARCH_SCORE + TEST_SCORE + 10))
 
 # Update summary table
-sed -i "s/| Extension Architecture .*/| Extension Architecture | ${STRUCTURE_SCORE}\/20 | $(if [ ${STRUCTURE_SCORE} -ge 15 ]; then echo "✅ Passed"; else echo "⚠️  Issues"; fi) |/" "${REPORT_FILE}"
-sed -i "/| Extension Architecture /a | Coding Guidelines | ${CODING_SCORE}/20 | $(if [ ${CODING_SCORE} -ge 15 ]; then echo "✅ Passed"; else echo "⚠️  Issues"; fi) |" "${REPORT_FILE}" 2>/dev/null || true
-sed -i "/| Coding Guidelines /a | PHP Architecture | ${ARCH_SCORE}/20 | $(if [ ${ARCH_SCORE} -ge 15 ]; then echo "✅ Passed"; else echo "⚠️  Issues"; fi) |" "${REPORT_FILE}" 2>/dev/null || true
-sed -i "/| PHP Architecture /a | Testing Standards | ${TEST_SCORE}/20 | $(if [ ${TEST_SCORE} -ge 15 ]; then echo "✅ Passed"; else echo "⚠️  Issues"; fi) |" "${REPORT_FILE}" 2>/dev/null || true
+sed -i "s/| Extension Architecture .*/| Extension Architecture | ${STRUCTURE_SCORE}\/20 | $(if [ "${STRUCTURE_SCORE}" -ge 15 ]; then echo "✅ Passed"; else echo "⚠️  Issues"; fi) |/" "${REPORT_FILE}"
+sed -i "/| Extension Architecture /a | Coding Guidelines | ${CODING_SCORE}/20 | $(if [ "${CODING_SCORE}" -ge 15 ]; then echo "✅ Passed"; else echo "⚠️  Issues"; fi) |" "${REPORT_FILE}" 2>/dev/null || true
+sed -i "/| Coding Guidelines /a | PHP Architecture | ${ARCH_SCORE}/20 | $(if [ "${ARCH_SCORE}" -ge 15 ]; then echo "✅ Passed"; else echo "⚠️  Issues"; fi) |" "${REPORT_FILE}" 2>/dev/null || true
+sed -i "/| PHP Architecture /a | Testing Standards | ${TEST_SCORE}/20 | $(if [ "${TEST_SCORE}" -ge 15 ]; then echo "✅ Passed"; else echo "⚠️  Issues"; fi) |" "${REPORT_FILE}" 2>/dev/null || true
 sed -i "/| Testing Standards /a | Best Practices | 10/20 | ℹ️  Partial |" "${REPORT_FILE}" 2>/dev/null || true
-sed -i "/| Best Practices /a | **TOTAL** | **${TOTAL_SCORE}/100** | $(if [ ${TOTAL_SCORE} -ge 80 ]; then echo "✅ Excellent"; elif [ ${TOTAL_SCORE} -ge 60 ]; then echo "✅ Good"; else echo "⚠️  Fair"; fi) |" "${REPORT_FILE}" 2>/dev/null || true
+sed -i "/| Best Practices /a | **TOTAL** | **${TOTAL_SCORE}/100** | $(if [ "${TOTAL_SCORE}" -ge 80 ]; then echo "✅ Excellent"; elif [ "${TOTAL_SCORE}" -ge 60 ]; then echo "✅ Good"; else echo "⚠️  Fair"; fi) |" "${REPORT_FILE}" 2>/dev/null || true
 
 # Add final sections
 cat >> "${REPORT_FILE}" <<EOF
@@ -54,7 +54,7 @@ cat >> "${REPORT_FILE}" <<EOF
 
 **Total Score: ${TOTAL_SCORE}/100**
 
-$(if [ ${TOTAL_SCORE} -ge 80 ]; then
+$(if [ "${TOTAL_SCORE}" -ge 80 ]; then
 cat <<END
 ### ✅ EXCELLENT Conformance Level
 
@@ -71,7 +71,7 @@ Your TYPO3 extension demonstrates strong adherence to official standards and bes
 - Keep dependencies updated
 - Monitor code coverage trends
 END
-elif [ ${TOTAL_SCORE} -ge 60 ]; then
+elif [ "${TOTAL_SCORE}" -ge 60 ]; then
 cat <<END
 ### ✅ GOOD Conformance Level
 
@@ -107,15 +107,15 @@ fi)
 ## Quick Action Checklist
 
 ### High Priority (Fix Now)
-$(if [ ${STRUCTURE_SCORE} -lt 15 ]; then echo "- [ ] Fix critical file structure issues (missing required files/directories)"; fi)
+$(if [ "${STRUCTURE_SCORE}" -lt 15 ]; then echo "- [ ] Fix critical file structure issues (missing required files/directories)"; fi)
 $(if grep -q "GeneralUtility::makeInstance" Classes/ 2>/dev/null; then echo "- [ ] Migrate GeneralUtility::makeInstance to constructor injection"; fi)
-$(if grep -q '\$GLOBALS\[' Classes/ 2>/dev/null; then echo "- [ ] Remove \$GLOBALS access, use dependency injection"; fi)
+$(if grep -q "\\\$GLOBALS\\[" Classes/ 2>/dev/null; then echo "- [ ] Remove \$GLOBALS access, use dependency injection"; fi)
 $(if [ ! -f "Configuration/Services.yaml" ]; then echo "- [ ] Add Configuration/Services.yaml with DI configuration"; fi)
 
 ### Medium Priority (Fix Soon)
-$(if [ ${CODING_SCORE} -lt 15 ]; then echo "- [ ] Add declare(strict_types=1) to all PHP files"; fi)
-$(if [ ${CODING_SCORE} -lt 15 ]; then echo "- [ ] Replace array() with [] short syntax"; fi)
-$(if [ ${TEST_SCORE} -lt 15 ]; then echo "- [ ] Add unit tests for untested classes"; fi)
+$(if [ "${CODING_SCORE}" -lt 15 ]; then echo "- [ ] Add declare(strict_types=1) to all PHP files"; fi)
+$(if [ "${CODING_SCORE}" -lt 15 ]; then echo "- [ ] Replace array() with [] short syntax"; fi)
+$(if [ "${TEST_SCORE}" -lt 15 ]; then echo "- [ ] Add unit tests for untested classes"; fi)
 $(if [ ! -d "Tests/Functional" ]; then echo "- [ ] Add functional tests for repositories"; fi)
 
 ### Low Priority (Improve When Possible)

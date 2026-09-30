@@ -91,7 +91,6 @@ EOF
 
 # Initialize scores
 total_score=0
-max_score=100
 
 echo -e "${YELLOW}Running conformance checks...${NC}"
 echo ""
