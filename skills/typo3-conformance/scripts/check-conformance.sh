@@ -162,14 +162,15 @@ else
 fi
 echo ""
 
+# Calculate total (including all scores)
+total_score=$((structure_score + docs_score + coding_score + arch_score + test_score + baseline_score))
+
 # 7. Generate comprehensive report
 echo -e "${BLUE}[7/7] Generating final report...${NC}"
 bash "${SCRIPT_DIR}/generate-report.sh" "${PROJECT_DIR}" "${REPORT_FILE}" \
-    "${structure_score}" "${coding_score}" "${arch_score}" "${test_score}"
+    "${structure_score}" "${coding_score}" "${arch_score}" "${test_score}" \
+    "${docs_score}" "${baseline_score}" "${total_score}"
 echo ""
-
-# Calculate total (including all scores)
-total_score=$((structure_score + docs_score + coding_score + arch_score + test_score + baseline_score))
 
 # Display summary
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"

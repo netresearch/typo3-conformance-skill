@@ -6,25 +6,62 @@
 
 set -e
 
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <extension-dir> <report-file> [structure coding architecture testing documentation baseline total]" >&2
+    echo "Called by check-conformance.sh, which writes the report header first." >&2
+    exit 2
+fi
+
 PROJECT_DIR="${1}"
 REPORT_FILE="${2}"
-STRUCTURE_SCORE="${3:-15}"
-CODING_SCORE="${4:-15}"
-ARCH_SCORE="${5:-15}"
-TEST_SCORE="${6:-15}"
+STRUCTURE_SCORE="${3:-0}"
+CODING_SCORE="${4:-0}"
+ARCH_SCORE="${5:-0}"
+TEST_SCORE="${6:-0}"
+DOCS_SCORE="${7:-0}"
+BASELINE_SCORE="${8:-0}"
+# The total is computed by check-conformance.sh; the fallback uses the same sum.
+TOTAL_SCORE="${9:-$((STRUCTURE_SCORE + DOCS_SCORE + CODING_SCORE + ARCH_SCORE + TEST_SCORE + BASELINE_SCORE))}"
 
 cd "${PROJECT_DIR}"
 
-# Calculate total
-TOTAL_SCORE=$((STRUCTURE_SCORE + CODING_SCORE + ARCH_SCORE + TEST_SCORE + 10))
+# One summary row: category, score, maximum (the maxima check-conformance.sh awards)
+summary_row() {
+    local status="⚠️  Issues"
+    if [ "$2" -ge "$3" ]; then
+        status="✅ Passed"
+    fi
+    echo "| $1 | $2/$3 | ${status} |"
+}
 
-# Update summary table
-sed -i "s/| Extension Architecture .*/| Extension Architecture | ${STRUCTURE_SCORE}\/20 | $(if [ "${STRUCTURE_SCORE}" -ge 15 ]; then echo "✅ Passed"; else echo "⚠️  Issues"; fi) |/" "${REPORT_FILE}"
-sed -i "/| Extension Architecture /a | Coding Guidelines | ${CODING_SCORE}/20 | $(if [ "${CODING_SCORE}" -ge 15 ]; then echo "✅ Passed"; else echo "⚠️  Issues"; fi) |" "${REPORT_FILE}" 2>/dev/null || true
-sed -i "/| Coding Guidelines /a | PHP Architecture | ${ARCH_SCORE}/20 | $(if [ "${ARCH_SCORE}" -ge 15 ]; then echo "✅ Passed"; else echo "⚠️  Issues"; fi) |" "${REPORT_FILE}" 2>/dev/null || true
-sed -i "/| PHP Architecture /a | Testing Standards | ${TEST_SCORE}/20 | $(if [ "${TEST_SCORE}" -ge 15 ]; then echo "✅ Passed"; else echo "⚠️  Issues"; fi) |" "${REPORT_FILE}" 2>/dev/null || true
-sed -i "/| Testing Standards /a | Best Practices | 10/20 | ℹ️  Partial |" "${REPORT_FILE}" 2>/dev/null || true
-sed -i "/| Best Practices /a | **TOTAL** | **${TOTAL_SCORE}/100** | $(if [ "${TOTAL_SCORE}" -ge 80 ]; then echo "✅ Excellent"; elif [ "${TOTAL_SCORE}" -ge 60 ]; then echo "✅ Good"; else echo "⚠️  Fair"; fi) |" "${REPORT_FILE}" 2>/dev/null || true
+if [ "${TOTAL_SCORE}" -ge 80 ]; then
+    total_status="✅ Excellent"
+elif [ "${TOTAL_SCORE}" -ge 60 ]; then
+    total_status="✅ Good"
+else
+    total_status="⚠️  Fair"
+fi
+
+summary_rows="$(
+    summary_row "File Structure" "${STRUCTURE_SCORE}" 18
+    summary_row "Documentation" "${DOCS_SCORE}" 10
+    summary_row "Coding Standards" "${CODING_SCORE}" 18
+    summary_row "PHP Architecture" "${ARCH_SCORE}" 18
+    summary_row "Testing Standards" "${TEST_SCORE}" 16
+    summary_row "Baseline Hygiene" "${BASELINE_SCORE}" 10
+    echo "| **TOTAL** | **${TOTAL_SCORE}/100** | ${total_status} |"
+)"
+
+# Fill the summary table: insert the rows after the first table separator
+# that follows the "## Summary" heading written by check-conformance.sh
+tmp_report="$(mktemp)"
+awk -v rows="${summary_rows}" '
+    /^## Summary$/ { in_summary = 1 }
+    { print }
+    in_summary && !done && /^\|-+\|-+\|-+\|$/ { print rows; done = 1 }
+' "${REPORT_FILE}" > "${tmp_report}"
+cat "${tmp_report}" > "${REPORT_FILE}"
+rm -f "${tmp_report}"
 
 # Add final sections
 cat >> "${REPORT_FILE}" <<EOF
@@ -108,8 +145,8 @@ fi)
 
 ### High Priority (Fix Now)
 $(if [ "${STRUCTURE_SCORE}" -lt 15 ]; then echo "- [ ] Fix critical file structure issues (missing required files/directories)"; fi)
-$(if grep -q "GeneralUtility::makeInstance" Classes/ 2>/dev/null; then echo "- [ ] Migrate GeneralUtility::makeInstance to constructor injection"; fi)
-$(if grep -q "\\\$GLOBALS\\[" Classes/ 2>/dev/null; then echo "- [ ] Remove \$GLOBALS access, use dependency injection"; fi)
+$(if grep -rq "GeneralUtility::makeInstance" Classes/ 2>/dev/null; then echo "- [ ] Migrate GeneralUtility::makeInstance to constructor injection"; fi)
+$(if grep -rq "\\\$GLOBALS\\[" Classes/ 2>/dev/null; then echo "- [ ] Remove \$GLOBALS access, use dependency injection"; fi)
 $(if [ ! -f "Configuration/Services.yaml" ]; then echo "- [ ] Add Configuration/Services.yaml with DI configuration"; fi)
 
 ### Medium Priority (Fix Soon)
