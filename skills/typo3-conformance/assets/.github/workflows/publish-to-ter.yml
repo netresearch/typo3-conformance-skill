@@ -60,11 +60,13 @@ jobs:
           # Append release link on new line
           COMMENT="${COMMENT}"$'\n\n'"Details: ${RELEASE_URL}"
 
-          # Set GitHub Actions output (HEREDOC preserves newlines)
+          # Set GitHub Actions output (HEREDOC preserves newlines). A random
+          # delimiter, so a line "EOF" in the release notes cannot end it early.
+          DELIMITER="EOF_$(openssl rand -hex 8)"
           {
-            echo "comment<<EOF"
+            echo "comment<<${DELIMITER}"
             echo "${COMMENT}"
-            echo "EOF"
+            echo "${DELIMITER}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Setup PHP

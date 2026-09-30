@@ -192,7 +192,7 @@ Always attach the value with `=` and pass it through `env:`:
   run: tailor ter:publish --comment="$COMMENT" "$VERSION"
 ```
 
-`--comment "$COMMENT"` (value as a separate word) breaks as soon as the comment starts with `-` — which release notes and `git log --format='- %s'` output almost always do. tailor's Symfony Console parser declares `--comment` with an optional value and does not take a following word that starts with `-` as that value; it parses it as an option and aborts with `The "- " option does not exist.` Stripping `#*+=~^|\<>` does not help, because `-` is an allowed character. `${{ }}` directly inside `run:` is a second defect: a quote in the release notes breaks the command or injects into it.
+`--comment "$COMMENT"` (value as a separate word) breaks as soon as the comment starts with `-` — which release notes and `git log --format='- %s'` output almost always do. tailor declares `--comment` with an optional value (`[--comment [COMMENT]]`), and Symfony Console does not take a following word that starts with `-` as that value; it parses the word as an option and aborts with `The "- " option does not exist.` Stripping `#*+=~^|\<>` does not help, because `-` is an allowed character. `${{ }}` directly inside `run:` is a second defect: a quote in the release notes breaks the command or injects into it.
 
 Check the call, not only the step that builds the comment: running `tailor ter:publish --comment="$COMMENT" 0.0.0` outside an extension directory parses the arguments first and only then fails on the missing `ext_emconf.php`, so an option error shows without any token or upload.
 
@@ -301,12 +301,14 @@ jobs:
 
 Details: ${RELEASE_URL}"
 
-          # Escape for GitHub Actions output (preserve newlines)
+          # Escape for GitHub Actions output (preserve newlines). A random
+          # delimiter, so a line "EOF" in the release notes cannot end it early.
+          DELIMITER="EOF_$(openssl rand -hex 8)"
           {
-            echo "comment<<EOF"
+            echo "comment<<${DELIMITER}"
             echo "${COMMENT}"
-            echo "EOF"
-          } >> $GITHUB_OUTPUT
+            echo "${DELIMITER}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
