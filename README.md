@@ -1290,6 +1290,46 @@ Contributions are welcome! Please follow these guidelines:
 6. Push to the branch (`git push origin feature/improvement`)
 7. Create a Pull Request
 
+The commands for working on this repository are listed in [AGENTS.md](AGENTS.md#commands).
+
+### Tests
+
+`python3 tests/test_scripts.py` runs the behaviour tests for the shipped scripts. It needs Python 3 (standard library only), Bash and Git. Each test builds a small TYPO3 extension or Git repository in a temporary directory, runs one script as a subprocess and checks its exit code and output:
+
+- the six check scripts under `skills/typo3-conformance/scripts/`: a conformant extension passes, and each defect they look for (missing files and directories, `$GLOBALS` access, `GeneralUtility::makeInstance()` outside tasks and form elements, missing `strict_types`, `array()`, a low test ratio, a grown PHPStan baseline, root PHP files) is reported with a non-zero exit code;
+- `check-conformance.sh` and `generate-report.sh`: relative and absolute target paths, rejected targets, the summary table and the action checklist of the written report;
+- `Build/Scripts/check-plugin-version.sh` and `scripts/verify-harness.sh`.
+
+A failure prints the test name and the failed assertion; most assertions include the script's output. CI runs the suite on every pull request and every push to `main` through [`.github/workflows/tests.yml`](.github/workflows/tests.yml). New or changed script behaviour needs a test in `tests/test_scripts.py` in the same pull request.
+
+`pre-commit run --all-files` runs the hooks of [`.pre-commit-config.yaml`](.pre-commit-config.yaml) locally (skill validator, version parity, markdownlint, yamllint, actionlint, Ruff, ShellCheck); Skill Validation runs the same linters in CI.
+
+### Dependencies
+
+- **Scripts:** Bash and the standard tools `grep`, `find`, `awk`, `sed` and `git`; `check-plugin-version.sh` also uses `python3`. Nothing is installed at run time.
+- **Tests:** Python 3 standard library only.
+- **Composer:** `composer.json` requires `netresearch/composer-agent-skill-plugin`, which installs the skill into a PHP project. The constraint is `*`, and no `composer.lock` is committed, so the latest release is resolved at install time.
+- **Development tools:** the pre-commit hooks are pinned by `rev:` in `.pre-commit-config.yaml`. Renovate ([`renovate.json`](renovate.json), `config:recommended` with the pre-commit manager enabled) proposes updates for them.
+- **CI:** the workflows call reusable workflows of `netresearch/.github`, `netresearch/skill-repo-skill` and `netresearch/typo3-ci-workflows`, which pin the actions they use by commit SHA.
+- **Templates:** the tools configured by the files under `skills/typo3-conformance/assets/` (PHPStan, Rector, PHP-CS-Fixer, ESLint, Stylelint, TypoScript lint, composer-unused) are dependencies of the extension that copies them, not of this repository.
+
+## Governance and policies
+
+This repository follows the Netresearch organisation policies:
+
+- [Governance](https://github.com/netresearch/.github/blob/main/GOVERNANCE.md): ownership, roles, and how decisions are made and disputes resolved.
+- [Roadmap](https://github.com/netresearch/.github/blob/main/ROADMAP.md): planned and explicitly excluded work for the coming year.
+- [Handling of dependency and code analysis findings](https://github.com/netresearch/.github/blob/main/SECURITY.md#handling-of-dependency-and-code-analysis-findings): thresholds, deadlines and the exception process for dependency (SCA) and static analysis (SAST) findings.
+- [Secret management](https://github.com/netresearch/.github/blob/main/SECURITY.md#secret-management): how CI and release credentials are stored, accessed and rotated.
+- [Access roster](https://github.com/netresearch/.github/blob/main/docs/access-roster.md): who holds administrative access to this repository and the organisation.
+
+The security assurance case for this skill (threat model, trust boundaries, countermeasures and limits) is in [docs/SECURITY-ASSURANCE.md](docs/SECURITY-ASSURANCE.md).
+
+Checks that run on pull requests in this repository:
+
+- Every pull request: Skill Validation (`lint.yml`: skill structure, manifest and version sync, markdownlint, yamllint, actionlint, JSON syntax, ShellCheck, Ruff, checkpoint schema), Eval Validation (`eval-validate.yml`) and Skill Tests (`tests.yml`: `tests/test_scripts.py`).
+- Pull requests to `main`: `security.yml` with Betterleaks (secret scanning), zizmor (workflow static analysis), dependency review (fails on vulnerabilities of severity high or above), Composer Audit and Opengrep SAST (fails on findings of severity WARNING or above); Harness Verification (`harness-verify.yml`) and Template Drift (`check-template-drift.yml`).
+
 ## License
 
 This project uses split licensing:

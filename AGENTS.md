@@ -13,17 +13,19 @@ typo3-conformance-skill/
 │   ├── SKILL.md                 # Skill metadata and trigger patterns
 │   ├── checkpoints.yaml         # Conformance checkpoints
 │   ├── scripts/                 # Check scripts (architecture, coding, file structure, etc.)
-│   ├── references/              # 22 reference guides (coding, architecture, TCA, etc.)
+│   ├── references/              # 24 reference guides (coding, architecture, TCA, etc.)
 │   └── assets/                  # Static assets
 ├── commands/                    # Slash commands
 │   └── check.md                 # /check command definition
 ├── evals/                       # Skill evaluation tests
 ├── outputStyles/                # Report output formatting
 ├── Build/                       # Build utilities
-├── .github/workflows/           # CI (lint.yml, release.yml, auto-merge-deps.yml)
+├── .github/workflows/           # CI (lint, tests, security, evals, harness, release, ...)
+├── tests/                       # Behaviour tests for the shipped scripts
 ├── composer.json                # PHP package definition
 └── docs/                        # Architecture and planning docs
-    └── ARCHITECTURE.md          # Architecture overview
+    ├── ARCHITECTURE.md          # Architecture overview
+    └── SECURITY-ASSURANCE.md    # Security assurance case
 ```
 
 ## Commands
@@ -38,7 +40,8 @@ No Makefile or build scripts defined. Key operations:
 - Check testing setup: `bash skills/typo3-conformance/scripts/check-testing.sh`
 - Check documentation: `bash skills/typo3-conformance/scripts/check-documentation.sh`
 - Check PHPStan baseline: `bash skills/typo3-conformance/scripts/check-phpstan-baseline.sh`
-- Generate report: `bash skills/typo3-conformance/scripts/generate-report.sh`
+- Generate report: `bash skills/typo3-conformance/scripts/generate-report.sh <extension-dir> <report-file> [scores...]` (called by check-conformance.sh)
+- Run the script tests: `python3 tests/test_scripts.py`
 - Verify harness maturity: `bash scripts/verify-harness.sh --format=text --status`
 
 ## Rules
@@ -57,6 +60,7 @@ No Makefile or build scripts defined. Key operations:
 
 - [SKILL.md](skills/typo3-conformance/SKILL.md) -- skill definition and trigger patterns
 - [checkpoints.yaml](skills/typo3-conformance/checkpoints.yaml) -- conformance checkpoints
-- [references/](skills/typo3-conformance/references/) -- 22 reference guides
+- [references/](skills/typo3-conformance/references/) -- 24 reference guides
 - [commands/check.md](commands/check.md) -- /check command definition
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) -- architecture overview
+- [docs/SECURITY-ASSURANCE.md](docs/SECURITY-ASSURANCE.md) -- security assurance case
