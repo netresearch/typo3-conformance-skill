@@ -648,5 +648,38 @@
         "description": "Identifies v13-deprecated APIs that are removed in v14"
       }
     ]
+  },
+  {
+    "name": "ter-publish-comment-option-form",
+    "prompt": "Review our TER publish step: it runs on push of a tag and calls `tailor ter:publish --comment \"${{ github.event.release.body }}\" \"$VERSION\"`. Is that fine?",
+    "assertions": [
+      {
+        "type": "content_regex",
+        "value": "--comment=",
+        "description": "Attaches the value with = so a comment starting with '-' is not parsed as an option"
+      },
+      {
+        "type": "content_regex",
+        "value": "option does not exist|parsed as (an )?option|(leading|starts? with|begins? with) (a )?[\"'`]?-",
+        "description": "Explains the leading-dash failure of a separately passed value"
+      },
+      {
+        "type": "content_regex",
+        "value": "push.{0,40}(tag|trigger)|tag.{0,40}push",
+        "description": "Notes that github.event.release is empty on a tag-push trigger"
+      },
+      {
+        "type": "content_regex",
+        "value": "env:",
+        "description": "Moves the value into env: instead of ${{ }} inside run:"
+      }
+    ],
+    "samples": {
+      "passing": "Two problems. The workflow runs on push of a tag, where github.event.release does not exist, so the comment is always empty and TER rejects it; take it from the CHANGELOG or the commits since the previous tag. And release notes usually start with a bullet, so a value that starts with '-' passed as a separate word is parsed as an option: 'The \"- \" option does not exist.' Put the comment into env: and call tailor ter:publish --comment=\"$COMMENT\" \"$VERSION\".",
+      "failing": [
+        "Looks fine. Quote the release body and pass it with --comment \"$BODY\" so spaces survive.",
+        "Move the comment into env: so ${{ }} is not expanded inside run:, then call tailor ter:publish --comment \"$COMMENT\" \"$VERSION\"."
+      ]
+    }
   }
 ]
