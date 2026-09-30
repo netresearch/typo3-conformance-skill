@@ -17,9 +17,6 @@ NC='\033[0m'
 
 # Configuration
 PROJECT_DIR="${1:-.}"
-REPORT_DIR="${PROJECT_DIR}/.conformance-reports"
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-REPORT_FILE="${REPORT_DIR}/conformance_${TIMESTAMP}.md"
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -35,14 +32,17 @@ echo -e "  • PSR Standard:  ${YELLOW}PSR-12 (Extended Coding Style)${NC}"
 echo -e "  • Architecture:  ${YELLOW}Dependency Injection, PSR-14 Events${NC}"
 echo ""
 
-# Create report directory
-mkdir -p "${REPORT_DIR}"
-
-# Check if directory exists
+# Check if directory exists (before anything is written into it)
 if [ ! -d "${PROJECT_DIR}" ]; then
     echo -e "${RED}✗ Error: Directory ${PROJECT_DIR} not found${NC}"
     exit 1
 fi
+
+# Resolve to an absolute path: the sub-scripts receive it after the cd below
+PROJECT_DIR="$(cd "${PROJECT_DIR}" && pwd)"
+REPORT_DIR="${PROJECT_DIR}/.conformance-reports"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+REPORT_FILE="${REPORT_DIR}/conformance_${TIMESTAMP}.md"
 
 cd "${PROJECT_DIR}"
 
@@ -56,7 +56,8 @@ echo -e "${GREEN}✓ TYPO3 Extension detected${NC}"
 echo ""
 
 # Initialize report
-cat > "${REPORT_FILE}" <<'EOF'
+mkdir -p "${REPORT_DIR}"
+cat > "${REPORT_FILE}" <<EOF
 # TYPO3 Extension Conformance Report
 
 **Generated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
