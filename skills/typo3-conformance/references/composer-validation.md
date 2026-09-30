@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Composer.json Validation Standards (TYPO3 v13)
 
 **Source:** TYPO3 Core API Reference v13.4 - FileStructure/ComposerJson.html

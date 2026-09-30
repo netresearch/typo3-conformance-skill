@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # TYPO3 Crowdin Integration Validation
 
 **Purpose**: Validate TYPO3 extension Crowdin integration against official TYPO3 standards for centralized translation management.
@@ -641,19 +644,19 @@ def find_untranslated(lang_files):
     for filepath in lang_files:
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
-        
+
         # Extract source/target pairs
         units = re.findall(
             r'<trans-unit id="([^"]+)"[^>]*>.*?<source>([^<]+)</source>\s*<target>([^<]+)</target>.*?</trans-unit>',
             content,
             re.DOTALL
         )
-        
+
         untranslated = []
         for unit_id, source, target in units:
             if source.strip() == target.strip():
                 untranslated.append((unit_id, source.strip()))
-        
+
         if untranslated:
             print(f"{filepath.name}: {len(untranslated)} untranslated")
             for unit_id, text in untranslated[:3]:
@@ -741,14 +744,14 @@ from pathlib import Path
 for filepath in Path('Resources/Private/Language').glob('*.locallang_be.xlf'):
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     # Add state="translated" to targets without it
     new_content = re.sub(
         r'<target(?![^>]*state=)([^>]*)>',
         r'<target state="translated"\1>',
         content
     )
-    
+
     if new_content != content:
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(new_content)
@@ -775,7 +778,7 @@ Some formatting differences cannot be prevented:
 ```diff
 - <file source-language="en" target-language="de" datatype="plaintext">
 + <file source-language="en" datatype="plaintext" target-language="de">
-  
+
 - <target>Translated text</target>
 + <target state="translated">Translated text</target>
 

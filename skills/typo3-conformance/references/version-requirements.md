@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # TYPO3 and PHP Version Requirements
 
 **Purpose:** Definitive version compatibility matrix for TYPO3 conformance checking

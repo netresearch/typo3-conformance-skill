@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # TYPO3 v13 Backend Module Modernization
 
 **Purpose:** Comprehensive guide for modernizing TYPO3 backend modules to v13 LTS standards

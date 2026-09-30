@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # TYPO3 Extension Conformance Checker
 
 A comprehensive Claude Code skill for evaluating TYPO3 extensions against official TYPO3 coding standards, architecture patterns, and best practices.

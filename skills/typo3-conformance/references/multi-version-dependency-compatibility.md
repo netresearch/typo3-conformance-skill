@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Multi-Version Dependency Compatibility
 
 > **Source**: Real-world conformance findings from extensions supporting multiple major versions of dependencies (e.g., `intervention/image ^3 || ^4`, `psr/http-message ^1 || ^2`)

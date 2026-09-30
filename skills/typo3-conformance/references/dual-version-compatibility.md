@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Dual Version (v12 + v13) Compatibility Patterns
 
 > **Source**: conformance work on a production TYPO3 extension for 12.4 + 13.4 LTS (2024-12)

@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # runTests.sh Validation Guide
 
 **Purpose:** Validate Build/Scripts/runTests.sh against TYPO3 Best Practices (Tea extension reference)

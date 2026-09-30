@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # TYPO3 Hooks and PSR-14 Events
 
 **Source:** TYPO3 Core API Reference - Hooks, Events, and Signals

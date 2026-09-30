@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
 
 # TYPO3 Extension Conformance Checker - PHPStan Baseline Validation
 # Verifies that new code does not add errors to phpstan-baseline.neon

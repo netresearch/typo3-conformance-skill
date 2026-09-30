@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Dual Version (v13 + v14) Compatibility Patterns
 
 > **Companion to:** `dual-version-compatibility.md` (v12 + v13).

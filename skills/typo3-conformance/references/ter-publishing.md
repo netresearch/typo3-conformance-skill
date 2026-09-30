@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # TER Publishing Reference
 
 **Purpose:** Document requirements and best practices for publishing TYPO3 extensions to the TER (TYPO3 Extension Repository)

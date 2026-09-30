@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # TYPO3 v14 Removals & Deprecations — Conformance Reference
 
 **Canonical owner:** This file is the canonical v13/v14 breaking-change fact catalog. Other skills (`typo3-extension-upgrade`, `typo3-upgrade-effort-model`, etc.) cross-link here instead of restating the fact lists — see the fact-ownership rule in `skill-repo-skill` `skills/skill-repo/references/skill-quality.md` ("Fact and trigger ownership"). When a new TYPO3 release changes these facts, edit only this file.

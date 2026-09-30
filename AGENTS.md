@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # TYPO3 Conformance Skill
 
 Comprehensive TYPO3 extension conformance checker against official coding standards, architecture patterns, and best practices.
