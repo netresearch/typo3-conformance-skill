@@ -1370,9 +1370,7 @@ This skill is built upon the foundational work of the TYPO3 community. We gratef
 
 ---
 
-**Version:** 1.12.0
 **Maintained By:** Netresearch DTT GmbH
-**Last Updated:** 2025-12-02
 
 ---
 
