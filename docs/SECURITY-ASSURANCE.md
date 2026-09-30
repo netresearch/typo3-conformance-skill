@@ -50,7 +50,7 @@ Boundary 1 lies between the scripts and the analysed extension: extension conten
 
 ### 3. Delivered content is the reviewed content
 
-- Releases are built by `.github/workflows/release.yml`, which calls the `netresearch/skill-repo-skill` release workflow with `id-token: write` and `attestations: write` for Sigstore signing and GitHub attestations, as its header comment states.
+- Releases are built by `.github/workflows/release.yml`, which calls the `netresearch/skill-repo-skill` release workflow with `id-token: write` and `attestations: write`. That workflow signs `SHA256SUMS.txt` keyless with `cosign sign-blob` and attests the release archives and checksums with `actions/attest-build-provenance`.
 - `Build/hooks/pre-push` runs `Build/Scripts/check-plugin-version.sh`, which refuses a push where a semver tag at `HEAD` disagrees with the version in `.claude-plugin/plugin.json`. The shared Skill Validation job checks that `SKILL.md`, `plugin.json` and `.claude-plugin/plugin.json` carry the same version.
 - `.github/workflows/scorecard.yml` runs OpenSSF Scorecard on `main` and weekly.
 
