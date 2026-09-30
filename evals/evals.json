@@ -648,5 +648,26 @@
         "description": "Identifies v13-deprecated APIs that are removed in v14"
       }
     ]
+  },
+  {
+    "name": "ter-publish-comment-option-form",
+    "prompt": "Review our TER publish step: it runs on push of a tag and calls `tailor ter:publish --comment \"${{ github.event.release.body }}\" \"$VERSION\"`. Is that fine?",
+    "assertions": [
+      {
+        "type": "content_contains",
+        "value": "--comment=",
+        "description": "Recommends attaching the value with = so a comment starting with '-' is not parsed as an option"
+      },
+      {
+        "type": "content_contains",
+        "value": "push",
+        "description": "Notes that github.event.release is empty on a tag-push trigger"
+      },
+      {
+        "type": "content_contains",
+        "value": "env",
+        "description": "Moves the value into env: instead of ${{ }} inside run:"
+      }
+    ]
   }
 ]

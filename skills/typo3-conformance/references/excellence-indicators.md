@@ -437,10 +437,13 @@ jobs:
         with:
           php-version: '8.3'
       - run: composer global require typo3/tailor
-      - run: |
+      - env:
+          COMMENT: ${{ github.event.release.body || github.event.release.name }}
+        run: |
           VERSION="${GITHUB_REF_NAME#v}"
           tailor set-version "$VERSION"
-          tailor ter:publish --comment "${{ github.event.release.body }}" "$VERSION"
+          # "=" keeps a comment starting with "-" attached (see ter-publishing.md)
+          tailor ter:publish --comment="${COMMENT:-Released version $VERSION}" "$VERSION"
 ```
 
 **Upload Comment Format:**

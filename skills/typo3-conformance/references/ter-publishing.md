@@ -178,12 +178,33 @@ run: |
   fi
 ```
 
+**`github.event.release` only exists when the workflow runs `on: release`.** Under `on: push: tags` it is absent, the expression evaluates to an empty string, and without a fallback tailor sends an empty comment, which TER rejects. A tag-triggered workflow needs another source (the matching `CHANGELOG.md` section, or the commit subjects since the previous tag) and must still never end up empty.
+
+### Passing the comment to tailor
+
+Always attach the value with `=` and pass it through `env:`:
+
+```yaml
+- name: Publish to TER
+  env:
+    VERSION: ${{ steps.version.outputs.version }}
+    COMMENT: ${{ steps.comment.outputs.comment }}
+  run: tailor ter:publish --comment="$COMMENT" "$VERSION"
+```
+
+`--comment "$COMMENT"` (value as a separate word) breaks as soon as the comment starts with `-` — which release notes and `git log --format='- %s'` output almost always do. tailor's Symfony Console parser declares `--comment` with an optional value and does not take a following word that starts with `-` as that value; it parses it as an option and aborts with `The "- " option does not exist.` Stripping `#*+=~^|\<>` does not help, because `-` is an allowed character. `${{ }}` directly inside `run:` is a second defect: a quote in the release notes breaks the command or injects into it.
+
+Check the call, not only the step that builds the comment: running `tailor ter:publish --comment="$COMMENT" 0.0.0` outside an extension directory parses the arguments first and only then fails on the missing `ext_emconf.php`, so an option error shows without any token or upload.
+
 ### Conformance Check
 
 When auditing extensions, verify `publish-to-ter.yml` uses:
-- ✅ `github.event.release.body` - Release notes (CORRECT)
+- ✅ `github.event.release.body` - Release notes (CORRECT, only under `on: release`)
 - ✅ `github.event.release.name` - Release title (fallback)
+- ❌ `github.event.release.*` in a workflow triggered `on: push: tags` (always empty)
 - ❌ `git tag -n1` - Tag/commit message (WRONG)
+- ✅ `--comment="$COMMENT"` with the value from `env:`
+- ❌ `--comment "$COMMENT"` or `--comment "${{ … }}"` (fails on a leading `-`; `${{ }}` in `run:` is injectable)
 
 ---
 
@@ -298,10 +319,13 @@ Details: ${RELEASE_URL}"
         run: composer global require typo3/tailor --prefer-dist --no-progress
 
       - name: Publish to TER
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          COMMENT: ${{ steps.comment.outputs.comment }}
         run: |
           TAILOR="$(composer global config bin-dir --absolute)/tailor"
-          "${TAILOR}" set-version "${{ steps.version.outputs.version }}"
-          "${TAILOR}" ter:publish --comment "${{ steps.comment.outputs.comment }}" "${{ steps.version.outputs.version }}"
+          "${TAILOR}" set-version "$VERSION"
+          "${TAILOR}" ter:publish --comment="$COMMENT" "$VERSION"
 ```
 
 ### Required Secrets
@@ -493,10 +517,12 @@ Details: https://github.com/vendor/extension/releases/tag/v2.0.0
 | Issue | Cause | Solution |
 |-------|-------|----------|
 | "No upload comment" error | Empty comment passed to tailor | Ensure fallback comment in workflow |
+| Empty comment although release notes exist | Workflow runs `on: push: tags`, where `github.event.release.body` does not exist | Take the comment from the CHANGELOG or the commits since the previous tag, or trigger `on: release` |
+| `The "- " option does not exist.` | Comment starts with `-` and was passed as a separate word (`--comment "$COMMENT"`) | Use `--comment="$COMMENT"` |
 | Special characters in XML feed | Unsupported chars in comment | Strip `#*+=~^\|\\<>` from comments |
 | Version mismatch | Tag doesn't match ext_emconf | Use `tailor set-version` before publish |
 | Authentication failed | Invalid/expired API token | Regenerate token at extensions.typo3.org |
-| Published with wrong / outdated upload comment | Publish ran before the release body was finalized | Re-run `tailor ter:publish --comment "..." vX.Y.Z` on the same version — TER overwrites the upload comment on republish. The ZIP contents are unchanged (the version number doesn't let you ship different code under the same version), only the comment updates. Safe to re-trigger the publish workflow after editing the GitHub release body. |
+| Published with wrong / outdated upload comment | Publish ran before the release body was finalized | Re-run `tailor ter:publish --comment="..." vX.Y.Z` on the same version — TER overwrites the upload comment on republish. The ZIP contents are unchanged (the version number doesn't let you ship different code under the same version), only the comment updates. Safe to re-trigger the publish workflow after editing the GitHub release body. |
 
 ### Validation Script
 
@@ -568,6 +594,7 @@ GitHub Actions Workflow -- Route B: standalone workflow (no reusable workflow av
 [ ] Extracts version correctly (strips 'v' prefix)
 [ ] Handles release body for comment
 [ ] Has fallback comment if body empty
+[ ] Passes the comment as --comment="$COMMENT" from env:, never as a separate word or via ${{ }} in run:
 [ ] Uses typo3/tailor for publishing
 [ ] Secrets properly configured
 

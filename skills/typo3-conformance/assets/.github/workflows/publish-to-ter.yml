@@ -78,7 +78,15 @@ jobs:
         run: composer global require typo3/tailor --prefer-dist --no-progress
 
       - name: Publish to TER
+        env:
+          # Through the environment, never ${{ }} inside the script: a quote
+          # in the release notes would otherwise break or inject into it.
+          VERSION: ${{ steps.version.outputs.version }}
+          COMMENT: ${{ steps.comment.outputs.comment }}
         run: |
           TAILOR="$(composer global config bin-dir --absolute)/tailor"
-          "${TAILOR}" set-version "${{ steps.version.outputs.version }}"
-          "${TAILOR}" ter:publish --comment "${{ steps.comment.outputs.comment }}" "${{ steps.version.outputs.version }}"
+          "${TAILOR}" set-version "$VERSION"
+          # --comment= keeps the value attached. Passed as a separate word,
+          # a comment starting with "-" (a Markdown bullet) is parsed as an
+          # option: 'The "- " option does not exist.'
+          "${TAILOR}" ter:publish --comment="$COMMENT" "$VERSION"
