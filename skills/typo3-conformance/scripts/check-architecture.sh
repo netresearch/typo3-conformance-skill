@@ -72,7 +72,7 @@ if [ "$total_makeinstance" -eq 0 ]; then
     echo "- ✅ No GeneralUtility::makeInstance() usage found"
 else
     # Count allowed exceptions (Form/Element/ and Task/)
-    allowed_makeinstance=$(grep -r "GeneralUtility::makeInstance" Classes/ 2>/dev/null | grep -cE '(Form/Element/|Task/)')
+    allowed_makeinstance=$(grep -r "GeneralUtility::makeInstance" Classes/ 2>/dev/null | grep -cE '(Form/Element/|Task/)' || true)
     prohibited_makeinstance=$((total_makeinstance - allowed_makeinstance))
 
     if [ "$prohibited_makeinstance" -eq 0 ]; then

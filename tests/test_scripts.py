@@ -218,6 +218,19 @@ class ArchitectureTest(TempDirTestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("1 prohibited instances", result.stdout)
 
+    def test_make_instance_only_in_prohibited_places_is_reported(self) -> None:
+        # grep -c exits 1 when nothing is allowed; under set -e that ended the
+        # script before the finding was printed.
+        ext = make_extension(self.tmp / "ext")
+        write(
+            ext / "Classes" / "Service" / "Worker.php",
+            "<?php\nGeneralUtility::makeInstance(Foo::class);\n",
+        )
+        result = run(self.script, str(ext), cwd=self.tmp)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("1 prohibited instances", result.stdout)
+        self.assertIn("Worker.php", result.stdout)
+
     def test_missing_services_yaml_fails(self) -> None:
         ext = make_extension(self.tmp / "ext")
         (ext / "Configuration" / "Services.yaml").unlink()
