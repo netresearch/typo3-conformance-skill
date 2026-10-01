@@ -1306,7 +1306,7 @@ A failure prints the test name and the failed assertion; most assertions include
 
 ### Dependencies
 
-- **Scripts:** Bash and the standard tools `grep`, `find`, `awk`, `sed` and `git`; `check-plugin-version.sh` also uses `python3`. Nothing is installed at run time.
+- **Scripts:** Bash and the standard tools `grep`, `find`, `awk`, `sed` and `git`; `check-plugin-version.sh` also uses `python3`, and `scripts/verify-harness.sh` uses the `gh` CLI for one optional lookup when it is installed. Nothing is installed at run time.
 - **Tests:** Python 3 standard library only.
 - **Composer:** `composer.json` requires `netresearch/composer-agent-skill-plugin`, which installs the skill into a PHP project. The constraint is `*`, and no `composer.lock` is committed, so the latest release is resolved at install time.
 - **Development tools:** the pre-commit hooks are pinned by `rev:` in `.pre-commit-config.yaml`. Renovate ([`renovate.json`](renovate.json), `config:recommended` with the pre-commit manager enabled) proposes updates for them.

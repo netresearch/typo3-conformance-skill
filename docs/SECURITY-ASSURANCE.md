@@ -26,7 +26,7 @@ This document states what users of the typo3-conformance skill can and cannot ex
 
 - **User**: runs the skill or a script against an extension they chose. Trusted: they choose the target directory and the arguments.
 - **AI agent**: loads `SKILL.md` and the references and runs the scripts or the grep recipes in `SKILL.md`. It acts with the user's permissions.
-- **Analysed extension**: untrusted input. Its files are read with `grep`, `find` and file tests.
+- **Analysed extension**: untrusted input. Its files are read with `grep`, `find`, `cat`, `awk`, file tests and `git` commands.
 - **Maintainers and CI**: change and release this repository.
 
 Boundary 1 lies between the scripts and the analysed extension: extension content is data, never code. Boundary 2 lies between this repository and the user's machine: releases are built and signed in CI.
@@ -62,7 +62,7 @@ Every workflow declares `permissions: {}` at the top and grants each job only wh
 
 | Weakness | Where it could arise | Countermeasure |
 |----------|---------------------|----------------|
-| CWE-78 OS command injection | File names and contents of the analysed extension | Target content is only passed to `grep`, `find`, `wc`, `head`, `cat` and `git ls-files` as data. No script builds a command string from it or passes it to `eval`. |
+| CWE-78 OS command injection | File names and contents of the analysed extension | Target content reaches the tools the scripts call (`grep`, `find`, `wc`, `head`, `cat`, `awk`, `sort`, `uniq`, `basename` and `git`) only as file arguments or standard input. No script builds a command string from it or passes it to `eval`. |
 | CWE-22 path traversal | The target path argument | The path is the user's own choice; `check-conformance.sh` resolves it once and writes only below it. |
 | CWE-377 insecure temporary file | Report rewriting | `generate-report.sh` creates its temporary file with `mktemp` next to the report, below the analysed directory, and removes it. |
 | CWE-829 inclusion from an untrusted source | Scripts from the target | `check-conformance.sh` runs sibling scripts from `SCRIPT_DIR` only. |
