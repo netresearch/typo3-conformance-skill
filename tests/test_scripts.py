@@ -395,6 +395,19 @@ class ConformanceTest(TempDirTestCase):
             report,
         )
 
+    def test_make_instance_in_allowed_places_is_not_an_action(self) -> None:
+        ext = make_extension(self.tmp / "ext")
+        write(
+            ext / "Classes" / "Task" / "Cleanup.php",
+            "<?php\nGeneralUtility::makeInstance(Foo::class);\n",
+        )
+        run(self.script, "ext", cwd=self.tmp)
+        self.assertNotIn("Migrate GeneralUtility::makeInstance", self.report(ext))
+        self.assertEqual(
+            list((ext / ".conformance-reports").iterdir()),
+            [next((ext / ".conformance-reports").glob("conformance_*.md"))],
+        )
+
 
 class GenerateReportTest(TempDirTestCase):
     script = SCRIPTS / "generate-report.sh"

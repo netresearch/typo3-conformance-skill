@@ -56,7 +56,7 @@ summary_rows="$(
 
 # Fill the summary table: insert the rows after the first table separator
 # that follows the "## Summary" heading written by check-conformance.sh
-tmp_report="$(mktemp)"
+tmp_report="$(mktemp "${REPORT_FILE}.XXXXXX")"
 awk -v rows="${summary_rows}" '
     /^## Summary$/ { in_summary = 1 }
     { print }
@@ -147,7 +147,7 @@ fi)
 
 ### High Priority (Fix Now)
 $(if [ "${STRUCTURE_SCORE}" -lt 15 ]; then echo "- [ ] Fix critical file structure issues (missing required files/directories)"; fi)
-$(if grep -rq "GeneralUtility::makeInstance" Classes/ 2>/dev/null; then echo "- [ ] Migrate GeneralUtility::makeInstance to constructor injection"; fi)
+$(if grep -r "GeneralUtility::makeInstance" Classes/ 2>/dev/null | grep -qvE '(Form/Element/|Task/)'; then echo "- [ ] Migrate GeneralUtility::makeInstance to constructor injection"; fi)
 $(if grep -rq "\\\$GLOBALS\\[" Classes/ 2>/dev/null; then echo "- [ ] Remove \$GLOBALS access, use dependency injection"; fi)
 $(if [ ! -f "Configuration/Services.yaml" ]; then echo "- [ ] Add Configuration/Services.yaml with DI configuration"; fi)
 
