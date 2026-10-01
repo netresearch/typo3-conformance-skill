@@ -17,10 +17,10 @@ This document states what users of the typo3-conformance skill can and cannot ex
 
 ## Security requirements
 
-1. The check scripts only read the extension they analyse. They do not execute its code, install its dependencies or contact the network.
-2. The check scripts write only below the analysed directory, into `.conformance-reports/`.
+1. The check scripts only read the extension they analyse. They do not run its PHP or JavaScript, install its dependencies or contact the network.
+2. The check scripts write only below the analysed directory: the report goes to `.conformance-reports/`, and `generate-report.sh` keeps its temporary copy next to it.
 3. The skill and its releases are delivered unmodified from this repository.
-4. Changes reach `main` only through the checks listed in [README.md](../README.md#governance-and-policies).
+4. Pull requests run the checks listed in [README.md](../README.md#governance-and-policies). Which of them must pass before a merge is set in the branch protection of `main`, a repository setting; on 2026-10-01 it required some of them, did not apply to administrators and required no approving review.
 
 ## Actors and trust boundaries
 
@@ -35,7 +35,7 @@ Boundary 1 lies between the scripts and the analysed extension: extension conten
 
 ### 1. The check scripts do not execute the analysed code
 
-- `check-file-structure.sh`, `check-coding-standards.sh`, `check-architecture.sh`, `check-testing.sh` and `check-documentation.sh` inspect files only with `[ -f ]`, `[ -d ]`, `find`, `grep`, `wc` and `cat` (plus `sort`, `uniq` and `basename` on the results). None of them runs `php`, `composer`, `npm`, `eval` or `source` on anything from the target.
+- `check-file-structure.sh`, `check-coding-standards.sh`, `check-architecture.sh`, `check-testing.sh` and `check-documentation.sh` inspect files only with `[ -f ]`, `[ -d ]`, `find`, `grep`, `wc`, `cat` and `git rev-parse`/`git ls-files` (plus `head`, `sort`, `uniq` and `basename` on the results). None of them runs `php`, `composer`, `npm`, `eval` or `source` on anything from the target.
 - `check-phpstan-baseline.sh` runs `git diff` and `git show` in the target; `check-file-structure.sh` runs `git ls-files` there. They do not run PHPStan; the remediation text they print tells the user which command to run.
 - `generate-report.sh` evaluates `[ -f ]` tests and `grep -rq` against the target to fill the report checklist.
 - `check-conformance.sh` calls only the scripts next to it (`SCRIPT_DIR`), never a script from the target.
@@ -62,9 +62,9 @@ Every workflow declares `permissions: {}` at the top and grants each job only wh
 
 | Weakness | Where it could arise | Countermeasure |
 |----------|---------------------|----------------|
-| CWE-78 OS command injection | File names and contents of the analysed extension | Target content is only passed to `grep`, `find` and `wc` as data. No script builds a command string from it or passes it to `eval`. |
+| CWE-78 OS command injection | File names and contents of the analysed extension | Target content is only passed to `grep`, `find`, `wc`, `head`, `cat` and `git ls-files` as data. No script builds a command string from it or passes it to `eval`. |
 | CWE-22 path traversal | The target path argument | The path is the user's own choice; `check-conformance.sh` resolves it once and writes only below it. |
-| CWE-377 insecure temporary file | Report rewriting | `generate-report.sh` uses `mktemp` and removes the file. |
+| CWE-377 insecure temporary file | Report rewriting | `generate-report.sh` creates its temporary file with `mktemp` next to the report, below the analysed directory, and removes it. |
 | CWE-829 inclusion from an untrusted source | Scripts from the target | `check-conformance.sh` runs sibling scripts from `SCRIPT_DIR` only. |
 | CWE-1104 unmaintained third-party components | Development and CI tools | Pre-commit hooks are pinned by `rev:` in `.pre-commit-config.yaml` and updated by Renovate (`renovate.json`); the reusable workflows pin actions by commit SHA. |
 | Secret exposure (CWE-798) | Commits | GitHub secret scanning with push protection (a repository setting) rejects pushes containing a recognised secret; Betterleaks scans every pull request to `main` (`security.yml`). The scripts read and store no credentials. |
