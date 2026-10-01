@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
+#
+# The Python code of this repository is tests/. Code blocks in the Markdown
+# references are documentation examples written for TYPO3 extensions, not
+# project code, so ruff (which formats fenced code in .md files since 0.16)
+# leaves them as written.
+extend-exclude = ["*.md"]

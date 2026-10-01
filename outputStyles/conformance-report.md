@@ -1,4 +1,6 @@
 ---
+# SPDX-License-Identifier: CC-BY-SA-4.0
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
 name: "conformance-report"
 description: "Formatted TYPO3 conformance assessment report"
 ---

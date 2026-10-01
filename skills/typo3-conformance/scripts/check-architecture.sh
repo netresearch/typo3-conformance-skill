@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
 
 #
 # TYPO3 PHP Architecture Conformance Checker
@@ -46,8 +48,9 @@ echo "### Prohibited Pattern Detection (Zero Tolerance)"
 echo ""
 
 # Check for $GLOBALS usage (ALWAYS prohibited in Classes/)
+# shellcheck disable=SC2016  # literal $GLOBALS[ is the grep pattern
 globals_count=$(grep -rn '\$GLOBALS\[' Classes/ 2>/dev/null | wc -l)
-if [ $globals_count -eq 0 ]; then
+if [ "$globals_count" -eq 0 ]; then
     echo "- ✅ No \$GLOBALS access found"
 else
     echo "- ❌ **CRITICAL:** ${globals_count} instances of \$GLOBALS access found"
@@ -56,6 +59,7 @@ else
     echo "  - \$GLOBALS['TSFE'] → Use PSR-7 Request or DI"
     echo "  - \$GLOBALS['TYPO3_CONF_VARS'] → Use ExtensionConfiguration"
     echo ""
+    # shellcheck disable=SC2016  # literal $GLOBALS[ is the grep pattern
     grep -rn '\$GLOBALS\[' Classes/ 2>/dev/null | head -10 || true
     has_issues=1
 fi
@@ -64,14 +68,14 @@ fi
 # First check total count
 total_makeinstance=$(grep -r "GeneralUtility::makeInstance" Classes/ 2>/dev/null | wc -l)
 
-if [ $total_makeinstance -eq 0 ]; then
+if [ "$total_makeinstance" -eq 0 ]; then
     echo "- ✅ No GeneralUtility::makeInstance() usage found"
 else
     # Count allowed exceptions (Form/Element/ and Task/)
-    allowed_makeinstance=$(grep -r "GeneralUtility::makeInstance" Classes/ 2>/dev/null | grep -E '(Form/Element/|Task/)' | wc -l)
+    allowed_makeinstance=$(grep -r "GeneralUtility::makeInstance" Classes/ 2>/dev/null | grep -cE '(Form/Element/|Task/)' || true)
     prohibited_makeinstance=$((total_makeinstance - allowed_makeinstance))
 
-    if [ $prohibited_makeinstance -eq 0 ]; then
+    if [ "$prohibited_makeinstance" -eq 0 ]; then
         echo "- ✅ GeneralUtility::makeInstance() only in allowed contexts (Form Elements, Tasks)"
         echo "  - ${allowed_makeinstance} allowed occurrences in Form/Element/ or Task/"
     else
@@ -91,7 +95,7 @@ echo ""
 
 # Check for constructors with dependencies
 constructors=$(grep -r "public function __construct" Classes/ 2>/dev/null | wc -l)
-if [ $constructors -gt 0 ]; then
+if [ "$constructors" -gt 0 ]; then
     echo "- ✅ ${constructors} classes use constructors (potential DI)"
 else
     echo "- ⚠️  No constructor injection found"
@@ -99,7 +103,7 @@ fi
 
 # Check for method injection (inject* methods)
 inject_methods=$(grep -r "public function inject[A-Z]" Classes/ 2>/dev/null | wc -l)
-if [ $inject_methods -gt 0 ]; then
+if [ "$inject_methods" -gt 0 ]; then
     echo "- ⚠️  ${inject_methods} method injection patterns found (inject*)"
     echo "  - Consider using constructor injection instead (more modern)"
 fi
@@ -147,7 +151,7 @@ if [ -d "Classes/Domain/Repository" ]; then
 
     # Check if repositories extend Repository
     proper_repos=$(grep -r "extends.*Repository" Classes/Domain/Repository/ 2>/dev/null | wc -l)
-    if [ $proper_repos -gt 0 ]; then
+    if [ "$proper_repos" -gt 0 ]; then
         echo "  - ✅ Repositories extend base Repository class"
     fi
 else
@@ -161,7 +165,7 @@ if [ -d "Classes/Controller" ]; then
 
     # Check if controllers extend ActionController
     proper_controllers=$(grep -r "extends ActionController" Classes/Controller/ 2>/dev/null | wc -l)
-    if [ $proper_controllers -gt 0 ]; then
+    if [ "$proper_controllers" -gt 0 ]; then
         echo "  - ✅ Controllers extend ActionController"
     fi
 fi
@@ -175,7 +179,7 @@ if [ -f "Configuration/RequestMiddlewares.php" ]; then
     echo "- ✅ Configuration/RequestMiddlewares.php present"
 
     middleware_count=$(find Classes/ -path "*/Middleware/*.php" 2>/dev/null | wc -l)
-    if [ $middleware_count -gt 0 ]; then
+    if [ "$middleware_count" -gt 0 ]; then
         echo "  - ✅ ${middleware_count} middleware classes found"
     fi
 else
@@ -186,7 +190,7 @@ echo ""
 echo "### Summary"
 echo ""
 
-if [ $has_issues -eq 0 ]; then
+if [ "$has_issues" -eq 0 ]; then
     echo "- ✅ **PHP Architecture: PASSED**"
 else
     echo "- ⚠️  **PHP Architecture: ISSUES FOUND**"

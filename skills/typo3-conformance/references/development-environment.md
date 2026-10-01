@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Development Environment Conformance
 
 **Purpose:** How this skill scores an extension's local dev-environment setup during a conformance audit. For how to set up or use DDEV itself, see the `typo3-ddev` skill — it is the single owner of DDEV setup/config mechanics, this file does not duplicate it.

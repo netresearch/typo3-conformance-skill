@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
 
 #
 # TYPO3 File Structure Conformance Checker
@@ -153,8 +155,12 @@ while IFS= read -r file; do
     fi
 done < <(find . -maxdepth 1 -name "*.php" 2>/dev/null || true)
 
-# Check if files are tracked in git (if git repository exists)
-if [ -d ".git" ]; then
+# Check if files are tracked in git (if git repository exists; a worktree has a .git file)
+in_git_repo=0
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    in_git_repo=1
+fi
+if [ "$in_git_repo" -eq 1 ]; then
     for file in "${all_root_php_files[@]}"; do
         if git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
             tracked_files+=("$file")
@@ -169,7 +175,7 @@ fi
 
 # Report tracked files (these are issues)
 if [ ${#tracked_files[@]} -gt 0 ]; then
-    if [ -d ".git" ]; then
+    if [ "$in_git_repo" -eq 1 ]; then
         echo "- ❌ ${#tracked_files[@]} PHP file(s) in root directory committed to repository:"
     else
         echo "- ❌ ${#tracked_files[@]} PHP file(s) found in root directory:"

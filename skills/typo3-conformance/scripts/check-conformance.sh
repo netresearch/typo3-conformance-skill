@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
 
 #
 # TYPO3 Extension Conformance Checker
@@ -17,9 +19,6 @@ NC='\033[0m'
 
 # Configuration
 PROJECT_DIR="${1:-.}"
-REPORT_DIR="${PROJECT_DIR}/.conformance-reports"
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-REPORT_FILE="${REPORT_DIR}/conformance_${TIMESTAMP}.md"
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -35,14 +34,17 @@ echo -e "  • PSR Standard:  ${YELLOW}PSR-12 (Extended Coding Style)${NC}"
 echo -e "  • Architecture:  ${YELLOW}Dependency Injection, PSR-14 Events${NC}"
 echo ""
 
-# Create report directory
-mkdir -p "${REPORT_DIR}"
-
-# Check if directory exists
+# Check if directory exists (before anything is written into it)
 if [ ! -d "${PROJECT_DIR}" ]; then
     echo -e "${RED}✗ Error: Directory ${PROJECT_DIR} not found${NC}"
     exit 1
 fi
+
+# Resolve to an absolute path: the sub-scripts receive it after the cd below
+PROJECT_DIR="$(cd "${PROJECT_DIR}" && pwd)"
+REPORT_DIR="${PROJECT_DIR}/.conformance-reports"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+REPORT_FILE="${REPORT_DIR}/conformance_${TIMESTAMP}.md"
 
 cd "${PROJECT_DIR}"
 
@@ -56,7 +58,8 @@ echo -e "${GREEN}✓ TYPO3 Extension detected${NC}"
 echo ""
 
 # Initialize report
-cat > "${REPORT_FILE}" <<'EOF'
+mkdir -p "${REPORT_DIR}"
+cat > "${REPORT_FILE}" <<EOF
 # TYPO3 Extension Conformance Report
 
 **Generated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
@@ -91,7 +94,6 @@ EOF
 
 # Initialize scores
 total_score=0
-max_score=100
 
 echo -e "${YELLOW}Running conformance checks...${NC}"
 echo ""
@@ -162,14 +164,15 @@ else
 fi
 echo ""
 
+# Calculate total (including all scores)
+total_score=$((structure_score + docs_score + coding_score + arch_score + test_score + baseline_score))
+
 # 7. Generate comprehensive report
 echo -e "${BLUE}[7/7] Generating final report...${NC}"
 bash "${SCRIPT_DIR}/generate-report.sh" "${PROJECT_DIR}" "${REPORT_FILE}" \
-    "${structure_score}" "${coding_score}" "${arch_score}" "${test_score}"
+    "${structure_score}" "${coding_score}" "${arch_score}" "${test_score}" \
+    "${docs_score}" "${baseline_score}" "${total_score}"
 echo ""
-
-# Calculate total (including all scores)
-total_score=$((structure_score + docs_score + coding_score + arch_score + test_score + baseline_score))
 
 # Display summary
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"

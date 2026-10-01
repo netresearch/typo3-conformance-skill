@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Excellence Indicators Reference
 
 **Purpose:** Document optional features that indicate exceptional TYPO3 extension quality beyond basic conformance

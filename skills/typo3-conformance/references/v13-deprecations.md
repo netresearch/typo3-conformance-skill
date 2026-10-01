@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # TYPO3 v13 Deprecations and Modern Alternatives
 
 **Sources:** TYPO3 Core API Reference v13.4

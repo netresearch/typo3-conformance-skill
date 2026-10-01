@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Architecture
 
 ## Overview
@@ -10,7 +13,7 @@ The typo3-conformance-skill is an AI agent skill that evaluates TYPO3 extensions
 
 - **SKILL.md**: Entry point loaded by AI agents. Contains trigger patterns, scoring rubric, and orchestration instructions.
 - **checkpoints.yaml**: Conformance checkpoints organized by category with scoring weights.
-- **references/**: 22 reference guides covering coding guidelines, directory structure, TCA, hooks/events, testing, documentation, and more.
+- **references/**: 24 reference guides covering coding guidelines, directory structure, TCA, hooks/events, testing, documentation, and more.
 - **scripts/**: Modular check scripts, each focused on one conformance domain.
 
 ### Check Scripts (`skills/typo3-conformance/scripts/`)
@@ -52,4 +55,5 @@ Extensions are scored across categories (file structure, coding standards, archi
 ## Integration
 
 - **composer.json**: Enables installation via Composer with `netresearch/composer-agent-skill-plugin`
-- **CI/CD**: GitHub Actions workflows handle linting and release automation
+- **CI/CD**: GitHub Actions workflows handle linting, the script tests (`tests/test_scripts.py`), security scans and release automation
+- **Security**: threat model, trust boundaries and limits are in [SECURITY-ASSURANCE.md](SECURITY-ASSURANCE.md)

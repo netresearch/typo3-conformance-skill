@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Directory Structure Standards
 
 **Purpose:** Validate proper separation of committed configuration vs generated/temporary files in TYPO3 extensions

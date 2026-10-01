@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
 
 #
 # TYPO3 Coding Standards Conformance Checker
@@ -49,7 +51,7 @@ for file in $php_files; do
     fi
 done
 
-if [ $missing_strict -eq 0 ]; then
+if [ "$missing_strict" -eq 0 ]; then
     echo "- ✅ All files have declare(strict_types=1)"
 else
     echo "- ❌ ${missing_strict} files missing declare(strict_types=1)"
@@ -61,7 +63,7 @@ echo ""
 echo "### Array Syntax"
 echo ""
 old_array_count=$(grep -r "array(" Classes/ 2>/dev/null | wc -l)
-if [ $old_array_count -eq 0 ]; then
+if [ "$old_array_count" -eq 0 ]; then
     echo "- ✅ No old array() syntax found"
 else
     echo "- ❌ ${old_array_count} instances of old array() syntax (should use [])"
@@ -79,7 +81,7 @@ for file in $php_files; do
     fi
 done
 
-if [ $files_without_namespace -eq 0 ]; then
+if [ "$files_without_namespace" -eq 0 ]; then
     echo "- ✅ All files have namespace declaration"
 else
     echo "- ❌ ${files_without_namespace} files missing namespace declaration"
@@ -100,7 +102,7 @@ for file in $php_files; do
     fi
 done
 
-if [ $classes_without_doc -eq 0 ]; then
+if [ "$classes_without_doc" -eq 0 ]; then
     echo "- ✅ All classes have PHPDoc comments"
 else
     echo "- ⚠️  ${classes_without_doc} classes missing PHPDoc comments"
@@ -113,7 +115,7 @@ echo ""
 
 # Check for snake_case in class names (should be UpperCamelCase)
 snake_case_classes=$(grep -rE "^(final )?class [a-z][a-z0-9_]*" Classes/ 2>/dev/null | wc -l)
-if [ $snake_case_classes -gt 0 ]; then
+if [ "$snake_case_classes" -gt 0 ]; then
     echo "- ❌ ${snake_case_classes} classes using incorrect naming (should be UpperCamelCase)"
     has_issues=1
 else
@@ -131,7 +133,7 @@ for file in $php_files; do
     fi
 done
 
-if [ $files_with_tabs -eq 0 ]; then
+if [ "$files_with_tabs" -eq 0 ]; then
     echo "- ✅ No tabs found (using spaces for indentation)"
 else
     echo "- ❌ ${files_with_tabs} files using tabs instead of spaces"
@@ -145,7 +147,7 @@ echo ""
 
 # Check if use statements are present and not duplicated
 duplicate_uses=$(grep -rh "^use " Classes/ 2>/dev/null | sort | uniq -d | wc -l)
-if [ $duplicate_uses -gt 0 ]; then
+if [ "$duplicate_uses" -gt 0 ]; then
     echo "- ⚠️  ${duplicate_uses} duplicate use statements found"
 else
     echo "- ✅ No duplicate use statements"
@@ -155,7 +157,7 @@ echo ""
 echo "### Summary"
 echo ""
 
-if [ $has_issues -eq 0 ]; then
+if [ "$has_issues" -eq 0 ]; then
     echo "- ✅ **Coding standards: PASSED**"
 else
     echo "- ⚠️  **Coding standards: ISSUES FOUND**"

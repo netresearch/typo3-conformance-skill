@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: Netresearch DTT GmbH
 
 # TYPO3 Extension Conformance Checker - PHPStan Baseline Validation
 # Verifies that new code does not add errors to phpstan-baseline.neon
@@ -25,8 +27,8 @@ cd "$PROJECT_ROOT" || exit 1
 echo "Checking PHPStan baseline hygiene in: $PROJECT_ROOT"
 echo
 
-# Check if git repository
-if [ ! -d ".git" ]; then
+# Check if git repository (a worktree or submodule has a .git file, not a directory)
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo -e "${YELLOW}⚠️  Not a git repository - skipping baseline check${NC}"
     exit 0
 fi
@@ -53,9 +55,13 @@ if ! git diff --quiet "$BASELINE_FILE" 2>/dev/null; then
     echo -e "${YELLOW}⚠️  Baseline file has uncommitted changes${NC}"
     echo
 
-    # Extract error counts from diff
-    BEFORE_COUNT=$(git show "HEAD:$BASELINE_FILE" 2>/dev/null | grep -E "^\s+count:\s+[0-9]+" | head -1 | grep -oE "[0-9]+" || echo "0")
-    AFTER_COUNT=$(grep -E "^\s+count:\s+[0-9]+" "$BASELINE_FILE" | head -1 | grep -oE "[0-9]+" || echo "0")
+    # Total error count: the sum of every "count:" entry, committed vs. working tree
+    # (HEAD:./path is resolved relative to the current directory, not the repo root)
+    sum_counts() {
+        awk '/^[[:space:]]+count:[[:space:]]+[0-9]+/ { total += $2 } END { print total + 0 }'
+    }
+    BEFORE_COUNT=$( (git show "HEAD:./$BASELINE_FILE" 2>/dev/null || true) | sum_counts)
+    AFTER_COUNT=$(sum_counts < "$BASELINE_FILE")
 
     if [ "$AFTER_COUNT" -gt "$BEFORE_COUNT" ]; then
         ADDED=$((AFTER_COUNT - BEFORE_COUNT))

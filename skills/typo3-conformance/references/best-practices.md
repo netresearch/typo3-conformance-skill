@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # TYPO3 Extension Best Practices
 
 **Source:** TYPO3 Best Practices (Tea Extension) and Core API Standards

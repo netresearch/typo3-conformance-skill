@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+<!-- SPDX-FileCopyrightText: Netresearch DTT GmbH -->
+
 # Localization Coverage & XLIFF Hygiene
 
 Checks and patterns for ensuring TYPO3 extension localization is complete, consistent, and not silently broken across languages.
