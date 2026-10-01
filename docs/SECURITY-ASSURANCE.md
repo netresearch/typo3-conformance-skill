@@ -67,7 +67,7 @@ Every workflow declares `permissions: {}` at the top and grants each job only wh
 | CWE-377 insecure temporary file | Report rewriting | `generate-report.sh` uses `mktemp` and removes the file. |
 | CWE-829 inclusion from an untrusted source | Scripts from the target | `check-conformance.sh` runs sibling scripts from `SCRIPT_DIR` only. |
 | CWE-1104 unmaintained third-party components | Development and CI tools | Pre-commit hooks are pinned by `rev:` in `.pre-commit-config.yaml` and updated by Renovate (`renovate.json`); the reusable workflows pin actions by commit SHA. |
-| Secret exposure (CWE-798) | Commits | Betterleaks scans every pull request to `main` (`security.yml`). The scripts read and store no credentials. |
+| Secret exposure (CWE-798) | Commits | GitHub secret scanning with push protection (a repository setting) rejects pushes containing a recognised secret; Betterleaks scans every pull request to `main` (`security.yml`). The scripts read and store no credentials. |
 
 ## What the skill does not protect against
 
