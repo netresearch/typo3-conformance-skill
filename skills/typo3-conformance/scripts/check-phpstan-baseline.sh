@@ -13,6 +13,9 @@
 #   1 = New errors added to baseline (violation)
 
 set -euo pipefail
+# shellcheck source-path=SCRIPTDIR
+# shellcheck disable=SC1091  # sourced relative to this script
+source "$(dirname "${BASH_SOURCE[0]}")/lib/git.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -28,7 +31,7 @@ echo "Checking PHPStan baseline hygiene in: $PROJECT_ROOT"
 echo
 
 # Check if git repository (a worktree or submodule has a .git file, not a directory)
-if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+if ! project_git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo -e "${YELLOW}⚠️  Not a git repository - skipping baseline check${NC}"
     exit 0
 fi
@@ -51,7 +54,7 @@ echo "Found baseline file: $BASELINE_FILE"
 echo
 
 # Check if baseline is modified in current changes
-if ! git diff --quiet "$BASELINE_FILE" 2>/dev/null; then
+if ! project_git diff --no-ext-diff --quiet "$BASELINE_FILE" 2>/dev/null; then
     echo -e "${YELLOW}⚠️  Baseline file has uncommitted changes${NC}"
     echo
 
@@ -60,7 +63,7 @@ if ! git diff --quiet "$BASELINE_FILE" 2>/dev/null; then
     sum_counts() {
         awk '/^[[:space:]]+count:[[:space:]]+[0-9]+/ { total += $2 } END { print total + 0 }'
     }
-    BEFORE_COUNT=$( (git show "HEAD:./$BASELINE_FILE" 2>/dev/null || true) | sum_counts)
+    BEFORE_COUNT=$( (project_git show --no-textconv "HEAD:./$BASELINE_FILE" 2>/dev/null || true) | sum_counts)
     AFTER_COUNT=$(sum_counts < "$BASELINE_FILE")
 
     if [ "$AFTER_COUNT" -gt "$BEFORE_COUNT" ]; then
@@ -100,7 +103,7 @@ else
 fi
 
 # Check for baseline in staged changes
-if git diff --cached --quiet "$BASELINE_FILE" 2>/dev/null; then
+if project_git diff --no-ext-diff --cached --quiet "$BASELINE_FILE" 2>/dev/null; then
     echo -e "${GREEN}✅ No baseline changes staged for commit${NC}"
 else
     echo

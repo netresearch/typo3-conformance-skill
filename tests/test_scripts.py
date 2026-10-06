@@ -156,6 +156,42 @@ class FileStructureTest(TempDirTestCase):
         self.assertIn("untracked PHP file(s) in root", result.stdout)
 
 
+class UntrustedGitConfigTest(TempDirTestCase):
+    """The checked extension's .git/config is input: a command it names for
+    core.fsmonitor or a hook does not run while the scripts ask git about
+    tracked files and baseline changes."""
+
+    def check(self, script: str, prepare) -> None:
+        ext = make_extension(self.tmp / "ext")
+        write(
+            ext / "Build" / "phpstan-baseline.neon", BASELINE.format(first=1, second=2)
+        )
+        write(ext / "helper.php", "<?php\n")
+        git(ext, "init", "-q")
+        git(ext, "add", ".")
+        git(ext, "commit", "-q", "-m", "init")
+        marker = self.tmp / "fsmonitor-ran"
+        git(ext, "config", "core.fsmonitor", f"touch {marker}; false")
+        prepare(ext)
+        run(SCRIPTS / script, str(ext), cwd=self.tmp)
+        self.assertFalse(marker.exists(), f"{script} ran a command from the git config")
+
+    def test_file_structure_check(self) -> None:
+        self.check(
+            "check-file-structure.sh",
+            lambda ext: write(ext / "helper.php", "<?php\n// changed\n"),
+        )
+
+    def test_phpstan_baseline_check(self) -> None:
+        self.check(
+            "check-phpstan-baseline.sh",
+            lambda ext: write(
+                ext / "Build" / "phpstan-baseline.neon",
+                BASELINE.format(first=1, second=5),
+            ),
+        )
+
+
 class CodingStandardsTest(TempDirTestCase):
     script = SCRIPTS / "check-coding-standards.sh"
 

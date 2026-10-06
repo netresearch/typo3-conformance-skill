@@ -9,6 +9,9 @@
 #
 
 set -e
+# shellcheck source-path=SCRIPTDIR
+# shellcheck disable=SC1091  # sourced relative to this script
+source "$(dirname "${BASH_SOURCE[0]}")/lib/git.sh"
 
 PROJECT_DIR="${1:-.}"
 cd "${PROJECT_DIR}"
@@ -157,12 +160,12 @@ done < <(find . -maxdepth 1 -name "*.php" 2>/dev/null || true)
 
 # Check if files are tracked in git (if git repository exists; a worktree has a .git file)
 in_git_repo=0
-if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+if project_git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     in_git_repo=1
 fi
 if [ "$in_git_repo" -eq 1 ]; then
     for file in "${all_root_php_files[@]}"; do
-        if git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
+        if project_git ls-files --error-unmatch "$file" >/dev/null 2>&1; then
             tracked_files+=("$file")
         else
             untracked_files+=("$file")
