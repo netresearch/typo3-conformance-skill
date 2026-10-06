@@ -60,8 +60,9 @@ echo
 # An untracked baseline counts as unchanged, as it does for `git diff`.
 baseline_modified() {
     local indexed
-    indexed=$(project_git show --no-textconv ":./$BASELINE_FILE" 2>/dev/null) || return 1
-    [ "$(printf '%s' "$indexed" | tr -d '\r')" != "$(tr -d '\r' < "$BASELINE_FILE")" ]
+    # The trailing x keeps $(...) from dropping final newlines.
+    indexed=$(project_git show --no-textconv ":./$BASELINE_FILE" 2>/dev/null && printf x) || return 1
+    [ "$(printf '%s' "$indexed" | tr -d '\r')" != "$(tr -d '\r' < "$BASELINE_FILE"; printf x)" ]
 }
 if baseline_modified; then
     echo -e "${YELLOW}⚠️  Baseline file has uncommitted changes${NC}"

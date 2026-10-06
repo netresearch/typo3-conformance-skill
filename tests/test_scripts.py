@@ -230,6 +230,7 @@ class UntrustedGitConfigTest(TempDirTestCase):
         git(ext, "config", "remote.origin.url", "ssh://example.invalid/x.git")
         git(ext, "config", "remote.origin.promisor", "true")
         git(ext, "config", "core.sshCommand", f"touch {marker}; false")
+        git(ext, "config", "protocol.ssh.allow", "always")
         run(SCRIPTS / "check-phpstan-baseline.sh", str(ext), cwd=self.tmp)
         self.assertFalse(marker.exists(), "a promisor remote's transport command ran")
 
@@ -247,6 +248,17 @@ class UntrustedGitConfigTest(TempDirTestCase):
         result = run(SCRIPTS / "check-phpstan-baseline.sh", str(ext), cwd=self.tmp)
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertIn("No changes to baseline file", result.stdout)
+
+    def test_phpstan_baseline_check_sees_an_added_final_newline(self) -> None:
+        ext = make_extension(self.tmp / "ext")
+        baseline = ext / "Build" / "phpstan-baseline.neon"
+        write(baseline, BASELINE.format(first=1, second=2))
+        git(ext, "init", "-q")
+        git(ext, "add", ".")
+        git(ext, "commit", "-q", "-m", "init")
+        write(baseline, BASELINE.format(first=1, second=2) + "\n")
+        result = run(SCRIPTS / "check-phpstan-baseline.sh", str(ext), cwd=self.tmp)
+        self.assertIn("Baseline file has uncommitted changes", result.stdout)
 
 
 class InheritedGitLocationTest(TempDirTestCase):
