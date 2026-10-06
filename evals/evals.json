@@ -681,5 +681,42 @@
         "Move the comment into env: so ${{ }} is not expanded inside run:, then call tailor ter:publish --comment \"$COMMENT\" \"$VERSION\"."
       ]
     }
+  },
+  {
+    "name": "composer-description-carries-ter-title",
+    "prompt": "Our TYPO3 extension's composer.json has \"description\": \"Adds image support to CKEditor5 RTE - by Netresearch\" and ext_emconf.php has 'title' => 'CKEditor Image Support'. Is the description fine for TER and TYPO3 v14?",
+    "assertions": [
+      {
+        "type": "content_regex",
+        "value": "(before|ahead of) the first [\"'`]? ?- ?[\"'`]?|split.{0,40} - |part before",
+        "description": "Explains that the title is the part of the description before the first ' - '"
+      },
+      {
+        "type": "content_regex",
+        "value": "(as|becomes|title( would be| is)?:?) [\"'`]?Adds image support to CKEditor5 RTE[\"'`]?|Adds image support to CKEditor5 RTE[\"'`]? (as|becomes) (the )?title",
+        "description": "Names the sentence fragment TER and TYPO3 v14 would take as the title"
+      },
+      {
+        "type": "content_regex",
+        "value": "description[: ]+[\"'`]?by Netresearch",
+        "description": "Names 'by Netresearch' as the description TER and TYPO3 v14 would derive"
+      },
+      {
+        "type": "content_regex",
+        "value": "CKEditor Image Support - ",
+        "description": "Proposes a description that starts with the ext_emconf.php title and ' - '"
+      },
+      {
+        "type": "content_regex",
+        "value": "255",
+        "description": "Names the 255-byte limit of the TER title column"
+      }
+    ],
+    "samples": {
+      "passing": "No. TYPO3 v14 and TER take the part before the first ' - ' as the title, so TER would list the extension as 'Adds image support to CKEditor5 RTE' with the description 'by Netresearch'. Write it as \"CKEditor Image Support - Adds image support to the CKEditor 5 RTE\": the title matches ext_emconf.php, and it stays far below the 255 bytes TER stores.",
+      "failing": [
+        "Yes, it is clear, longer than 20 characters and names the vendor."
+      ]
+    }
   }
 ]
