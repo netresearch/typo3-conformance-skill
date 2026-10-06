@@ -6,7 +6,8 @@
 # and can name commands git runs: core.fsmonitor when git refreshes the index
 # (git diff and git ls-files do) and hooks. project_git turns both off and
 # skips the system config; callers add --no-ext-diff / --no-textconv where a
-# diff driver could otherwise run. Inherited variables that point git at
+# diff driver could otherwise run; callers do not let git hash working-tree
+# files, which would run a clean filter. Inherited variables that point git at
 # another repository or index (set when the checks run from a git hook) are
 # removed, so git answers for the checked extension.
 

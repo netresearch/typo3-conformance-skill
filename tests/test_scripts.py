@@ -191,6 +191,22 @@ class UntrustedGitConfigTest(TempDirTestCase):
             ),
         )
 
+    def test_phpstan_baseline_check_runs_no_clean_filter(self) -> None:
+        ext = make_extension(self.tmp / "ext")
+        baseline = ext / "Build" / "phpstan-baseline.neon"
+        write(baseline, BASELINE.format(first=1, second=2))
+        git(ext, "init", "-q")
+        git(ext, "add", ".")
+        git(ext, "commit", "-q", "-m", "init")
+        marker = self.tmp / "filter-ran"
+        git(ext, "config", "filter.evil.clean", f"touch {marker}; cat")
+        write(ext / ".gitattributes", "*.neon filter=evil\n")
+        write(baseline, BASELINE.format(first=1, second=5))
+        result = run(SCRIPTS / "check-phpstan-baseline.sh", str(ext), cwd=self.tmp)
+        self.assertFalse(marker.exists(), "the extension's clean filter ran")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("Error count increased: 3 → 6", result.stdout)
+
 
 class InheritedGitLocationTest(TempDirTestCase):
     """Run from a git hook, GIT_DIR and GIT_INDEX_FILE point at the calling

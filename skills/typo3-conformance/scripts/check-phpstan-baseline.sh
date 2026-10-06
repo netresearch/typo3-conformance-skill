@@ -53,8 +53,14 @@ fi
 echo "Found baseline file: $BASELINE_FILE"
 echo
 
-# Check if baseline is modified in current changes
-if ! project_git diff --no-ext-diff --quiet "$BASELINE_FILE" 2>/dev/null; then
+# Check if baseline is modified in current changes. The working-tree file is
+# compared with its index copy byte for byte: `git diff` would hash the
+# working-tree file and run a clean filter named in the extension's config.
+baseline_modified() {
+    project_git ls-files --error-unmatch -- "$BASELINE_FILE" >/dev/null 2>&1 || return 1
+    ! cmp -s <(project_git show --no-textconv ":./$BASELINE_FILE" 2>/dev/null) "$BASELINE_FILE"
+}
+if baseline_modified; then
     echo -e "${YELLOW}⚠️  Baseline file has uncommitted changes${NC}"
     echo
 
