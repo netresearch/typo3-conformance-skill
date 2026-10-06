@@ -207,6 +207,47 @@ class UntrustedGitConfigTest(TempDirTestCase):
         self.assertEqual(result.returncode, 1, result.stdout)
         self.assertIn("Error count increased: 3 → 6", result.stdout)
 
+    def test_phpstan_baseline_check_fetches_no_missing_object(self) -> None:
+        ext = make_extension(self.tmp / "ext")
+        baseline = ext / "Build" / "phpstan-baseline.neon"
+        write(baseline, BASELINE.format(first=1, second=2))
+        git(ext, "init", "-q")
+        git(ext, "add", ".")
+        git(ext, "commit", "-q", "-m", "init")
+        blob = subprocess.run(
+            ["git", "rev-parse", "HEAD:Build/phpstan-baseline.neon"],
+            cwd=ext,
+            env=ENV,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        ).stdout.strip()
+        (ext / ".git" / "objects" / blob[:2] / blob[2:]).unlink()
+        marker = self.tmp / "transport-ran"
+        git(ext, "config", "core.repositoryformatversion", "1")
+        git(ext, "config", "extensions.partialClone", "origin")
+        git(ext, "config", "remote.origin.url", "ssh://example.invalid/x.git")
+        git(ext, "config", "remote.origin.promisor", "true")
+        git(ext, "config", "core.sshCommand", f"touch {marker}; false")
+        run(SCRIPTS / "check-phpstan-baseline.sh", str(ext), cwd=self.tmp)
+        self.assertFalse(marker.exists(), "a promisor remote's transport command ran")
+
+    def test_phpstan_baseline_check_ignores_line_ending_conversion(self) -> None:
+        ext = make_extension(self.tmp / "ext")
+        baseline = ext / "Build" / "phpstan-baseline.neon"
+        write(baseline, BASELINE.format(first=1, second=2))
+        write(ext / ".gitattributes", "*.neon text eol=crlf\n")
+        git(ext, "init", "-q")
+        git(ext, "add", ".")
+        git(ext, "commit", "-q", "-m", "init")
+        baseline.unlink()
+        git(ext, "checkout", "--", "Build/phpstan-baseline.neon")
+        self.assertIn(b"\r\n", baseline.read_bytes())
+        result = run(SCRIPTS / "check-phpstan-baseline.sh", str(ext), cwd=self.tmp)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("No changes to baseline file", result.stdout)
+
 
 class InheritedGitLocationTest(TempDirTestCase):
     """Run from a git hook, GIT_DIR and GIT_INDEX_FILE point at the calling
