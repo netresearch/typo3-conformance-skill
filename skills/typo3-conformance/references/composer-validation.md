@@ -31,22 +31,32 @@ jq -r '.type' composer.json | grep -q "typo3-cms-extension" && echo "✅ Correct
 ```
 
 ### description
-**Format:** Single-line summary describing what the extension does
+**Format:** `<Title> - <Description>`, one line
+
+Composer has no title field. TYPO3 v14 and TER (since 2026-09-14) read the
+extension title from `description`: the part before the first ` - ` is the
+title, the rest is the description. Without ` - `, TER falls back to `title`
+in `ext_emconf.php`. A ` - ` used as punctuation inside a sentence therefore
+turns that part of the sentence into the title, and TER shows it on the detail
+page, in lists, search and the REST API. TER stores the title in a 255-byte
+column; a longer one fails the upload with a generic HTTP 500.
 
 **Requirements:**
-- Clear, concise description of extension functionality
-- Should identify the vendor/company for professional extensions
+- Start with the same title `ext_emconf.php` carries, then ` - `
+- No other ` - ` before the description proper
+- Title at most 255 bytes
+- Clear, concise description of extension functionality after the title
 - Avoid vague descriptions like "An extension" or "Utility tools"
 
 **Good Examples:**
 ```json
-"description": "Adds image support to CKEditor5 RTE - by Netresearch"
-"description": "TYPO3 extension for advanced content management by Vendor GmbH"
-"description": "Provides custom form elements for newsletter subscription"
+"description": "CKEditor Rich Text Editor Image Support - Adds image support to the CKEditor 5 RTE"
+"description": "Newsletter Forms - Custom form elements for newsletter subscription"
 ```
 
 **Bad Examples:**
 ```json
+"description": "Adds image support to CKEditor5 RTE - by Netresearch"  // Title "Adds image support to CKEditor5 RTE", description "by Netresearch"
 "description": "Extension"  // Too vague
 "description": "Some tools"  // Meaningless
 "description": ""  // Empty
@@ -60,7 +70,13 @@ jq -r '.description' composer.json | grep -q . && echo "✅ Has description" || 
 # Check description length (should be meaningful, >20 chars)
 DESC_LEN=$(jq -r '.description | length' composer.json)
 [[ $DESC_LEN -gt 20 ]] && echo "✅ Description is meaningful" || echo "⚠️  Description too short"
+
+# Show the title TYPO3 v14 and TER derive, with its length in bytes
+jq -r .description composer.json | LC_ALL=C awk -F ' - ' '{ print length($1) " bytes: " $1 }'
 ```
+
+Compare the printed title with `title` in `ext_emconf.php`. Checkpoint TC-186
+fails when the two differ or the title exceeds 255 bytes.
 
 ### license
 **Recommended:** `GPL-2.0-only` or `GPL-2.0-or-later`
@@ -214,7 +230,7 @@ jq -r '.keywords | length' composer.json | grep -qE '^[1-9]' && echo "✅ Has ke
 **Mandatory (MUST have):**
 - [ ] `name` - vendor/package format
 - [ ] `type` - must be `typo3-cms-extension`
-- [ ] `description` - clear, concise description
+- [ ] `description` - `<Title> - <Description>`, title matching `ext_emconf.php`, at most 255 bytes
 - [ ] `license` - SPDX identifier (GPL-2.0-or-later, AGPL-3.0-or-later)
 - [ ] `require.typo3/cms-core` - with upper bound constraint
 - [ ] `require.php` - PHP version constraint
@@ -328,6 +344,15 @@ jq -r '.description' composer.json | grep -q . || { echo "❌ Missing 'descripti
 # Check description is meaningful (>20 chars)
 DESC_LEN=$(jq -r '.description | length' composer.json 2>/dev/null)
 [[ $DESC_LEN -lt 20 ]] && { echo "⚠️  Description too short (should be >20 chars)"; ((WARNINGS++)); }
+
+# Check the title TYPO3 v14 and TER take from the description (part before the first " - ")
+TITLE=$(jq -r '.description' composer.json | awk -F ' - ' 'NF > 1 { print $1 }')
+if [[ -n $TITLE ]]; then
+    TITLE_BYTES=$(printf '%s' "$TITLE" | LC_ALL=C wc -c)
+    [[ $TITLE_BYTES -gt 255 ]] && { echo "❌ Title before ' - ' is $TITLE_BYTES bytes, TER stores at most 255"; ((ERRORS++)); }
+    EMCONF_TITLE=$(sed -nE "s/.*'title'[[:space:]]*=>[[:space:]]*'([^']*)'.*/\1/p" ext_emconf.php 2>/dev/null)
+    [[ -n $EMCONF_TITLE && $TITLE != "$EMCONF_TITLE" ]] && { echo "⚠️  Title before ' - ' ($TITLE) differs from ext_emconf.php title ($EMCONF_TITLE)"; ((WARNINGS++)); }
+fi
 
 # Check typo3/cms-core
 jq -r '.require["typo3/cms-core"]' composer.json | grep -q . || { echo "❌ Missing typo3/cms-core"; ((ERRORS++)); }

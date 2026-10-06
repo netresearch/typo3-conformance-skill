@@ -313,6 +313,20 @@ mechanical:
     severity: warning
     desc: "composer.json should have a meaningful description"
 
+  # TYPO3 v14 and TER read the extension title from the composer.json
+  # description: the part before the first " - ". Without " - " TER falls back
+  # to the ext_emconf.php title, so only a description with " - " is checked.
+  - id: TC-186
+    type: command
+    pattern: |
+      title=$(jq -r '.description // ""' composer.json | awk -F ' - ' 'NF > 1 { print $1 }')
+      [ -z "$title" ] && exit 0
+      [ "$(printf '%s' "$title" | LC_ALL=C wc -c)" -le 255 ] || exit 1
+      emconf=$(sed -nE "s/.*'title'[[:space:]]*=>[[:space:]]*'([^']*)'.*/\1/p" ext_emconf.php 2>/dev/null)
+      [ -z "$emconf" ] || [ "$title" = "$emconf" ]
+    severity: warning
+    desc: "composer.json description should start with '<ext_emconf.php title> - ': TYPO3 v14 and TER take the part before the first ' - ' as the title (max 255 bytes)"
+
   - id: TC-26
     type: regex
     target: composer.json
