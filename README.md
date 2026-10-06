@@ -1032,6 +1032,8 @@ The skill generates comprehensive markdown reports with dual scoring system:
 - Testing Standards: 0-20 points
 - Best Practices: 0-20 points
 
+`scripts/check-conformance.sh` scores the base categories mechanically on the same scale: file structure (Extension Architecture), coding standards, PHP architecture and testing at up to 20 points each, and Best Practices as documentation (up to 10) plus PHPStan baseline hygiene (up to 10).
+
 **Excellence Indicators (0-22 points) - OPTIONAL BONUS**
 - Community & Internationalization: 0-6 points
 - Advanced Quality Tooling: 0-9 points

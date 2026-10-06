@@ -388,12 +388,12 @@ class ConformanceTest(TempDirTestCase):
         ext = make_extension(self.tmp / "ext")
         result = run(self.script, "ext", cwd=self.tmp)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("Total Score:          90/100", result.stdout)
+        self.assertIn("Total Score:          100/100", result.stdout)
         report = self.report(ext)
         self.assertIn("**Project:** ext", report)
         self.assertNotIn("$(", report)
-        self.assertIn("| File Structure | 18/18 | ✅ Passed |", report)
-        self.assertIn("| **TOTAL** | **90/100** |", report)
+        self.assertIn("| File Structure | 20/20 | ✅ Passed |", report)
+        self.assertIn("| **TOTAL** | **100/100** |", report)
         self.assertIn("## 1. File Structure Conformance", report)
 
     def test_absolute_path_argument_works_from_another_directory(self) -> None:
@@ -461,16 +461,16 @@ class GenerateReportTest(TempDirTestCase):
             "## Standards Checked\n\n| a | b |\n|---|---|\n\n"
             "## Summary\n\n| Category | Score | Status |\n|----|----|----|\n",
         )
-        args = ("18", "12", "18", "16", "10", "0", "74")
+        args = ("20", "13", "11", "10", "10", "0", "64")
         result = run(self.script, str(ext), str(report), *args, cwd=self.tmp)
         self.assertEqual(result.returncode, 0, result.stderr)
         lines = report.read_text(encoding="utf-8").splitlines()
         header = lines.index("| Category | Score | Status |")
-        self.assertEqual(lines[header + 2], "| File Structure | 18/18 | ✅ Passed |")
-        self.assertEqual(lines[header + 4], "| Coding Standards | 12/18 | ⚠️  Issues |")
+        self.assertEqual(lines[header + 2], "| File Structure | 20/20 | ✅ Passed |")
+        self.assertEqual(lines[header + 4], "| Coding Standards | 13/20 | ⚠️  Issues |")
         self.assertEqual(lines[header + 7], "| Baseline Hygiene | 0/10 | ⚠️  Issues |")
-        self.assertEqual(lines[header + 8], "| **TOTAL** | **74/100** | ✅ Good |")
-        self.assertIn("**Total Score: 74/100**", lines)
+        self.assertEqual(lines[header + 8], "| **TOTAL** | **64/100** | ✅ Good |")
+        self.assertIn("**Total Score: 64/100**", lines)
 
 
 class PluginVersionTest(TempDirTestCase):

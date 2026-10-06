@@ -92,7 +92,10 @@ This conformance check validates your extension against the following standards:
 |----------|-------|--------|
 EOF
 
-# Initialize scores
+# Initialize scores. The base rubric (README.md, SKILL.md) has five categories
+# of 20 points: Extension Architecture (file structure here), Coding
+# Guidelines, PHP Architecture, Testing Standards, and Best Practices, which
+# this script scores as Documentation (10) plus PHPStan Baseline Hygiene (10).
 total_score=0
 
 echo -e "${YELLOW}Running conformance checks...${NC}"
@@ -102,10 +105,10 @@ echo ""
 echo -e "${BLUE}[1/7] Checking file structure...${NC}"
 if bash "${SCRIPT_DIR}/check-file-structure.sh" "${PROJECT_DIR}" >> "${REPORT_FILE}"; then
     echo -e "${GREEN}  ✓ File structure check complete${NC}"
-    structure_score=18
+    structure_score=20
 else
     echo -e "${YELLOW}  ⚠ File structure issues found${NC}"
-    structure_score=10
+    structure_score=11
 fi
 echo ""
 
@@ -124,10 +127,10 @@ echo ""
 echo -e "${BLUE}[3/7] Checking coding standards...${NC}"
 if bash "${SCRIPT_DIR}/check-coding-standards.sh" "${PROJECT_DIR}" >> "${REPORT_FILE}"; then
     echo -e "${GREEN}  ✓ Coding standards check complete${NC}"
-    coding_score=18
+    coding_score=20
 else
     echo -e "${YELLOW}  ⚠ Coding standards issues found${NC}"
-    coding_score=12
+    coding_score=13
 fi
 echo ""
 
@@ -135,10 +138,10 @@ echo ""
 echo -e "${BLUE}[4/7] Checking PHP architecture...${NC}"
 if bash "${SCRIPT_DIR}/check-architecture.sh" "${PROJECT_DIR}" >> "${REPORT_FILE}"; then
     echo -e "${GREEN}  ✓ Architecture check complete${NC}"
-    arch_score=18
+    arch_score=20
 else
     echo -e "${YELLOW}  ⚠ Architecture issues found${NC}"
-    arch_score=10
+    arch_score=11
 fi
 echo ""
 
@@ -146,10 +149,10 @@ echo ""
 echo -e "${BLUE}[5/7] Checking testing infrastructure...${NC}"
 if bash "${SCRIPT_DIR}/check-testing.sh" "${PROJECT_DIR}" >> "${REPORT_FILE}"; then
     echo -e "${GREEN}  ✓ Testing check complete${NC}"
-    test_score=16
+    test_score=20
 else
     echo -e "${YELLOW}  ⚠ Testing issues found${NC}"
-    test_score=8
+    test_score=10
 fi
 echo ""
 
@@ -179,13 +182,12 @@ echo -e "${BLUE}╔════════════════════�
 echo -e "${BLUE}║                    Conformance Results                     ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "  File Structure:       ${structure_score}/18"
+echo -e "  File Structure:       ${structure_score}/20"
 echo -e "  Documentation:        ${docs_score}/10"
-echo -e "  Coding Standards:     ${coding_score}/18"
-echo -e "  PHP Architecture:     ${arch_score}/18"
-echo -e "  Testing Standards:    ${test_score}/16"
+echo -e "  Coding Standards:     ${coding_score}/20"
+echo -e "  PHP Architecture:     ${arch_score}/20"
+echo -e "  Testing Standards:    ${test_score}/20"
 echo -e "  Baseline Hygiene:     ${baseline_score}/10"
-echo -e "  Best Practices:       10/10"
 echo ""
 echo -e "  ${BLUE}Total Score:          ${total_score}/100${NC}"
 echo ""
