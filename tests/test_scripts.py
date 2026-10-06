@@ -192,6 +192,35 @@ class UntrustedGitConfigTest(TempDirTestCase):
         )
 
 
+class InheritedGitLocationTest(TempDirTestCase):
+    """Run from a git hook, GIT_DIR and GIT_INDEX_FILE point at the calling
+    repository; the scripts still answer for the checked extension."""
+
+    def test_file_structure_check_reads_the_extension(self) -> None:
+        ext = make_extension(self.tmp / "ext")
+        write(ext / "helper.php", "<?php\n")
+        git(ext, "init", "-q")
+        git(ext, "add", ".")
+        other = self.tmp / "other"
+        other.mkdir()
+        git(other, "init", "-q")
+        env = {
+            **ENV,
+            "GIT_DIR": str(other / ".git"),
+            "GIT_INDEX_FILE": str(other / ".git" / "index"),
+        }
+        result = subprocess.run(
+            ["bash", str(SCRIPTS / "check-file-structure.sh"), str(ext)],
+            cwd=self.tmp,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+        self.assertIn("helper.php (ISSUE", result.stdout)
+
+
 class CodingStandardsTest(TempDirTestCase):
     script = SCRIPTS / "check-coding-standards.sh"
 
