@@ -314,18 +314,26 @@ mechanical:
     desc: "composer.json should have a meaningful description"
 
   # TYPO3 v14 and TER read the extension title from the composer.json
-  # description: the part before the first " - ". Without " - " TER falls back
-  # to the ext_emconf.php title, so only a description with " - " is checked.
+  # description: the part before the first " - ". Both checks follow TER's
+  # getTitleAndDescription(): trim, split on the first " - ", and skip a
+  # description without one (TER then takes the ext_emconf.php title).
+  # TC-187 reads ext_emconf.php by including it, the way TYPO3 does. Both pass
+  # when php is not available.
   - id: TC-186
     type: command
     pattern: |
-      title=$(jq -r '.description // ""' composer.json | awk -F ' - ' 'NF > 1 { print $1 }')
-      [ -z "$title" ] && exit 0
-      [ "$(printf '%s' "$title" | LC_ALL=C wc -c)" -le 255 ] || exit 1
-      emconf=$(sed -nE "s/.*'title'[[:space:]]*=>[[:space:]]*'([^']*)'.*/\1/p" ext_emconf.php 2>/dev/null)
-      [ -z "$emconf" ] || [ "$title" = "$emconf" ]
+      command -v php >/dev/null || exit 0
+      php -r '$d = trim((string) (json_decode((string) @file_get_contents("composer.json"), true)["description"] ?? "")); if (!str_contains($d, " - ")) exit(0); exit(strlen(trim(explode(" - ", $d, 2)[0])) > 255 ? 1 : 0);'
+    severity: error
+    desc: "composer.json description: the title before the first ' - ' must be at most 255 bytes, or TER rejects the upload"
+
+  - id: TC-187
+    type: command
+    pattern: |
+      command -v php >/dev/null || exit 0
+      php -r '$d = trim((string) (json_decode((string) @file_get_contents("composer.json"), true)["description"] ?? "")); if (!str_contains($d, " - ") || !is_file("ext_emconf.php")) exit(0); $_EXTKEY = "ext"; $EM_CONF = []; include "ext_emconf.php"; $c = reset($EM_CONF); $e = is_array($c) ? (string) ($c["title"] ?? "") : ""; exit($e === "" || $e === trim(explode(" - ", $d, 2)[0]) ? 0 : 1);'
     severity: warning
-    desc: "composer.json description should start with '<ext_emconf.php title> - ': TYPO3 v14 and TER take the part before the first ' - ' as the title (max 255 bytes)"
+    desc: "composer.json description should start with '<ext_emconf.php title> - ': TYPO3 v14 and TER take the part before the first ' - ' as the title"
 
   - id: TC-26
     type: regex

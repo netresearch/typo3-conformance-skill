@@ -693,8 +693,13 @@
       },
       {
         "type": "content_regex",
-        "value": "by Netresearch",
-        "description": "Names the description TER and TYPO3 v14 would derive"
+        "value": "(as|becomes|title( would be| is)?:?) [\"'`]?Adds image support to CKEditor5 RTE[\"'`]?|Adds image support to CKEditor5 RTE[\"'`]? (as|becomes) (the )?title",
+        "description": "Names the sentence fragment TER and TYPO3 v14 would take as the title"
+      },
+      {
+        "type": "content_regex",
+        "value": "description[: ]+[\"'`]?by Netresearch",
+        "description": "Names 'by Netresearch' as the description TER and TYPO3 v14 would derive"
       },
       {
         "type": "content_regex",
