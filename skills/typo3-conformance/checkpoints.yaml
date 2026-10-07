@@ -360,7 +360,7 @@ mechanical:
     type: command
     pattern: |
       command -v php >/dev/null || exit 0
-      php -r '$j = json_decode((string) @file_get_contents("composer.json"), true) ?: []; $d = trim((string) ($j["description"] ?? "")); $e = ""; if (is_file("ext_emconf.php")) { $_EXTKEY = "ext"; $EM_CONF = []; include "ext_emconf.php"; $c = reset($EM_CONF); $e = is_array($c) ? (string) ($c["title"] ?? "") : ""; } $t = str_contains($d, " - ") ? trim(explode(" - ", $d, 2)[0]) : $e; exit(mb_strlen($t) > 40 ? 1 : 0);'
+      php -r '$j = json_decode((string) @file_get_contents("composer.json"), true) ?: []; $d = trim((string) ($j["description"] ?? "")); $e = ""; if (is_file("ext_emconf.php")) { $_EXTKEY = "ext"; $EM_CONF = []; include "ext_emconf.php"; $c = reset($EM_CONF); $e = is_array($c) ? (string) ($c["title"] ?? "") : ""; } $t = str_contains($d, " - ") ? trim(explode(" - ", $d, 2)[0]) : $e; exit(preg_match_all("/./su", $t) > 40 ? 1 : 0);'
     severity: error
     desc: "Extension title must be at most 40 characters: longer titles wrap in the docs.typo3.org H1 and header"
 
@@ -368,7 +368,7 @@ mechanical:
     type: command
     pattern: |
       command -v php >/dev/null || exit 0
-      php -r '$j = json_decode((string) @file_get_contents("composer.json"), true) ?: []; $d = trim((string) ($j["description"] ?? "")); $e = ""; if (is_file("ext_emconf.php")) { $_EXTKEY = "ext"; $EM_CONF = []; include "ext_emconf.php"; $c = reset($EM_CONF); $e = is_array($c) ? (string) ($c["title"] ?? "") : ""; } $t = str_contains($d, " - ") ? trim(explode(" - ", $d, 2)[0]) : $e; exit(mb_strlen($t) > 30 ? 1 : 0);'
+      php -r '$j = json_decode((string) @file_get_contents("composer.json"), true) ?: []; $d = trim((string) ($j["description"] ?? "")); $e = ""; if (is_file("ext_emconf.php")) { $_EXTKEY = "ext"; $EM_CONF = []; include "ext_emconf.php"; $c = reset($EM_CONF); $e = is_array($c) ? (string) ($c["title"] ?? "") : ""; } $t = str_contains($d, " - ") ? trim(explode(" - ", $d, 2)[0]) : $e; exit(preg_match_all("/./su", $t) > 30 ? 1 : 0);'
     severity: warning
     desc: "Extension title should be at most 30 characters: the docs.typo3.org menu caption wraps from about 26"
 
@@ -376,7 +376,7 @@ mechanical:
     type: command
     pattern: |
       command -v php >/dev/null || exit 0
-      php -r '$j = json_decode((string) @file_get_contents("composer.json"), true) ?: []; $d = trim((string) ($j["description"] ?? "")); $e = ""; if (is_file("ext_emconf.php")) { $_EXTKEY = "ext"; $EM_CONF = []; include "ext_emconf.php"; $c = reset($EM_CONF); $e = is_array($c) ? (string) ($c["title"] ?? "") : ""; } $t = str_contains($d, " - ") ? trim(explode(" - ", $d, 2)[0]) : $e; if ($t === "" || !is_file("Documentation/guides.xml")) exit(0); $ok = preg_match("/<project\b[^>]*\btitle=\"([^\"]*)\"/s", (string) file_get_contents("Documentation/guides.xml"), $m) === 1; exit($ok && html_entity_decode($m[1], ENT_QUOTES | ENT_XML1) === $t ? 0 : 1);'
+      php -r '$j = json_decode((string) @file_get_contents("composer.json"), true) ?: []; $d = trim((string) ($j["description"] ?? "")); $e = ""; if (is_file("ext_emconf.php")) { $_EXTKEY = "ext"; $EM_CONF = []; include "ext_emconf.php"; $c = reset($EM_CONF); $e = is_array($c) ? (string) ($c["title"] ?? "") : ""; } $t = str_contains($d, " - ") ? trim(explode(" - ", $d, 2)[0]) : $e; if ($t === "" || !is_file("Documentation/guides.xml")) exit(0); $ok = preg_match("/<project\b[^>]*\btitle=([\"\x27])(.*?)\\1/s", (string) file_get_contents("Documentation/guides.xml"), $m) === 1; exit($ok && html_entity_decode($m[2], ENT_QUOTES | ENT_XML1) === $t ? 0 : 1);'
     severity: warning
     desc: "Documentation/guides.xml <project title> should equal the extension title (docs.typo3.org browser tab)"
 
@@ -384,7 +384,7 @@ mechanical:
     type: command
     pattern: |
       command -v php >/dev/null || exit 0
-      php -r '$j = json_decode((string) @file_get_contents("composer.json"), true) ?: []; $d = trim((string) ($j["description"] ?? "")); $e = ""; if (is_file("ext_emconf.php")) { $_EXTKEY = "ext"; $EM_CONF = []; include "ext_emconf.php"; $c = reset($EM_CONF); $e = is_array($c) ? (string) ($c["title"] ?? "") : ""; } $t = str_contains($d, " - ") ? trim(explode(" - ", $d, 2)[0]) : $e; if ($t === "" || !is_file("Documentation/Index.rst")) exit(0); $l = file("Documentation/Index.rst", FILE_IGNORE_NEW_LINES); $h = null; for ($i = 0; $i < count($l) - 1; $i++) { $a = $l[$i]; if (trim($a) !== "" && $a[0] !== " " && !preg_match("/^(\.\.|:)/", $a) && !preg_match("/^([=#*~^\-])\\1+$/", trim($a)) && preg_match("/^([=#*~^\-])\\1+$/", trim($l[$i + 1]))) { $h = trim($a); break; } } exit($h === null || $h === $t ? 0 : 1);'
+      php -r '$j = json_decode((string) @file_get_contents("composer.json"), true) ?: []; $d = trim((string) ($j["description"] ?? "")); $e = ""; if (is_file("ext_emconf.php")) { $_EXTKEY = "ext"; $EM_CONF = []; include "ext_emconf.php"; $c = reset($EM_CONF); $e = is_array($c) ? (string) ($c["title"] ?? "") : ""; } $t = str_contains($d, " - ") ? trim(explode(" - ", $d, 2)[0]) : $e; if ($t === "" || !is_file("Documentation/Index.rst")) exit(0); $l = file("Documentation/Index.rst", FILE_IGNORE_NEW_LINES); $h = null; for ($i = 0; $i < count($l) - 1; $i++) { $a = $l[$i]; if (trim($a) !== "" && $a[0] !== " " && !preg_match("/^(\.\.|:)/", $a) && !preg_match("/^([=#*~^\-])\\1+$/", trim($a)) && preg_match("/^([=#*~^\-])\\1+$/", trim($l[$i + 1]))) { $h = trim($a); break; } } exit($h === $t ? 0 : 1);'
     severity: warning
     desc: "The first heading of Documentation/Index.rst should equal the extension title (docs.typo3.org header, menu and H1)"
 
@@ -392,7 +392,7 @@ mechanical:
     type: command
     pattern: |
       command -v php >/dev/null || exit 0
-      php -r '$j = json_decode((string) @file_get_contents("composer.json"), true) ?: []; $d = trim((string) ($j["description"] ?? "")); $e = ""; if (is_file("ext_emconf.php")) { $_EXTKEY = "ext"; $EM_CONF = []; include "ext_emconf.php"; $c = reset($EM_CONF); $e = is_array($c) ? (string) ($c["title"] ?? "") : ""; } $t = str_contains($d, " - ") ? trim(explode(" - ", $d, 2)[0]) : $e; $r = (string) @file_get_contents("README.md"); $p = []; if (preg_match("/<h1\b[^>]*>(.*?)<\/h1>/is", $r, $m, PREG_OFFSET_CAPTURE)) { $p[] = [$m[0][1], trim(strip_tags($m[1][0]))]; } if (preg_match("/^#[ \t]+(.+?)[ \t]*$/m", $r, $m, PREG_OFFSET_CAPTURE)) { $p[] = [$m[0][1], $m[1][0]]; } if ($t === "" || $p === []) exit(0); sort($p); $h = html_entity_decode($p[0][1]); exit(in_array($h, [$t, $t . " for TYPO3"], true) ? 0 : 1);'
+      php -r '$j = json_decode((string) @file_get_contents("composer.json"), true) ?: []; $d = trim((string) ($j["description"] ?? "")); $e = ""; if (is_file("ext_emconf.php")) { $_EXTKEY = "ext"; $EM_CONF = []; include "ext_emconf.php"; $c = reset($EM_CONF); $e = is_array($c) ? (string) ($c["title"] ?? "") : ""; } $t = str_contains($d, " - ") ? trim(explode(" - ", $d, 2)[0]) : $e; $r = (string) @file_get_contents("README.md"); $p = []; if (preg_match("/<h1\b[^>]*>(.*?)<\/h1>/is", $r, $m, PREG_OFFSET_CAPTURE)) { $p[] = [$m[0][1], trim(strip_tags($m[1][0]))]; } if (preg_match("/^#[ \t]+(.+?)[ \t]*$/m", $r, $m, PREG_OFFSET_CAPTURE)) { $p[] = [$m[0][1], $m[1][0]]; } if ($t === "" || !is_file("README.md")) exit(0); if ($p === []) exit(1); sort($p); $h = html_entity_decode($p[0][1]); exit(in_array($h, [$t, $t . " for TYPO3"], true) ? 0 : 1);'
     severity: warning
     desc: "The README heading should be the extension title, optionally followed by ' for TYPO3'"
 
