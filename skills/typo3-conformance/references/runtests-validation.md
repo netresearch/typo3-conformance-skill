@@ -280,7 +280,7 @@ sed -n '/if \[ \${TYPO3_VERSION} -eq 13 \];/,/fi/p' Build/Scripts/runTests.sh
 grep '^NETWORK=' Build/Scripts/runTests.sh
 
 # Extract extension key from composer.json or ext_emconf.php
-EXT_KEY=$(jq -r '.extra.typo3.cms."extension-key"' composer.json)
+EXT_KEY=$(jq -r '.extra."typo3/cms"."extension-key"' composer.json)
 
 # Expected: NETWORK="${EXT_KEY}-${SUFFIX}" or similar
 # ❌ Wrong: NETWORK="friendsoftypo3-tea-${SUFFIX}"
@@ -300,7 +300,7 @@ echo "🔍 Validating Build/Scripts/runTests.sh against extension requirements..
 # Extract requirements
 MIN_PHP=$(jq -r '.require.php' composer.json | grep -oE '[0-9]+\.[0-9]+' | head -1)
 TARGET_TYPO3=$(jq -r '.require."typo3/cms-core"' composer.json | grep -oE '^[0-9]+' | head -1)
-EXT_KEY=$(jq -r '.extra.typo3.cms."extension-key"' composer.json)
+EXT_KEY=$(jq -r '.extra."typo3/cms"."extension-key"' composer.json)
 
 echo "📋 Extension Requirements:"
 echo "  PHP: ${MIN_PHP}+"

@@ -153,8 +153,10 @@ git ls-files .Build/
 # Extract composer paths
 cat composer.json | jq -r '.config."bin-dir"'      # Should be .Build/bin
 cat composer.json | jq -r '.config."vendor-dir"'   # Should be .Build/vendor
-cat composer.json | jq -r '.extra.typo3.cms."web-dir"'  # Should be .Build/public
+cat composer.json | jq -r '.extra."typo3/cms"."web-dir"'  # Should be .Build/public
 ```
+
+Checkpoint TC-194 enforces `vendor-dir` = `.Build/vendor` as a warning. Lowercase `.build/` is a legacy layout: it is flagged, not rejected — migrate it when touching the build setup.
 
 **Expected composer.json:**
 
@@ -500,9 +502,11 @@ else
 fi
 
 # Check 5: Composer paths should reference .Build/
-BIN_DIR=$(jq -r '.config."bin-dir" // ".Build/bin"' composer.json)
-VENDOR_DIR=$(jq -r '.config."vendor-dir" // ".Build/vendor"' composer.json)
-WEB_DIR=$(jq -r '.extra.typo3.cms."web-dir" // ".Build/public"' composer.json)
+# No default: an unset path means Composer's own default (vendor/, vendor/bin,
+# public/), which is not .Build/ — the same reading as checkpoint TC-194.
+BIN_DIR=$(jq -r '.config."bin-dir" // "unset"' composer.json)
+VENDOR_DIR=$(jq -r '.config."vendor-dir" // "unset"' composer.json)
+WEB_DIR=$(jq -r '.extra."typo3/cms"."web-dir" // "unset"' composer.json)
 
 if [ "${BIN_DIR}" = ".Build/bin" ]; then
     echo "✅ Composer bin-dir: ${BIN_DIR}"
