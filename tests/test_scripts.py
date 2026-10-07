@@ -231,6 +231,10 @@ class UntrustedGitConfigTest(TempDirTestCase):
         git(ext, "config", "remote.origin.promisor", "true")
         git(ext, "config", "core.sshCommand", f"touch {marker}; false")
         git(ext, "config", "protocol.ssh.allow", "always")
+        # A newer mtime makes the index entry stale, so a `git diff` of the
+        # baseline would have to read the missing blob.
+        later = baseline.stat().st_mtime + 5
+        os.utime(baseline, (later, later))
         run(SCRIPTS / "check-phpstan-baseline.sh", str(ext), cwd=self.tmp)
         self.assertFalse(marker.exists(), "a promisor remote's transport command ran")
 
