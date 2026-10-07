@@ -335,6 +335,22 @@ mechanical:
     severity: warning
     desc: "composer.json description should start with '<ext_emconf.php title> - ': TYPO3 v14 and TER take the part before the first ' - ' as the title"
 
+  # The TYPO3 standard build layout is .Build/ (TYPO3BestPractices/tea sets
+  # config.vendor-dir .Build/vendor). Lowercase .build/vendor and a missing
+  # value (vendor/ in the repository root) fail as a warning, not an error:
+  # existing legacy layouts are migrated when the build setup is touched.
+  # Predicts: build scripts, CI and runTests.sh copied from the TYPO3 standard
+  # resolving a vendor directory the extension does not use.
+  # Calibration: demote to info if every flagged extension is a legacy layout
+  # nobody migrates over 6 months of /assess runs.
+  - id: TC-188
+    type: json_path
+    target: composer.json
+    pattern: '.config["vendor-dir"] == ".Build/vendor"'
+    severity: warning
+    desc: "composer.json config.vendor-dir should be .Build/vendor (TYPO3 standard, see TYPO3BestPractices/tea); other values such as .build/vendor are legacy - migrate when touching the build setup"
+    tags: [composer, build, directory-structure]
+
   - id: TC-26
     type: regex
     target: composer.json

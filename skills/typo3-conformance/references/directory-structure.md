@@ -156,6 +156,8 @@ cat composer.json | jq -r '.config."vendor-dir"'   # Should be .Build/vendor
 cat composer.json | jq -r '.extra.typo3.cms."web-dir"'  # Should be .Build/public
 ```
 
+Checkpoint TC-188 enforces `vendor-dir` = `.Build/vendor` as a warning. Lowercase `.build/` is a legacy layout: it is flagged, not rejected — migrate it when touching the build setup.
+
 **Expected composer.json:**
 
 ```json
