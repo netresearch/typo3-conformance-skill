@@ -156,6 +156,140 @@ class FileStructureTest(TempDirTestCase):
         self.assertIn("untracked PHP file(s) in root", result.stdout)
 
 
+class UntrustedGitConfigTest(TempDirTestCase):
+    """The checked extension's .git/config is input: a command it names for
+    core.fsmonitor or a hook does not run while the scripts ask git about
+    tracked files and baseline changes."""
+
+    def check(self, script: str, prepare) -> None:
+        ext = make_extension(self.tmp / "ext")
+        write(
+            ext / "Build" / "phpstan-baseline.neon", BASELINE.format(first=1, second=2)
+        )
+        write(ext / "helper.php", "<?php\n")
+        git(ext, "init", "-q")
+        git(ext, "add", ".")
+        git(ext, "commit", "-q", "-m", "init")
+        marker = self.tmp / "fsmonitor-ran"
+        git(ext, "config", "core.fsmonitor", f"touch {marker}; false")
+        prepare(ext)
+        run(SCRIPTS / script, str(ext), cwd=self.tmp)
+        self.assertFalse(marker.exists(), f"{script} ran a command from the git config")
+
+    def test_file_structure_check(self) -> None:
+        self.check(
+            "check-file-structure.sh",
+            lambda ext: write(ext / "helper.php", "<?php\n// changed\n"),
+        )
+
+    def test_phpstan_baseline_check(self) -> None:
+        self.check(
+            "check-phpstan-baseline.sh",
+            lambda ext: write(
+                ext / "Build" / "phpstan-baseline.neon",
+                BASELINE.format(first=1, second=5),
+            ),
+        )
+
+    def test_phpstan_baseline_check_runs_no_clean_filter(self) -> None:
+        ext = make_extension(self.tmp / "ext")
+        baseline = ext / "Build" / "phpstan-baseline.neon"
+        write(baseline, BASELINE.format(first=1, second=2))
+        git(ext, "init", "-q")
+        git(ext, "add", ".")
+        git(ext, "commit", "-q", "-m", "init")
+        marker = self.tmp / "filter-ran"
+        git(ext, "config", "filter.evil.clean", f"touch {marker}; cat")
+        write(ext / ".gitattributes", "*.neon filter=evil\n")
+        write(baseline, BASELINE.format(first=1, second=5))
+        result = run(SCRIPTS / "check-phpstan-baseline.sh", str(ext), cwd=self.tmp)
+        self.assertFalse(marker.exists(), "the extension's clean filter ran")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("Error count increased: 3 → 6", result.stdout)
+
+    def test_phpstan_baseline_check_fetches_no_missing_object(self) -> None:
+        ext = make_extension(self.tmp / "ext")
+        baseline = ext / "Build" / "phpstan-baseline.neon"
+        write(baseline, BASELINE.format(first=1, second=2))
+        git(ext, "init", "-q")
+        git(ext, "add", ".")
+        git(ext, "commit", "-q", "-m", "init")
+        blob = subprocess.run(
+            ["git", "rev-parse", "HEAD:Build/phpstan-baseline.neon"],
+            cwd=ext,
+            env=ENV,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        ).stdout.strip()
+        (ext / ".git" / "objects" / blob[:2] / blob[2:]).unlink()
+        marker = self.tmp / "transport-ran"
+        git(ext, "config", "core.repositoryformatversion", "1")
+        git(ext, "config", "extensions.partialClone", "origin")
+        git(ext, "config", "remote.origin.url", "ssh://example.invalid/x.git")
+        git(ext, "config", "remote.origin.promisor", "true")
+        git(ext, "config", "core.sshCommand", f"touch {marker}; false")
+        git(ext, "config", "protocol.ssh.allow", "always")
+        run(SCRIPTS / "check-phpstan-baseline.sh", str(ext), cwd=self.tmp)
+        self.assertFalse(marker.exists(), "a promisor remote's transport command ran")
+
+    def test_phpstan_baseline_check_ignores_line_ending_conversion(self) -> None:
+        ext = make_extension(self.tmp / "ext")
+        baseline = ext / "Build" / "phpstan-baseline.neon"
+        write(baseline, BASELINE.format(first=1, second=2))
+        write(ext / ".gitattributes", "*.neon text eol=crlf\n")
+        git(ext, "init", "-q")
+        git(ext, "add", ".")
+        git(ext, "commit", "-q", "-m", "init")
+        baseline.unlink()
+        git(ext, "checkout", "--", "Build/phpstan-baseline.neon")
+        self.assertIn(b"\r\n", baseline.read_bytes())
+        result = run(SCRIPTS / "check-phpstan-baseline.sh", str(ext), cwd=self.tmp)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("No changes to baseline file", result.stdout)
+
+    def test_phpstan_baseline_check_sees_an_added_final_newline(self) -> None:
+        ext = make_extension(self.tmp / "ext")
+        baseline = ext / "Build" / "phpstan-baseline.neon"
+        write(baseline, BASELINE.format(first=1, second=2))
+        git(ext, "init", "-q")
+        git(ext, "add", ".")
+        git(ext, "commit", "-q", "-m", "init")
+        write(baseline, BASELINE.format(first=1, second=2) + "\n")
+        result = run(SCRIPTS / "check-phpstan-baseline.sh", str(ext), cwd=self.tmp)
+        self.assertIn("Baseline file has uncommitted changes", result.stdout)
+
+
+class InheritedGitLocationTest(TempDirTestCase):
+    """Run from a git hook, GIT_DIR and GIT_INDEX_FILE point at the calling
+    repository; the scripts still answer for the checked extension."""
+
+    def test_file_structure_check_reads_the_extension(self) -> None:
+        ext = make_extension(self.tmp / "ext")
+        write(ext / "helper.php", "<?php\n")
+        git(ext, "init", "-q")
+        git(ext, "add", ".")
+        other = self.tmp / "other"
+        other.mkdir()
+        git(other, "init", "-q")
+        env = {
+            **ENV,
+            "GIT_DIR": str(other / ".git"),
+            "GIT_INDEX_FILE": str(other / ".git" / "index"),
+        }
+        result = subprocess.run(
+            ["bash", str(SCRIPTS / "check-file-structure.sh"), str(ext)],
+            cwd=self.tmp,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+        self.assertIn("helper.php (ISSUE", result.stdout)
+
+
 class CodingStandardsTest(TempDirTestCase):
     script = SCRIPTS / "check-coding-standards.sh"
 
@@ -352,12 +486,12 @@ class ConformanceTest(TempDirTestCase):
         ext = make_extension(self.tmp / "ext")
         result = run(self.script, "ext", cwd=self.tmp)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("Total Score:          90/100", result.stdout)
+        self.assertIn("Total Score:          100/100", result.stdout)
         report = self.report(ext)
         self.assertIn("**Project:** ext", report)
         self.assertNotIn("$(", report)
-        self.assertIn("| File Structure | 18/18 | ✅ Passed |", report)
-        self.assertIn("| **TOTAL** | **90/100** |", report)
+        self.assertIn("| File Structure | 20/20 | ✅ Passed |", report)
+        self.assertIn("| **TOTAL** | **100/100** |", report)
         self.assertIn("## 1. File Structure Conformance", report)
 
     def test_absolute_path_argument_works_from_another_directory(self) -> None:
@@ -425,16 +559,16 @@ class GenerateReportTest(TempDirTestCase):
             "## Standards Checked\n\n| a | b |\n|---|---|\n\n"
             "## Summary\n\n| Category | Score | Status |\n|----|----|----|\n",
         )
-        args = ("18", "12", "18", "16", "10", "0", "74")
+        args = ("20", "13", "11", "10", "10", "0", "64")
         result = run(self.script, str(ext), str(report), *args, cwd=self.tmp)
         self.assertEqual(result.returncode, 0, result.stderr)
         lines = report.read_text(encoding="utf-8").splitlines()
         header = lines.index("| Category | Score | Status |")
-        self.assertEqual(lines[header + 2], "| File Structure | 18/18 | ✅ Passed |")
-        self.assertEqual(lines[header + 4], "| Coding Standards | 12/18 | ⚠️  Issues |")
+        self.assertEqual(lines[header + 2], "| File Structure | 20/20 | ✅ Passed |")
+        self.assertEqual(lines[header + 4], "| Coding Standards | 13/20 | ⚠️  Issues |")
         self.assertEqual(lines[header + 7], "| Baseline Hygiene | 0/10 | ⚠️  Issues |")
-        self.assertEqual(lines[header + 8], "| **TOTAL** | **74/100** | ✅ Good |")
-        self.assertIn("**Total Score: 74/100**", lines)
+        self.assertEqual(lines[header + 8], "| **TOTAL** | **64/100** | ✅ Good |")
+        self.assertIn("**Total Score: 64/100**", lines)
 
 
 class PluginVersionTest(TempDirTestCase):

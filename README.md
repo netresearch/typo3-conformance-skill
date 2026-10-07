@@ -1032,6 +1032,8 @@ The skill generates comprehensive markdown reports with dual scoring system:
 - Testing Standards: 0-20 points
 - Best Practices: 0-20 points
 
+`scripts/check-conformance.sh` scores the base categories mechanically on the same scale: file structure (Extension Architecture), coding standards, PHP architecture and testing at up to 20 points each, and Best Practices as documentation (up to 10) plus PHPStan baseline hygiene (up to 10).
+
 **Excellence Indicators (0-22 points) - OPTIONAL BONUS**
 - Community & Internationalization: 0-6 points
 - Advanced Quality Tooling: 0-9 points
@@ -1306,7 +1308,7 @@ A failure prints the test name and the failed assertion; most assertions include
 
 ### Dependencies
 
-- **Scripts:** Bash and the standard tools `grep`, `find`, `awk`, `sed` and `git`; `check-plugin-version.sh` also uses `python3`, and `scripts/verify-harness.sh` uses the `gh` CLI for one optional lookup when it is installed. Nothing is installed at run time.
+- **Scripts:** Bash and the standard tools `grep`, `find`, `awk`, `sed`, `tr` and `git`; `check-plugin-version.sh` also uses `python3`, and `scripts/verify-harness.sh` uses the `gh` CLI for one optional lookup when it is installed. Nothing is installed at run time.
 - **Tests:** Python 3 standard library only.
 - **Composer:** `composer.json` requires `netresearch/composer-agent-skill-plugin`, which installs the skill into a PHP project. The constraint is `*`, and no `composer.lock` is committed, so the latest release is resolved at install time.
 - **Development tools:** the pre-commit hooks are pinned by `rev:` in `.pre-commit-config.yaml`. Renovate ([`renovate.json`](renovate.json), `config:recommended` with the pre-commit manager enabled) proposes updates for them.

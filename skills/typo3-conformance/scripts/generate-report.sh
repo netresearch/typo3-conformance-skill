@@ -45,11 +45,11 @@ else
 fi
 
 summary_rows="$(
-    summary_row "File Structure" "${STRUCTURE_SCORE}" 18
+    summary_row "File Structure" "${STRUCTURE_SCORE}" 20
     summary_row "Documentation" "${DOCS_SCORE}" 10
-    summary_row "Coding Standards" "${CODING_SCORE}" 18
-    summary_row "PHP Architecture" "${ARCH_SCORE}" 18
-    summary_row "Testing Standards" "${TEST_SCORE}" 16
+    summary_row "Coding Standards" "${CODING_SCORE}" 20
+    summary_row "PHP Architecture" "${ARCH_SCORE}" 20
+    summary_row "Testing Standards" "${TEST_SCORE}" 20
     summary_row "Baseline Hygiene" "${BASELINE_SCORE}" 10
     echo "| **TOTAL** | **${TOTAL_SCORE}/100** | ${total_status} |"
 )"
