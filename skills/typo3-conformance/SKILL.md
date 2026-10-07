@@ -46,7 +46,7 @@ Read ext_emconf.php + composer.json for version, type, scope.
 
 ### Steps 1-11: Checks
 
-1. **Metadata** -- key, TYPO3 version, type
+1. **Metadata** -- key, TYPO3 version, type; one title and description across TER, docs.typo3.org, README and GitHub (`references/extension-naming.md`)
 2. **Structure** -- composer.json, ext_emconf.php, Classes/, Configuration/, Resources/
 3. **Coding** -- strict_types, PSR-12, PHP 8.4 explicit nullable, PHP 8.5 float-to-int
 4. **Prohibited** -- no `$GLOBALS`, no `GeneralUtility::makeInstance()` for services
@@ -94,7 +94,7 @@ grep -rn 'HashService\|GeneralUtility::hmac(\|->findBy[A-Z]\|->findOneBy[A-Z]\|-
 See `references/`:
 
 - **Architecture & code:** `extension-architecture.md`, `directory-structure.md`, `php-architecture.md`, `coding-guidelines.md`, `best-practices.md`, `hooks-and-events.md`
-- **Validation:** `composer-validation.md`, `ext-emconf-validation.md`, `ext-files-validation.md`, `runtests-validation.md`, `version-requirements.md`, `testing-standards.md`
+- **Validation:** `composer-validation.md`, `extension-naming.md`, `ext-emconf-validation.md`, `ext-files-validation.md`, `runtests-validation.md`, `version-requirements.md`, `testing-standards.md`
 - **Multi-version:** `dual-version-compatibility.md`, `v13-v14-dual-compatibility.md`, `multi-version-dependency-compatibility.md`, `v13-deprecations.md`, `v14-deprecations.md`
 - **Practices & backend:** `development-environment.md`, `backend-module-v13.md`, `ter-publishing.md`, `report-template.md`, `excellence-indicators.md`, `localization-coverage.md`, `crowdin-integration.md`
 

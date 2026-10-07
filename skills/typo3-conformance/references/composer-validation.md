@@ -83,6 +83,10 @@ Compare the printed title with `title` in `ext_emconf.php`. Checkpoint TC-186
 differs from the `ext_emconf.php` title. Both skip a description without
 ` - `.
 
+The same title belongs in `guides.xml`, `Documentation/Index.rst`, the README
+and the GitHub description; `extension-naming.md` lists every place, its
+source and its length limits.
+
 ### license
 **Recommended:** `GPL-2.0-only` or `GPL-2.0-or-later`
 

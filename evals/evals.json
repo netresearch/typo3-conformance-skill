@@ -718,5 +718,42 @@
         "Yes, it is clear, longer than 20 characters and names the vendor."
       ]
     }
+  },
+  {
+    "name": "extension-title-across-platforms",
+    "prompt": "Our extension shows as 'Netresearch: Image Optimization' on TER, 'Image Optimization for TYPO3' as the H1 on docs.typo3.org, and the README says 'nr_image_optimize'. Where does each place take the name from, and what should we change so they agree?",
+    "assertions": [
+      {
+        "type": "content_regex",
+        "value": "(before|ahead of) the first [\"'`]? ?- ?[\"'`]?|part before",
+        "description": "Names the composer.json description split as TER's title source"
+      },
+      {
+        "type": "content_regex",
+        "value": "Index\\.rst",
+        "description": "Names the first heading of Documentation/Index.rst as the docs.typo3.org H1 source"
+      },
+      {
+        "type": "content_regex",
+        "value": "guides\\.xml",
+        "description": "Names guides.xml <project title>"
+      },
+      {
+        "type": "content_regex",
+        "value": "(no|without|drop|remove)[^.]{0,40}(vendor|Netresearch)",
+        "description": "Drops the vendor prefix from the title"
+      },
+      {
+        "type": "content_regex",
+        "value": "Image Optimization - ",
+        "description": "Proposes a composer description starting with the title and ' - '"
+      }
+    ],
+    "samples": {
+      "passing": "TER takes the title from the part before the first ' - ' in the composer.json description, falling back to the ext_emconf.php title; docs.typo3.org takes its header, menu and H1 from the first heading of Documentation/Index.rst and the browser tab from guides.xml <project title>. Use one title without the vendor prefix: set 'Image Optimization' in ext_emconf.php, Index.rst and guides.xml, and write the composer description as \"Image Optimization - On-demand image optimization ...\". The README heading becomes 'Image Optimization for TYPO3'.",
+      "failing": [
+        "Rename the extension key to image_optimization and update the TER listing in the web form."
+      ]
+    }
   }
 ]
