@@ -343,7 +343,7 @@ mechanical:
   # resolving a vendor directory the extension does not use.
   # Calibration: demote to info if every flagged extension is a legacy layout
   # nobody migrates over 6 months of /assess runs.
-  - id: TC-188
+  - id: TC-194
     type: json_path
     target: composer.json
     pattern: '.config["vendor-dir"] == ".Build/vendor"'
