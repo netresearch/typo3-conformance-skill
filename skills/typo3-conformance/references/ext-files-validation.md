@@ -330,32 +330,32 @@ template default. Consequence for a review of a code fallback around
   only when `get()` throws:
   - the extension has neither stored configuration nor a template;
   - the option is in neither the stored configuration nor the template;
-  - the synchronisation has something to write (for this key or for any
-    other active extension) and `system/settings.php` exists but is not
-    writable: it then fails in `setAll()` with `SettingsWriteException`
-    (v12.4: plain `\RuntimeException`) before either of the cases above is
-    reached, and the template default does not reach the code.
-    `SettingsWriteException` extends `\RuntimeException`, while the two
-    `ExtensionConfiguration*` exceptions extend `TYPO3\CMS\Core\Exception`.
-    A catch limited to those two does not catch the write failure, which then
-    propagates; a catch of `\RuntimeException`, `\Exception` or `\Throwable`
-    does, and its default runs.
+  - `system/settings.php` exists but is not writable and the synchronisation
+    has anything to write: a missing key, or any stored `EXTENSIONS` entry
+    that differs from the merged templates of the active extensions (for
+    example one of an uninstalled extension). It then fails in `setAll()`
+    with `SettingsWriteException` (v12.4: plain `\RuntimeException`) before
+    either case above is reached.
+
+Which catch sees which exception: `SettingsWriteException` extends
+`\RuntimeException`; the two `ExtensionConfiguration*` exceptions extend
+`TYPO3\CMS\Core\Exception`. Resolve the `use` import before judging a
+`catch (Exception)`: with `use Exception;` it is `\Exception` and sees the
+write failure, with `use TYPO3\CMS\Core\Exception;` it does not.
 
 So, for `get()` with a path:
 
 - A default that differs between `ext_conf_template.txt` and the code
-  fallback is **not a finding**. Where `system/settings.php` is writable,
-  absent (nothing is written) or already holds the key, the template default
-  is what the code sees.
-- A broad catch (`\RuntimeException`, `\Exception`, `\Throwable`) runs its
-  fallback on a read-only `settings.php` that lacks a newly added key. Such a
-  fallback should be safe, i.e. not write or create data:
-  - safe fallback: **not a finding**, even when the template enables the
-    feature;
-  - fallback that writes or creates data: **a finding**.
-- A narrow catch (only the `ExtensionConfiguration*` exceptions) runs its
-  fallback only when the extension or option is missing from the template;
-  its default is not a finding.
+  fallback is **not a finding**. The code sees the stored value or the
+  template default; the fallback runs only in the throw cases above.
+- **Exception:** the catch also sees the write failure (`\RuntimeException`,
+  `\Exception`, `\Throwable`, resolved through `use`), and its fallback
+  differs from the template default by writing or creating data. On a
+  read-only `settings.php` with a pending write (for example a newly added
+  key), that fallback runs
+  instead of the template default: **a finding**. A fallback that does not
+  write or create data is not a finding, even when the template enables the
+  feature.
 - The core docblock of `get()` says its exceptions indicate a programming
   error and should not be caught; a review may prefer letting it throw.
 
@@ -375,8 +375,8 @@ writes `system/settings.php` when that file exists (`setAll()`).
 
 Evidence case: nr_textdb `createIfMissing` has template default `1` and code
 fallback `false` (a helper wraps `get('nr_textdb', 'createIfMissing')` in a
-`try`/`catch` that returns `null`; the caller applies `?? false` and a
-`(bool)` cast). A functional test run on 2026-10-18 with the key absent from
+`try`/`catch (Exception)` with `use Exception;` that returns `null`; the
+caller applies `?? false` and a `(bool)` cast). A functional test run on 2026-10-18 with the key absent from
 the configuration returned `true`: the template default, not the code
 fallback. With a read-only `settings.php` the core code implies the same read
 returns `false` (not measured).
