@@ -330,8 +330,10 @@ template default. Consequence for a review of a code fallback around
   only when `get()` throws:
   - the extension has neither stored configuration nor a template;
   - the option is in neither the stored configuration nor the template;
-  - `system/settings.php` exists but is not writable and the synchronisation
-    has anything to write: a missing key, or any stored `EXTENSIONS` entry
+  - the synchronisation runs (the requested path or the extension's
+    configuration is missing), `system/settings.php` exists but is not
+    writable, and the synchronisation has anything to write: the missing
+    key, or any stored `EXTENSIONS` entry
     that differs from the merged templates of the active extensions (for
     example one of an uninstalled extension). It then fails in `setAll()`
     with `SettingsWriteException` (v12.4: plain `\RuntimeException`) before
@@ -370,8 +372,9 @@ In `get('ext_key')['option'] ?? <default>` or a direct `$GLOBALS` read with
 `?? <default>`, a key added to the template in a later release reaches the
 code default, so a differing default there can be a real finding.
 
-"Safe" describes what the extension code does: the synchronisation itself
-writes `system/settings.php` when that file exists (`setAll()`).
+"Writes or creates data" describes what the extension code does: the
+synchronisation itself writes `system/settings.php` when that file exists and
+the merged configuration differs from the stored one (`setAll()`).
 
 Evidence case: nr_textdb `createIfMissing` has template default `1` and code
 fallback `false` (a helper wraps `get('nr_textdb', 'createIfMissing')` in a
