@@ -317,18 +317,26 @@ every supported LTS:
 - [v13.4.36, lines 106-119](https://github.com/TYPO3/typo3/blob/v13.4.36/typo3/sysext/core/Classes/Configuration/ExtensionConfiguration.php#L106-L119)
 - [v12.4.45, lines 104-117](https://github.com/TYPO3/typo3/blob/v12.4.45/typo3/sysext/core/Classes/Configuration/ExtensionConfiguration.php#L104-L117)
 
-Consequence for a review: in
-`$this->extensionConfiguration->get('ext_key', 'option') ?? <default>`, or in
-a `try`/`catch` around that call that returns a default, the code default is
-reached only when the configuration cannot be read at all (the extension has
-no template, or `get()` throws). The template default wins in every other
-case. So:
+`get()` therefore returns the stored value or, if the key is missing, the
+template default. Consequence for a review of a code fallback around
+`$this->extensionConfiguration->get('ext_key', 'option')`:
+
+- `get(...) ?? <default>`: `??` does not catch the exception, so the default
+  applies only when the stored value is `null` (a key set to `null`, for
+  example in `additional.php`). In practice it is dead code.
+- A `try`/`catch` around the call that returns a default: the default applies
+  only when `get()` throws, i.e. when the configuration cannot be read at all.
+
+So:
 
 - A default that differs between `ext_conf_template.txt` and the code
   fallback is **not a finding** for this form of the call.
 - A safe fallback, one that keeps the extension from writing or creating data
   when the configuration is unreadable, is correct there even when the
-  template enables the feature.
+  template enables the feature. The core docblock of `get()` says its
+  exceptions indicate a programming error and should not be caught; a review
+  may prefer letting it throw, but the differing default is still not a
+  finding.
 
 Two limits:
 
@@ -342,8 +350,9 @@ Two limits:
   does, not whether TYPO3 writes its own configuration.
 
 Evidence case: nr_textdb `createIfMissing` has template default `1` and code
-fallback `false` (`get('nr_textdb', 'createIfMissing') ?? false` inside a
-`try`/`catch`). A functional test run on 2026-10-18 with the key absent from
+fallback `false` (a helper wraps `get('nr_textdb', 'createIfMissing')` in a
+`try`/`catch` that returns `null`; the caller applies `?? false` and a
+`(bool)` cast). A functional test run on 2026-10-18 with the key absent from
 the configuration returned `true`: the template default, not the code
 fallback.
 
