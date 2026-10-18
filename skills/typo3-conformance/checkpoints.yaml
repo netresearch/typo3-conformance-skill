@@ -304,7 +304,7 @@ mechanical:
     target: composer.json
     pattern: '.license'
     severity: warning
-    desc: "composer.json should declare license (GPL-2.0-or-later recommended)"
+    desc: "composer.json should declare license (GPL-2.0-or-later recommended; GPL-3.0-or-later accepted, see composer-validation.md)"
 
   - id: TC-25
     type: json_path
@@ -1586,6 +1586,26 @@ llm_reviews:
       4. Flag options read in code but not defined in ext_conf_template.txt
          (missing configuration UI)
       5. Check that option descriptions match actual behavior
+      Do not flag a default that differs between ext_conf_template.txt and a
+      code fallback (`?? <default>`, or a catch around the read) when the
+      option is read with ExtensionConfiguration->get('ext_key', 'option'):
+      get() with a path fills a missing key from the template. If no
+      configuration remains after that (nothing stored, no or an empty
+      template), it throws ExtensionConfigurationExtensionNotConfiguredException;
+      if the path is still missing, ExtensionConfigurationPathDoesNotExistException.
+      So a bare `??` only applies when an existing key is set to null, and a
+      catch fallback only when get() throws. Exception: when
+      system/settings.php exists but is not writable and the sync has anything to
+      write, get() throws SettingsWriteException (v12.4: \RuntimeException).
+      If the catch sees that (\RuntimeException, \Exception or \Throwable;
+      resolve the `use` import of `Exception` first) and its fallback differs
+      from the template default by writing or creating data, flag it. A
+      catch limited to TYPO3\CMS\Core\Exception or the
+      ExtensionConfiguration* exceptions does not see that failure.
+      A differing default read via get('ext_key')['option'] or directly from
+      $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS'] bypasses the sync and can
+      still be a finding. See references/ext-files-validation.md, "Template
+      Defaults Reach get() With a Path".
     severity: warning
     desc: "Options in ext_conf_template.txt should match implemented functionality (no phantom options)"
     tags: [configuration, alignment, assessment]

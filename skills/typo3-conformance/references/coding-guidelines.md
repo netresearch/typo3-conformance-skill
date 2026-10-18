@@ -87,7 +87,7 @@ parameters:
 
 ## Required File Header
 
-TYPO3 extension source files use this license header (GPL-2.0-or-later, matching TYPO3 core). `ext_emconf.php` is the one exception — no `declare(strict_types=1)`, see above.
+TYPO3 extension source files use this license header (GPL-2.0-or-later, matching TYPO3 core). `ext_emconf.php` is the one exception — no `declare(strict_types=1)`, see above. TYPO3's guideline keeps this notice wording unchanged, and the notice names GPL version 2 or later. Project-specific exception of this skill: an extension whose `composer.json` declares `GPL-3.0-or-later` (accepted, see `composer-validation.md`) may state version 3 in its header, so header and `composer.json` agree. This is a deviation from the TYPO3 guideline, not part of it.
 ```php
 <?php
 declare(strict_types=1);

@@ -88,11 +88,24 @@ and the GitHub description; `extension-naming.md` lists every place, its
 source and its length limits.
 
 ### license
-**Recommended:** `GPL-2.0-only` or `GPL-2.0-or-later`
+**Recommended:** `GPL-2.0-or-later` (the TYPO3 core license). `GPL-2.0-only`
+is accepted.
+
+**Also accepted, no warning:** `GPL-3.0-or-later`. TER accepted
+[nr_textdb 4.0.2](https://extensions.typo3.org/extension/nr_textdb) on
+2026-10-07 (upload 15:27 UTC) with `"license": "GPL-3.0-or-later"` in the
+`composer.json` of the shipped TER zip
+(`https://extensions.typo3.org/extension/download/nr_textdb/4.0.2/zip`).
+The TER API exposes no license field, so this is evidence of an accepted
+upload, not of a license rule TER enforces. Any other GPL-3.0 value,
+including `GPL-3.0-only`, still prints the warning, and so do
+`AGPL-3.0-or-later` and `LGPL-3.0-or-later`. `GPL-3.0-or-later` passes only
+as the exact value or as an element of a license array, not inside an SPDX
+expression such as `MIT OR GPL-3.0-or-later`.
 
 **Validation:**
 ```bash
-jq -r '.license' composer.json | grep -qE "GPL-2.0-(only|or-later)" && echo "✅ GPL license" || echo "⚠️  Check license"
+jq -r '.license | if type == "array" then .[] else . end' composer.json | grep -qE 'GPL-2.0-(only|or-later)|^GPL-3\.0-or-later$' && echo "✅ GPL license" || echo "⚠️  Check license"
 ```
 
 ### require
@@ -240,7 +253,7 @@ jq -r '.keywords | length' composer.json | grep -qE '^[1-9]' && echo "✅ Has ke
 - [ ] `name` - vendor/package format
 - [ ] `type` - must be `typo3-cms-extension`
 - [ ] `description` - clear, concise description; with ` - `, the part before it is the title: matching `ext_emconf.php`, at most 255 bytes (`<Title> - <Description>` is required for TYPO3 v14 to show the title when the extension has no `ext_emconf.php`)
-- [ ] `license` - SPDX identifier (GPL-2.0-or-later, AGPL-3.0-or-later)
+- [ ] `license` - SPDX identifier (GPL-2.0-or-later recommended; GPL-2.0-only and GPL-3.0-or-later accepted; see [license](#license))
 - [ ] `require.typo3/cms-core` - with upper bound constraint
 - [ ] `require.php` - PHP version constraint
 - [ ] `autoload.psr-4` - mapping to Classes/
