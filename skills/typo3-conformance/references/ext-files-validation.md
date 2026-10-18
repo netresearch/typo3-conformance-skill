@@ -310,8 +310,9 @@ $value = $this->extensionConfiguration->get('extension_key', 'optionName');
 merges the template defaults under the stored values, and reads again. Only if
 the path is still missing does it throw
 `ExtensionConfigurationPathDoesNotExistException`. (Before that, `get()` throws
-`ExtensionConfigurationExtensionNotConfiguredException` when the extension has
-neither stored configuration nor a template.) The path branch is the same in
+`ExtensionConfigurationExtensionNotConfiguredException` when no configuration
+remains after the synchronisation: nothing stored and no template, or an empty
+one.) The path branch is the same in
 every supported LTS:
 
 - [v14.3.9, lines 106-119](https://github.com/TYPO3/typo3/blob/v14.3.9/typo3/sysext/core/Classes/Configuration/ExtensionConfiguration.php#L106-L119)
@@ -323,12 +324,14 @@ every supported LTS:
 template default. Consequence for a review of a code fallback around
 `$this->extensionConfiguration->get('ext_key', 'option')`:
 
-- `get(...) ?? <default>`: `??` does not catch the exception, so the default
-  applies only when the stored value is `null` (a key set to `null`, for
-  example in `additional.php`). In practice it is dead code.
+- `get(...) ?? <default>`: `??` does not catch an exception. The default
+  applies only when `get()` returns `null`, i.e. an existing key is set to
+  `null` (for example in `additional.php`). That is a null-coalescing
+  fallback, not an exception fallback.
 - A `try`/`catch` around the call that returns a default: the default applies
   only when `get()` throws:
-  - the extension has neither stored configuration nor a template;
+  - no configuration remains after the synchronisation (nothing stored and
+    no or an empty template);
   - the option is in neither the stored configuration nor the template;
   - the synchronisation runs (the requested path or the extension's
     configuration is missing), `system/settings.php` exists but is not

@@ -1589,9 +1589,12 @@ llm_reviews:
       Do not flag a default that differs between ext_conf_template.txt and a
       code fallback (`?? <default>`, or a catch around the read) when the
       option is read with ExtensionConfiguration->get('ext_key', 'option'):
-      get() with a path fills a missing key from the template and throws if
-      it is still missing, so a bare `??` only applies to a stored null and
-      a catch fallback only when get() throws. Exception: when
+      get() with a path fills a missing key from the template. If no
+      configuration remains after that (nothing stored, no or an empty
+      template), it throws ExtensionConfigurationExtensionNotConfiguredException;
+      if the path is still missing, ExtensionConfigurationPathDoesNotExistException.
+      So a bare `??` only applies when an existing key is set to null, and a
+      catch fallback only when get() throws. Exception: when
       system/settings.php exists but is not writable and the sync has anything to
       write, get() throws SettingsWriteException (v12.4: \RuntimeException).
       If the catch sees that (\RuntimeException, \Exception or \Throwable;
