@@ -325,8 +325,9 @@ template default. Consequence for a review of a code fallback around
   applies only when the stored value is `null` (a key set to `null`, for
   example in `additional.php`). In practice it is dead code.
 - A `try`/`catch` around the call that returns a default: the default applies
-  only when `get()` throws, i.e. the extension has no configuration at all,
-  or the option is in neither the stored configuration nor the template.
+  only when `get()` throws, i.e. the extension has neither stored
+  configuration nor a template, or the option is in neither the stored
+  configuration nor the template.
 
 So:
 
@@ -341,7 +342,7 @@ So:
 Two limits:
 
 - This holds only for `get()` with a path. `get('ext_key')` without a path
-  synchronises only when the extension has no configuration at all, and returns
+  synchronises only when the extension has no stored configuration, and returns
   the stored array as it is. In `get('ext_key')['option'] ?? <default>` a key
   added to the template in a later release reaches the code default, so a
   differing default there can be a real finding.
