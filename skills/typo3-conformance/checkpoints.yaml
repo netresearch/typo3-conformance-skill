@@ -1593,10 +1593,10 @@ llm_reviews:
       it is still missing, so a catch fallback only applies when get() throws
       (neither stored configuration nor a template for the extension; the
       option is in neither the stored configuration nor the template; or the
-      key is not stored yet and system/settings.php exists but is not
+      sync has something to write and system/settings.php exists but is not
       writable), and a bare `??` only for a stored null. Because of the
-      read-only case, the catch fallback should be a safe one (not writing or
-      creating data); it only runs there if the catch covers
+      read-only case, DO flag a catch fallback that writes or creates data;
+      a safe one is fine. It only runs there if the catch covers
       \RuntimeException, since the write failure is not an
       ExtensionConfiguration*Exception. A differing default read via
       get('ext_key')['option'] can still be a finding. See

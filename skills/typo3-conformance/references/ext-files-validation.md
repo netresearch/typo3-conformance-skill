@@ -330,10 +330,12 @@ template default. Consequence for a review of a code fallback around
   only when `get()` throws:
   - the extension has neither stored configuration nor a template;
   - the option is in neither the stored configuration nor the template;
-  - the key is not stored yet and `system/settings.php` exists but is not
-    writable: the synchronisation then fails in `setAll()` with
-    `SettingsWriteException` (v12.4: plain `\RuntimeException`), and the
-    template default does not reach the code. `SettingsWriteException`
+  - the synchronisation has something to write (for this key or for any
+    other active extension) and `system/settings.php` exists but is not
+    writable: it then fails in `setAll()` with `SettingsWriteException`
+    (v12.4: plain `\RuntimeException`) before either of the cases above is
+    reached, and the template default does not reach the code.
+    `SettingsWriteException`
     extends `\RuntimeException`, while the two `ExtensionConfiguration*`
     exceptions extend `TYPO3\CMS\Core\Exception`; a catch limited to those
     does not catch the write failure, which then propagates.
@@ -342,7 +344,8 @@ So:
 
 - A default that differs between `ext_conf_template.txt` and the code
   fallback is **not a finding** for this form of the call, as long as
-  `system/settings.php` is writable or already holds the key.
+  `system/settings.php` is writable, absent (then nothing is written), or
+  already holds the key.
 - A safe fallback, one that keeps the extension from writing or creating data
   when `get()` throws, is not a finding either, even when the template
   enables the feature. On an installation with a read-only `settings.php`
@@ -351,6 +354,8 @@ So:
   behaviour that is acceptable there. The core docblock of `get()` says its
   exceptions indicate a programming error and should not be caught; a review
   may prefer letting it throw.
+- A catch fallback that writes or creates data **is** a finding: on a
+  read-only `settings.php` it runs instead of the template default.
 
 Further limits:
 
