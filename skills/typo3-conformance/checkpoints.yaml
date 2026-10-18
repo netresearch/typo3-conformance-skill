@@ -1590,18 +1590,17 @@ llm_reviews:
       code fallback (`?? <default>`, or a catch around the read) when the
       option is read with ExtensionConfiguration->get('ext_key', 'option'):
       get() with a path fills a missing key from the template and throws if
-      it is still missing, so a catch fallback only applies when get() throws
-      (neither stored configuration nor a template for the extension; the
-      option is in neither the stored configuration nor the template; or the
-      sync has something to write and system/settings.php exists but is not
-      writable), and a bare `??` only for a stored null. Because of the
-      read-only case, DO flag a catch fallback that writes or creates data;
-      a safe one is fine. It only runs there if the catch covers
-      \RuntimeException, since the write failure is not an
-      ExtensionConfiguration*Exception. A differing default read via
-      get('ext_key')['option'] can still be a finding. See
-      references/ext-files-validation.md, "Template Defaults Reach get()
-      With a Path".
+      it is still missing, so a bare `??` only applies to a stored null and
+      a catch fallback only when get() throws. One throw case matters: when
+      system/settings.php exists but is not writable, the sync fails with
+      SettingsWriteException (v12.4: \RuntimeException). A catch covering
+      \RuntimeException, \Exception or \Throwable then runs its fallback;
+      flag such a fallback only if it writes or creates data. A catch limited
+      to the ExtensionConfiguration* exceptions does not see that failure.
+      A differing default read via get('ext_key')['option'] or directly from
+      $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS'] bypasses the sync and can
+      still be a finding. See references/ext-files-validation.md, "Template
+      Defaults Reach get() With a Path".
     severity: warning
     desc: "Options in ext_conf_template.txt should match implemented functionality (no phantom options)"
     tags: [configuration, alignment, assessment]

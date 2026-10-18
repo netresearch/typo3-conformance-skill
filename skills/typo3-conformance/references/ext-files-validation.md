@@ -335,39 +335,43 @@ template default. Consequence for a review of a code fallback around
     writable: it then fails in `setAll()` with `SettingsWriteException`
     (v12.4: plain `\RuntimeException`) before either of the cases above is
     reached, and the template default does not reach the code.
-    `SettingsWriteException`
-    extends `\RuntimeException`, while the two `ExtensionConfiguration*`
-    exceptions extend `TYPO3\CMS\Core\Exception`; a catch limited to those
-    does not catch the write failure, which then propagates.
+    `SettingsWriteException` extends `\RuntimeException`, while the two
+    `ExtensionConfiguration*` exceptions extend `TYPO3\CMS\Core\Exception`.
+    A catch limited to those two does not catch the write failure, which then
+    propagates; a catch of `\RuntimeException`, `\Exception` or `\Throwable`
+    does, and its default runs.
 
-So:
+So, for `get()` with a path:
 
 - A default that differs between `ext_conf_template.txt` and the code
-  fallback is **not a finding** for this form of the call, as long as
-  `system/settings.php` is writable, absent (then nothing is written), or
-  already holds the key.
-- A safe fallback, one that keeps the extension from writing or creating data
-  when `get()` throws, is not a finding either, even when the template
-  enables the feature. On an installation with a read-only `settings.php`
-  that has not stored a newly added key, the safe fallback is what runs if
-  the catch covers `\RuntimeException` (or `\Exception`), so it should be the
-  behaviour that is acceptable there. The core docblock of `get()` says its
-  exceptions indicate a programming error and should not be caught; a review
-  may prefer letting it throw.
-- A catch fallback that writes or creates data **is** a finding: on a
-  read-only `settings.php` it runs instead of the template default.
+  fallback is **not a finding**. Where `system/settings.php` is writable,
+  absent (nothing is written) or already holds the key, the template default
+  is what the code sees.
+- A broad catch (`\RuntimeException`, `\Exception`, `\Throwable`) runs its
+  fallback on a read-only `settings.php` that lacks a newly added key. Such a
+  fallback should be safe, i.e. not write or create data:
+  - safe fallback: **not a finding**, even when the template enables the
+    feature;
+  - fallback that writes or creates data: **a finding**.
+- A narrow catch (only the `ExtensionConfiguration*` exceptions) runs its
+  fallback only when the extension or option is missing from the template;
+  its default is not a finding.
+- The core docblock of `get()` says its exceptions indicate a programming
+  error and should not be caught; a review may prefer letting it throw.
 
-Further limits:
+Reads that bypass the synchronisation:
 
-- This holds only for `get()` with a path. `get('ext_key')` without a path
-  synchronises only when the extension has no stored configuration, and returns
-  the stored array as it is. In `get('ext_key')['option'] ?? <default>` a key
-  added to the template in a later release reaches the code default, so a
-  differing default there can be a real finding.
-- The synchronisation itself writes `system/settings.php` when that file
-  exists (`setAll()`), and throws when it cannot. "Safe fallback" above
-  describes what the extension code does, not whether TYPO3 writes its own
-  configuration.
+- `get('ext_key')` without a path synchronises only when the extension has no
+  stored configuration, and returns the stored array as it is.
+- `$GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['ext_key']['option']` never
+  synchronises.
+
+In `get('ext_key')['option'] ?? <default>` or a direct `$GLOBALS` read with
+`?? <default>`, a key added to the template in a later release reaches the
+code default, so a differing default there can be a real finding.
+
+"Safe" describes what the extension code does: the synchronisation itself
+writes `system/settings.php` when that file exists (`setAll()`).
 
 Evidence case: nr_textdb `createIfMissing` has template default `1` and code
 fallback `false` (a helper wraps `get('nr_textdb', 'createIfMissing')` in a
