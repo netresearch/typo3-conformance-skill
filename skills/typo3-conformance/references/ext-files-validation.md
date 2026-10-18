@@ -309,7 +309,9 @@ $value = $this->extensionConfiguration->get('extension_key', 'optionName');
 `synchronizeExtConfTemplateWithLocalConfigurationOfAllExtensions(true)`, which
 merges the template defaults under the stored values, and reads again. Only if
 the path is still missing does it throw
-`ExtensionConfigurationPathDoesNotExistException`. The code is the same in
+`ExtensionConfigurationPathDoesNotExistException`. (Before that, `get()` throws
+`ExtensionConfigurationExtensionNotConfiguredException` when the extension has
+neither stored configuration nor a template.) The path branch is the same in
 every supported LTS:
 
 - [v14.3.9, lines 106-119](https://github.com/TYPO3/typo3/blob/v14.3.9/typo3/sysext/core/Classes/Configuration/ExtensionConfiguration.php#L106-L119)
@@ -325,37 +327,46 @@ template default. Consequence for a review of a code fallback around
   applies only when the stored value is `null` (a key set to `null`, for
   example in `additional.php`). In practice it is dead code.
 - A `try`/`catch` around the call that returns a default: the default applies
-  only when `get()` throws, i.e. the extension has neither stored
-  configuration nor a template, or the option is in neither the stored
-  configuration nor the template.
+  only when `get()` throws:
+  - the extension has neither stored configuration nor a template;
+  - the option is in neither the stored configuration nor the template;
+  - the key is not stored yet and `system/settings.php` exists but is not
+    writable: the synchronisation then fails in `setAll()` with
+    `SettingsWriteException` (v12.4: `RuntimeException`), and the template
+    default does not reach the code.
 
 So:
 
 - A default that differs between `ext_conf_template.txt` and the code
-  fallback is **not a finding** for this form of the call.
+  fallback is **not a finding** for this form of the call, as long as
+  `system/settings.php` is writable or already holds the key.
 - A safe fallback, one that keeps the extension from writing or creating data
   when `get()` throws, is not a finding either, even when the template
-  enables the feature. The core docblock of `get()` says its exceptions
+  enables the feature. On an installation with a read-only `settings.php`
+  that has not stored a newly added key, the safe fallback is what runs, so
+  it should be the behaviour that is acceptable there. The core docblock of `get()` says its exceptions
   indicate a programming error and should not be caught; a review may prefer
   letting it throw.
 
-Two limits:
+Further limits:
 
 - This holds only for `get()` with a path. `get('ext_key')` without a path
   synchronises only when the extension has no stored configuration, and returns
   the stored array as it is. In `get('ext_key')['option'] ?? <default>` a key
   added to the template in a later release reaches the code default, so a
   differing default there can be a real finding.
-- The synchronisation itself can write `system/settings.php` when that file
-  exists (`setAll()`). "Safe fallback" above describes what the extension code
-  does, not whether TYPO3 writes its own configuration.
+- The synchronisation itself writes `system/settings.php` when that file
+  exists (`setAll()`), and throws when it cannot. "Safe fallback" above
+  describes what the extension code does, not whether TYPO3 writes its own
+  configuration.
 
 Evidence case: nr_textdb `createIfMissing` has template default `1` and code
 fallback `false` (a helper wraps `get('nr_textdb', 'createIfMissing')` in a
 `try`/`catch` that returns `null`; the caller applies `?? false` and a
 `(bool)` cast). A functional test run on 2026-10-18 with the key absent from
 the configuration returned `true`: the template default, not the code
-fallback.
+fallback. With a read-only `settings.php` the core code implies the same read
+returns `false` (not measured).
 
 ---
 
