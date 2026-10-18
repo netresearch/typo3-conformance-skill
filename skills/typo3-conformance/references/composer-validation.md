@@ -99,7 +99,9 @@ is accepted.
 The TER API exposes no license field, so this is evidence of an accepted
 upload, not of a license rule TER enforces. Any other GPL-3.0 value,
 including `GPL-3.0-only`, still prints the warning, and so do
-`AGPL-3.0-or-later` and `LGPL-3.0-or-later`.
+`AGPL-3.0-or-later` and `LGPL-3.0-or-later`. `GPL-3.0-or-later` passes only
+as the exact value or as an element of a license array, not inside an SPDX
+expression such as `MIT OR GPL-3.0-or-later`.
 
 **Validation:**
 ```bash
@@ -251,7 +253,7 @@ jq -r '.keywords | length' composer.json | grep -qE '^[1-9]' && echo "✅ Has ke
 - [ ] `name` - vendor/package format
 - [ ] `type` - must be `typo3-cms-extension`
 - [ ] `description` - clear, concise description; with ` - `, the part before it is the title: matching `ext_emconf.php`, at most 255 bytes (`<Title> - <Description>` is required for TYPO3 v14 to show the title when the extension has no `ext_emconf.php`)
-- [ ] `license` - SPDX identifier (GPL-2.0-or-later recommended, GPL-3.0-or-later accepted; see [license](#license))
+- [ ] `license` - SPDX identifier (GPL-2.0-or-later recommended; GPL-2.0-only and GPL-3.0-or-later accepted; see [license](#license))
 - [ ] `require.typo3/cms-core` - with upper bound constraint
 - [ ] `require.php` - PHP version constraint
 - [ ] `autoload.psr-4` - mapping to Classes/

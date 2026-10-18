@@ -325,18 +325,18 @@ template default. Consequence for a review of a code fallback around
   applies only when the stored value is `null` (a key set to `null`, for
   example in `additional.php`). In practice it is dead code.
 - A `try`/`catch` around the call that returns a default: the default applies
-  only when `get()` throws, i.e. when the configuration cannot be read at all.
+  only when `get()` throws, i.e. the extension has no configuration at all,
+  or the option is in neither the stored configuration nor the template.
 
 So:
 
 - A default that differs between `ext_conf_template.txt` and the code
   fallback is **not a finding** for this form of the call.
 - A safe fallback, one that keeps the extension from writing or creating data
-  when the configuration is unreadable, is correct there even when the
-  template enables the feature. The core docblock of `get()` says its
-  exceptions indicate a programming error and should not be caught; a review
-  may prefer letting it throw, but the differing default is still not a
-  finding.
+  when `get()` throws, is not a finding either, even when the template
+  enables the feature. The core docblock of `get()` says its exceptions
+  indicate a programming error and should not be caught; a review may prefer
+  letting it throw.
 
 Two limits:
 
