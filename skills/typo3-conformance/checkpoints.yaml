@@ -1596,9 +1596,12 @@ llm_reviews:
       key is not stored yet and system/settings.php exists but is not
       writable), and a bare `??` only for a stored null. Because of the
       read-only case, the catch fallback should be a safe one (not writing or
-      creating data). A differing default read via get('ext_key')['option']
-      can still be a finding. See references/ext-files-validation.md, "Template Defaults
-      Reach get() With a Path".
+      creating data); it only runs there if the catch covers
+      \RuntimeException, since the write failure is not an
+      ExtensionConfiguration*Exception. A differing default read via
+      get('ext_key')['option'] can still be a finding. See
+      references/ext-files-validation.md, "Template Defaults Reach get()
+      With a Path".
     severity: warning
     desc: "Options in ext_conf_template.txt should match implemented functionality (no phantom options)"
     tags: [configuration, alignment, assessment]
