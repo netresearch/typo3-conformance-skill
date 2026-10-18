@@ -304,7 +304,7 @@ mechanical:
     target: composer.json
     pattern: '.license'
     severity: warning
-    desc: "composer.json should declare license (GPL-2.0-or-later recommended)"
+    desc: "composer.json should declare license (GPL-2.0-or-later recommended; GPL-3.0-or-later accepted, see composer-validation.md)"
 
   - id: TC-25
     type: json_path
@@ -1586,6 +1586,14 @@ llm_reviews:
       4. Flag options read in code but not defined in ext_conf_template.txt
          (missing configuration UI)
       5. Check that option descriptions match actual behavior
+      Do not flag a default that differs between ext_conf_template.txt and a
+      code fallback (`?? <default>`, or a catch around the read) when the
+      option is read with ExtensionConfiguration->get('ext_key', 'option'):
+      get() with a path fills a missing key from the template, so the code
+      fallback only applies when the configuration cannot be read at all.
+      A differing default read via get('ext_key')['option'] can still be a
+      finding. See references/ext-files-validation.md, "Template Defaults
+      Reach get() With a Path".
     severity: warning
     desc: "Options in ext_conf_template.txt should match implemented functionality (no phantom options)"
     tags: [configuration, alignment, assessment]

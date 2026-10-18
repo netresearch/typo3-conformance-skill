@@ -88,11 +88,21 @@ and the GitHub description; `extension-naming.md` lists every place, its
 source and its length limits.
 
 ### license
-**Recommended:** `GPL-2.0-only` or `GPL-2.0-or-later`
+**Recommended:** `GPL-2.0-or-later` (the TYPO3 core license). `GPL-2.0-only`
+is accepted.
+
+**Also accepted, no warning:** `GPL-3.0-or-later`. TER accepted
+[nr_textdb 4.0.2](https://extensions.typo3.org/extension/nr_textdb) on
+2026-10-07 (upload 15:27 UTC) with `"license": "GPL-3.0-or-later"` in the
+`composer.json` of the shipped TER zip
+(`https://extensions.typo3.org/extension/download/nr_textdb/4.0.2/zip`).
+The TER API exposes no license field, so this is evidence of an accepted
+upload, not of a license rule TER enforces. Any other value, including
+`GPL-3.0-only`, still prints the warning.
 
 **Validation:**
 ```bash
-jq -r '.license' composer.json | grep -qE "GPL-2.0-(only|or-later)" && echo "✅ GPL license" || echo "⚠️  Check license"
+jq -r '.license | if type == "array" then .[] else . end' composer.json | grep -qE 'GPL-2.0-(only|or-later)|^GPL-3\.0-or-later$' && echo "✅ GPL license" || echo "⚠️  Check license"
 ```
 
 ### require

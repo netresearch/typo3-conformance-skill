@@ -301,6 +301,52 @@ $config = $this->extensionConfiguration->get('extension_key');
 $value = $this->extensionConfiguration->get('extension_key', 'optionName');
 ```
 
+### Template Defaults Reach `get()` With a Path
+
+`ExtensionConfiguration::get($extension, $path)` fills in a missing key from
+`ext_conf_template.txt` before it answers. When the path is not in
+`$GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']`, it calls
+`synchronizeExtConfTemplateWithLocalConfigurationOfAllExtensions(true)`, which
+merges the template defaults under the stored values, and reads again. Only if
+the path is still missing does it throw
+`ExtensionConfigurationPathDoesNotExistException`. The code is the same in
+every supported LTS:
+
+- [v14.3.9, lines 106-119](https://github.com/TYPO3/typo3/blob/v14.3.9/typo3/sysext/core/Classes/Configuration/ExtensionConfiguration.php#L106-L119)
+  (v14.3.7 is identical)
+- [v13.4.36, lines 106-119](https://github.com/TYPO3/typo3/blob/v13.4.36/typo3/sysext/core/Classes/Configuration/ExtensionConfiguration.php#L106-L119)
+- [v12.4.45, lines 104-117](https://github.com/TYPO3/typo3/blob/v12.4.45/typo3/sysext/core/Classes/Configuration/ExtensionConfiguration.php#L104-L117)
+
+Consequence for a review: in
+`$this->extensionConfiguration->get('ext_key', 'option') ?? <default>`, or in
+a `try`/`catch` around that call that returns a default, the code default is
+reached only when the configuration cannot be read at all (the extension has
+no template, or `get()` throws). The template default wins in every other
+case. So:
+
+- A default that differs between `ext_conf_template.txt` and the code
+  fallback is **not a finding** for this form of the call.
+- A safe fallback, one that keeps the extension from writing or creating data
+  when the configuration is unreadable, is correct there even when the
+  template enables the feature.
+
+Two limits:
+
+- This holds only for `get()` with a path. `get('ext_key')` without a path
+  synchronises only when the extension has no configuration at all, and returns
+  the stored array as it is. In `get('ext_key')['option'] ?? <default>` a key
+  added to the template in a later release reaches the code default, so a
+  differing default there can be a real finding.
+- The synchronisation itself can write `system/settings.php` when that file
+  exists (`setAll()`). "Safe fallback" above describes what the extension code
+  does, not whether TYPO3 writes its own configuration.
+
+Evidence case: nr_textdb `createIfMissing` has template default `1` and code
+fallback `false` (`get('nr_textdb', 'createIfMissing') ?? false` inside a
+`try`/`catch`). A functional test run on 2026-10-18 with the key absent from
+the configuration returned `true`: the template default, not the code
+fallback.
+
 ---
 
 ## Validation Checklist
