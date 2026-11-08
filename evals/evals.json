@@ -566,10 +566,27 @@
       },
       {
         "type": "content_contains",
-        "value": "reportUnmatched",
-        "description": "Recommends reportUnmatched: false pattern"
+        "value": "TestCase",
+        "description": "Explains that PHPStan could not load PHPUnit's TestCase (assertions are static)"
+      },
+      {
+        "type": "content_regex",
+        "value": "PHPStan (2|\\^2)|phpstan/phpstan:\\^2|dev dependency|require-dev",
+        "description": "Names a real fix: PHPStan 2 or PHPUnit as a dev dependency, not an ignoreErrors suppression"
+      },
+      {
+        "type": "content_regex",
+        "value": "(?i)(do not|don't|never|instead of)[^.]{0,60}ignoreErrors",
+        "description": "Warns against an ignoreErrors suppression instead of recommending one"
       }
-    ]
+    ],
+    "samples": {
+      "passing": "There is no real conflict, so CGL stays authoritative and self::assertEquals() is correct: PHPUnit declares its assertions final public static. PHPStan reports an undefined static method when the assertion does not exist in the installed PHPUnit (change the assertion), or when it cannot load PHPUnit\\Framework\\TestCase; then the same run also says the test class extends an unknown class. Upgrade to phpstan/phpstan:^2 if PHPStan 1.x runs against PHPUnit 13, or require PHPUnit as a dev dependency of the project PHPStan runs from. Do not add an ignoreErrors pattern.",
+      "failing": [
+        "CGL is authoritative for code style. PHPUnit 11 marks assertions non-static, so suppress the PHPStan false positive with an ignoreErrors pattern on 'Call to an undefined static method' and set reportUnmatched: false.",
+        "CGL is authoritative. PHPStan could not load PHPUnit's TestCase, so upgrade to phpstan/phpstan:^2. Until then, add an ignoreErrors pattern on 'Call to an undefined static method' so the run is green."
+      ]
+    }
   },
   {
     "name": "quick-check-grep-patterns",
