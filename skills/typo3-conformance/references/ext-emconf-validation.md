@@ -690,25 +690,33 @@ has an `autoload` section and that file is Composer-generated (it must contain
 1. **`providesPackages` declares the packages the extension bundles itself — an
    empty `{}` is correct when it bundles none.** `isComposerOnlyCapable()` tests
    `isset(...providesPackages)`, which an empty object passes; the changelog of
-   #108345 states the empty object explicitly. Every entry in `require` must then
-   resolve in classic mode as one of: a TYPO3 extension, `php`,
-   `composer-runtime-api`, `ext-*`, a package the Core ships (for example
+   #108345 states the empty object explicitly. Measured: netresearch/t3x-nr-textdb
+   has declared `{}` since 2026-07-30 and its functional suite passes on TYPO3 ^14.3
+   (MariaDB, MySQL, PostgreSQL). `isComposerDependency()` accepts `php`,
+   `composer-runtime-api`, `ext-*`, the packages the Core ships (for example
    `symfony/console`, `symfony/translation`, `psr/log`, `doctrine/dbal`; the full list
-   is the `require` block of `typo3/cms-core`, not every package of those vendors),
-   or a package listed in `providesPackages` of this or another loaded extension.
-   A required library outside these sets is treated as an extension dependency, the
-   package graph is unsatisfiable, and the result is
-   `Container entry "...ExtTablesFactory" is not available` (failsafe container).
-   The fix is to bundle that library and list it — listing a library the extension
-   does not bundle only hides the missing dependency until a class is used.
+   is the `require` block of `typo3/cms-core`, not every package of those vendors)
+   and packages listed in `providesPackages` of a loaded extension. Do not list a
+   library the extension does not bundle. What classic mode does with a required
+   library outside these sets is read from the code only and was not reproduced;
+   the testing framework (`PackageCollection`, 9.3.0) skips such non-extension
+   dependencies.
+   This gotcha used to blame the failsafe-container error on `{}`. The source case,
+   t3x-nr-temporal-cache commit 56f3a52 (2026-06-16), adds a non-empty mapping AND
+   loads `typo3/cms-reports` in `coreExtensionsToLoad` in one step, and the session
+   notes from the same day name an unloaded `reports` dependency as the cause of the
+   error (Gotcha 3). No record shows `{}` failing.
 2. **Both `version` AND `providesPackages` are required** to silence the deprecation.
    `version` may live at the root or under `extra.typo3/cms`; prefer the latter so
    Packagist/TER do not warn about a hardcoded root `version`.
 3. **Composer-only mode derives dependencies from composer `require`.** Every
    `typo3/cms-*` in `require` becomes a HARD TYPO3 dependency. Align the
    `constraints.depends` above to match, and load each one in the functional tests'
-   `coreExtensionsToLoad` (see the typo3-testing skill) — otherwise the package graph
-   is unsatisfiable and you hit the same failsafe-container error.
+   `coreExtensionsToLoad` (see the typo3-testing skill) — otherwise setup fails with
+   `Package "<key>" depends on package "<dep>" which does not exist.`, followed by
+   `Container entry "...ExtTablesFactory" is not available` (failsafe container).
+   The first message names the missing extension; the second is a follow-on error
+   of the same failed setup and names no cause of its own.
 
 ### Validation Commands
 
