@@ -196,12 +196,18 @@ grep -r "tmpDir" Build/phpstan.neon
 
 **Example CORRECT patterns:**
 
+`ci:cgl` fixes the code; the dry-run check is `ci:test:php:cgl`, the script the
+shared CI workflow (netresearch/typo3-ci-workflows) runs first.
+
 ```json
 // composer.json
 {
     "scripts": {
         "ci:cgl": [
-            "php-cs-fixer fix --cache-file .Build/.php-cs-fixer.cache --dry-run --diff"
+            "php-cs-fixer fix --cache-file .Build/.php-cs-fixer.cache"
+        ],
+        "ci:test:php:cgl": [
+            "@ci:cgl --dry-run --diff"
         ]
     }
 }
@@ -308,7 +314,10 @@ return (new PhpCsFixer\Config())
 {
     "scripts": {
         "ci:cgl": [
-            "php-cs-fixer fix --cache-file .Build/.php-cs-fixer.cache --dry-run --diff"
+            "php-cs-fixer fix --cache-file .Build/.php-cs-fixer.cache"
+        ],
+        "ci:test:php:cgl": [
+            "@ci:cgl --dry-run --diff"
         ]
     }
 }
