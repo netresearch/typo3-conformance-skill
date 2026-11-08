@@ -659,31 +659,48 @@ so support for older LTS releases is unchanged.
 }
 ```
 
-An extension that bundles a Composer library for classic mode lists that library
-instead. The key is the package name; the value is an optional path to a Composer
-vendor directory inside the extension, whose `autoload.php` TYPO3 includes early:
+An extension that bundles Composer libraries for classic mode lists each package it
+bundles instead. The key is the package name; the value is an optional path to a
+Composer vendor directory inside the extension:
 
 ```json
-"providesPackages": {
-    "acme/pdf-lib": "Resources/Private/Php/ComposerVendor"
+{
+    "autoload": {
+        "psr-4": { "Vendor\\MyExtension\\": "Classes/" }
+    },
+    "extra": {
+        "typo3/cms": {
+            "Package": {
+                "providesPackages": {
+                    "acme/pdf-lib": "Resources/Private/Php/ComposerVendor"
+                }
+            }
+        }
+    }
 }
 ```
 
+TYPO3 includes `<path>/autoload.php` early only when the extension's `composer.json`
+has an `autoload` section and that file is Composer-generated (it must contain
+`return ComposerAutoloaderInit`); otherwise the path is skipped silently
+(`ClassLoadingInformationGenerator`, v14.3.10).
+
 ### Gotchas (verified against `PackageManager` at v14.2.0, v14.3.0, v14.3.5, v14.3.10)
 
-1. **`providesPackages` lists only the required packages that are neither a TYPO3
-   extension nor shipped by TYPO3.** An empty `{}` is correct for an extension whose
-   `require` holds only `php`, `ext-*`, `typo3/cms-*` and packages the Core ships
-   (for example `symfony/console`, `symfony/translation`, `psr/log`, `doctrine/dbal`;
-   the full list is the `require` block of `typo3/cms-core`, not every package of
-   those vendors): `isComposerOnlyCapable()` tests
-   `isset(...providesPackages)`, which an empty object passes, and
-   `isComposerDependency()` already accepts `php`, `composer-runtime-api`, `ext-*`
-   and every installed (shipped) package. A required library that is in neither set
-   is treated as an extension dependency, the package graph is unsatisfiable, and the
-   result is `Container entry "...ExtTablesFactory" is not available` (failsafe
-   container) — list that library in `providesPackages`. The changelog of #108345
-   states the empty object explicitly for extensions that provide no packages.
+1. **`providesPackages` declares the packages the extension bundles itself — an
+   empty `{}` is correct when it bundles none.** `isComposerOnlyCapable()` tests
+   `isset(...providesPackages)`, which an empty object passes; the changelog of
+   #108345 states the empty object explicitly. Every entry in `require` must then
+   resolve in classic mode as one of: a TYPO3 extension, `php`,
+   `composer-runtime-api`, `ext-*`, a package the Core ships (for example
+   `symfony/console`, `symfony/translation`, `psr/log`, `doctrine/dbal`; the full list
+   is the `require` block of `typo3/cms-core`, not every package of those vendors),
+   or a package listed in `providesPackages` of this or another loaded extension.
+   A required library outside these sets is treated as an extension dependency, the
+   package graph is unsatisfiable, and the result is
+   `Container entry "...ExtTablesFactory" is not available` (failsafe container).
+   The fix is to bundle that library and list it — listing a library the extension
+   does not bundle only hides the missing dependency until a class is used.
 2. **Both `version` AND `providesPackages` are required** to silence the deprecation.
    `version` may live at the root or under `extra.typo3/cms`; prefer the latter so
    Packagist/TER do not warn about a hardcoded root `version`.
