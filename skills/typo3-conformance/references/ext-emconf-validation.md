@@ -674,7 +674,9 @@ vendor directory inside the extension, whose `autoload.php` TYPO3 includes early
 1. **`providesPackages` lists only the required packages that are neither a TYPO3
    extension nor shipped by TYPO3.** An empty `{}` is correct for an extension whose
    `require` holds only `php`, `ext-*`, `typo3/cms-*` and packages the Core ships
-   (`symfony/*`, `psr/*`, `doctrine/*` …): `isComposerOnlyCapable()` tests
+   (for example `symfony/console`, `symfony/translation`, `psr/log`, `doctrine/dbal`;
+   the full list is the `require` block of `typo3/cms-core`, not every package of
+   those vendors): `isComposerOnlyCapable()` tests
    `isset(...providesPackages)`, which an empty object passes, and
    `isComposerDependency()` already accepts `php`, `composer-runtime-api`, `ext-*`
    and every installed (shipped) package. A required library that is in neither set
