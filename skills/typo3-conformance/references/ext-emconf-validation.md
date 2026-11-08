@@ -715,7 +715,8 @@ has an `autoload` section and that file is Composer-generated (it must contain
    `coreExtensionsToLoad` (see the typo3-testing skill) — otherwise setup fails with
    `Package "<key>" depends on package "<dep>" which does not exist.`, followed by
    `Container entry "...ExtTablesFactory" is not available` (failsafe container).
-   The first message names the missing extension; the second is only its echo.
+   The first message names the missing extension; the second is a follow-on error
+   of the same failed setup and names no cause of its own.
 
 ### Validation Commands
 
