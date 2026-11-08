@@ -652,8 +652,27 @@ so support for older LTS releases is unchanged.
             "extension-key": "my_extension",
             "version": "1.2.3",
             "Package": {
+                "providesPackages": {}
+            }
+        }
+    }
+}
+```
+
+An extension that bundles Composer libraries for classic mode lists each package it
+bundles instead. The key is the package name; the value is an optional path to a
+Composer vendor directory inside the extension:
+
+```json
+{
+    "autoload": {
+        "psr-4": { "Vendor\\MyExtension\\": "Classes/" }
+    },
+    "extra": {
+        "typo3/cms": {
+            "Package": {
                 "providesPackages": {
-                    "vendor/my-extension": "my_extension"
+                    "acme/pdf-lib": "Resources/Private/Php/ComposerVendor"
                 }
             }
         }
@@ -661,12 +680,27 @@ so support for older LTS releases is unchanged.
 }
 ```
 
-### Gotchas (verified against `PackageManager::isComposerOnlyCapable()`)
+TYPO3 includes `<path>/autoload.php` early only when the extension's `composer.json`
+has an `autoload` section and that file is Composer-generated (it must contain
+`return ComposerAutoloaderInit`); otherwise the path is skipped silently
+(`ClassLoadingInformationGenerator`, v14.3.10).
 
-1. **`providesPackages` must be NON-EMPTY.** An empty `{}` makes TYPO3 believe the
-   Composer package provides no extension → the package is not registered →
+### Gotchas (verified against `PackageManager` at v14.2.0, v14.3.0, v14.3.5, v14.3.10)
+
+1. **`providesPackages` declares the packages the extension bundles itself — an
+   empty `{}` is correct when it bundles none.** `isComposerOnlyCapable()` tests
+   `isset(...providesPackages)`, which an empty object passes; the changelog of
+   #108345 states the empty object explicitly. Every entry in `require` must then
+   resolve in classic mode as one of: a TYPO3 extension, `php`,
+   `composer-runtime-api`, `ext-*`, a package the Core ships (for example
+   `symfony/console`, `symfony/translation`, `psr/log`, `doctrine/dbal`; the full list
+   is the `require` block of `typo3/cms-core`, not every package of those vendors),
+   or a package listed in `providesPackages` of this or another loaded extension.
+   A required library outside these sets is treated as an extension dependency, the
+   package graph is unsatisfiable, and the result is
    `Container entry "...ExtTablesFactory" is not available` (failsafe container).
-   Map the Composer package name to the extension key.
+   The fix is to bundle that library and list it — listing a library the extension
+   does not bundle only hides the missing dependency until a class is used.
 2. **Both `version` AND `providesPackages` are required** to silence the deprecation.
    `version` may live at the root or under `extra.typo3/cms`; prefer the latter so
    Packagist/TER do not warn about a hardcoded root `version`.
@@ -681,7 +715,8 @@ so support for older LTS releases is unchanged.
 ```bash
 # Does composer.json declare the composer-only metadata?
 # `version` may be at the root OR under extra.typo3/cms (see Gotcha #2)
-jq -e '(.version // .extra["typo3/cms"].version) and ((.extra["typo3/cms"].Package.providesPackages // {}) | length > 0)' composer.json
+# providesPackages must be PRESENT; an empty object {} is valid (see Gotcha #1)
+jq -e '(.version // .extra["typo3/cms"].version) and (.extra["typo3/cms"].Package.providesPackages | type == "object")' composer.json
 
 # Run functional tests on v14.3 and assert zero deprecations
 typo3DatabaseDriver=pdo_sqlite .Build/bin/phpunit -c Build/phpunit/FunctionalTests.xml --display-deprecations
