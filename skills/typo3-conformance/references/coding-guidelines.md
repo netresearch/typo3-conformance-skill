@@ -73,17 +73,7 @@ Use the `typo3/coding-standards` package for a current base config; see `assets/
 
 When CGL (php-cs-fixer) and PHPStan disagree, **CGL is authoritative for code style**.
 
-**Static Assertions in PHPUnit 11:** CGL enforces `self::assertEquals()`, but PHPUnit 11 marks assertion methods non-static, so PHPStan reports a false positive. Suppress PHPStan, not CGL:
-```yaml
-# Build/phpstan/phpstan.neon
-parameters:
-    ignoreErrors:
-        -
-            message: '#Call to an undefined static method .+::(assert[A-Z]\w*|fail|markTest\w*)#'
-            reportUnmatched: false
-```
-
-`reportUnmatched: false` because on TYPO3 12.4 with testing-framework v8 (PHPUnit 10) the pattern has no matches — this stays safe across the 12.4/13.4/14.0 matrix.
+**Static Assertions:** CGL enforces `self::assertEquals()`, and PHPStan agrees: PHPUnit declares its assertions `final public static` in `PHPUnit\Framework\Assert` (checked at PHPUnit 10.5.0, 11.5.0, 12.0.0 and 13.4.6). A PHPStan `Call to an undefined static method <TestClass>::assert…()` means PHPStan could not load `PHPUnit\Framework\TestCase`; the same run also reports `Class <TestClass> extends unknown class PHPUnit\Framework\TestCase`. The causes are PHPStan 1.x analysing tests against PHPUnit 13 (fix: `phpstan/phpstan:^2`) or PHPUnit missing from the Composer project PHPStan runs from (fix: require it as a dev dependency). Do not suppress the message with `ignoreErrors`: the pattern does not match the `extends unknown class` error, so the run stays red. The typo3-testing skill (`references/ci-debugging.md`) has the measured version matrix.
 
 ## Required File Header
 
