@@ -251,6 +251,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: read
+
 jobs:
   publish:
     name: Publish new version to TER
@@ -261,6 +264,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Validate tag format
         run: |
@@ -292,7 +297,7 @@ jobs:
           elif [[ -n "${RELEASE_NAME}" ]]; then
             COMMENT="${RELEASE_NAME}"
           else
-            COMMENT="Release ${{ steps.version.outputs.version }}"
+            COMMENT="Release ${GITHUB_REF_NAME#v}"
           fi
 
           # Strip characters not supported in TER XML export
