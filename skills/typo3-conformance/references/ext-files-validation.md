@@ -51,11 +51,11 @@ What the loss does depends on the node (checked against TYPO3 14.3.7):
 The collision is visible only in a composed installation. From the project root, list keys that more than one `ext_localconf.php` registers:
 
 ```bash
-grep -rHoE --include=ext_localconf.php "nodeRegistry[\"']\]\[[0-9]+\]" vendor public/typo3conf/ext 2>/dev/null \
+grep -RHoE --include=ext_localconf.php "nodeRegistry[\"']\]\[[0-9]+\]" vendor public/typo3conf/ext 2>/dev/null \
   | sed -E 's/.*\[([0-9]+)\]$/\1/' | sort | uniq -d
 ```
 
-No output means no key is registered twice. The pattern finds the direct array form only; a key built in a variable or a loop needs a manual look.
+No output means no key is registered twice. `-R` follows symlinks, which matters because Composer links path-repository packages (the project's own extensions under `packages/`) into `vendor` as symlinks, and `-r` skips those. The pattern finds the direct array form only; a key built in a variable or a loop needs a manual look.
 
 ### TYPO3 v13 Deprecations
 
