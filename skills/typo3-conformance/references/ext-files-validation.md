@@ -40,9 +40,7 @@ defined('TYPO3') or die();
 
 `$GLOBALS['TYPO3_CONF_VARS']['SYS']['formEngine']['nodeRegistry']` is a plain array keyed by integer. When two extensions pick the same key, the `ext_localconf.php` loaded later overwrites the earlier entry: no exception, no log line, and the losing node is never registered. A round key such as `1700000001` is the usual cause.
 
-What the loss does depends on the node (checked against TYPO3 14.3.7):
-
-When the lost entry overrides a node type core already knows (`input`, `select`, …), `NodeFactory` falls back to the core class and nothing visible happens. When the lost entry is the only registration of its name, which is the case for every custom `renderType`:
+What the loss does depends on the node (checked against TYPO3 14.3.7). When the lost entry overrides a node type core already knows (`input`, `select`, …), `NodeFactory` falls back to the core class and nothing visible happens. When the lost entry is the only registration of its name, which is the case for every custom `renderType`:
 
 - A lost **element** `renderType` falls back to `UnknownElement`, which renders a warning box in place of the field.
 - A lost **field control** also resolves to `UnknownElement`. Its result is not empty and has no `iconIdentifier`, so `FieldControl` throws `RuntimeException` 1483890332 and the whole record edit form fails with HTTP 500.
