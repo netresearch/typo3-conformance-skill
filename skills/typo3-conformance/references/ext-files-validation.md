@@ -36,6 +36,27 @@ defined('TYPO3') or die();
 ❌ Time zone, memory limit, locale settings
 ❌ Icon registration (use `Icons.php` instead)
 
+### Integer keys in `nodeRegistry` must be unique across the installation
+
+`$GLOBALS['TYPO3_CONF_VARS']['SYS']['formEngine']['nodeRegistry']` is a plain array keyed by integer. When two extensions pick the same key, the `ext_localconf.php` loaded later overwrites the earlier entry: no exception, no log line, and the losing node is never registered. A round key such as `1700000001` is the usual cause.
+
+What the loss does depends on the node (checked against TYPO3 14.3.7). When the lost entry overrides a node type core already knows (`input`, `select`, …), `NodeFactory` falls back to the core class and nothing visible happens. When the lost entry is the only registration of its name, which is the case for every custom `renderType`:
+
+- A lost **element** `renderType` falls back to `UnknownElement`, which renders a warning box in place of the field.
+- A lost **field control** also resolves to `UnknownElement`. Its result is not empty and has no `iconIdentifier`, so `FieldControl` throws `RuntimeException` 1483890332 and the whole record edit form fails with HTTP 500.
+
+✅ Use the Unix timestamp of the day you register the node as its key (`date +%s`) and say so in a comment next to it.
+❌ Round or sequential keys copied from an example.
+
+Each extension on its own is fine; the collision exists only where both are installed together, so search the installation, not one extension. From the project root, list keys that more than one `ext_localconf.php` registers (Composer mode keeps extensions in `vendor`, classic mode in `typo3conf/ext` or `public/typo3conf/ext`):
+
+```bash
+grep -RHoE --include=ext_localconf.php "nodeRegistry[\"']\]\[[\"']?[0-9]+[\"']?\]" vendor typo3conf/ext public/typo3conf/ext 2>/dev/null \
+  | sed -E "s/.*\[[\"']?([0-9]+)[\"']?\]$/\1/" | sort | uniq -d
+```
+
+No output means no key is registered twice. `-R` follows symlinks, which matters because Composer links path-repository packages (the project's own extensions under `packages/`) into `vendor` as symlinks, and `-r` skips those. The pattern finds the direct array form, with the key quoted or not (`[1700000001]` and `['1700000001']` are the same PHP key); a key built in a variable or a loop needs a manual look.
+
 ### TYPO3 v13 Deprecations
 
 **❌ DEPRECATED:** `\TYPO3\CMS\Core\Utility\ExtensionManagementUtility::addUserTSConfig()`
