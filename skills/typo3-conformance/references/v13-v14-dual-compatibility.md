@@ -23,6 +23,8 @@
 
 Require the LTS floors only. `^14.0`, `^14.1` or `^14.2` admit the non-LTS sprint releases 14.0–14.2, which are unsupported; a finding, not an alternative.
 
+A floor is also a claim about the Core API at that floor. `^13.4` admits 13.4.0, so every Core class that the extension extends, decorates or checks by reflection must have the used signature in 13.4.0, not only in the latest patch release. Before you lower a floor, read the class source at the lowest tag that the new constraint allows and at the tag where the API changed: `gh api repos/TYPO3/typo3/contents/<path>?ref=v13.4.0 --jq .content | base64 -d`. Example: `RequestFactory::request()` received its fourth parameter `?string $context` in 13.4.12. An extension that subclasses `RequestFactory` therefore needs `^13.4.12`, and a runtime version gate in the extension needs the same floor.
+
 ### ext_emconf.php
 
 ```php
